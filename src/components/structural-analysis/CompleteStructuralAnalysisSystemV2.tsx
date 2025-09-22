@@ -36,7 +36,7 @@ import {
 // Import Components
 import { ResultsDisplay } from './ResultsDisplay';
 import { ReportGenerator } from './ReportGenerator';
-import StructureViewer from './3d/StructureViewer';
+import Simple3DViewer from './3d/Simple3DViewer';
 
 // Import Types & Interfaces
 import { 
@@ -584,7 +584,7 @@ export default function CompleteStructuralAnalysisSystemV2() {
                         </CardHeader>
                         <CardContent>
                           <div className="h-96 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
-                            <StructureViewer 
+                            <Simple3DViewer 
                               structure={structure3D} 
                               onElementClick={() => {}}
                             />

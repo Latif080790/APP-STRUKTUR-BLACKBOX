@@ -17,6 +17,7 @@ import {
   FormErrorBoundary,
   VisualizationErrorBoundary 
 } from '../common/ErrorBoundary';
+import CalculationEngineTest from '../test/CalculationEngineTest';
 
 // Import forms
 import { 
@@ -720,11 +721,12 @@ export default function CompleteStructuralAnalysisSystem() {
   // Render tab list
   const renderTabList = () => {
     return (
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="input">Input</TabsTrigger>
         <TabsTrigger value="results" disabled={!analysisResults}>Hasil</TabsTrigger>
         <TabsTrigger value="visualization">Visualisasi</TabsTrigger>
         <TabsTrigger value="report" disabled={!analysisResults}>Laporan</TabsTrigger>
+        <TabsTrigger value="test">Test Engine</TabsTrigger>
       </TabsList>
     );
   };
@@ -863,6 +865,11 @@ export default function CompleteStructuralAnalysisSystem() {
               </AlertDescription>
             </Alert>
           )}
+        </TabsContent>
+        
+        {/* Tab Test Engine */}
+        <TabsContent value="test" className="space-y-6">
+          <CalculationEngineTest />
         </TabsContent>
       </Tabs>
     </div>

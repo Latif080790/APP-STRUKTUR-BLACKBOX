@@ -112,7 +112,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
 
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
       console.group('🚨 Error Report');
       console.error('Error:', error);
       console.error('Error Info:', errorInfo);
@@ -188,7 +188,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </Button>
               </div>
 
-              {process.env.NODE_ENV === 'development' && (
+              {typeof process !== 'undefined' && process.env?.NODE_ENV === 'development' && (
                 <details className="mt-6 text-left">
                   <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
                     🔍 Detail Error (Development)

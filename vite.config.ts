@@ -26,10 +26,10 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3003,
+    port: 8080,
     open: true,
     host: true,
-    strictPort: true
+    strictPort: false
   },
   build: {
     commonjsOptions: {
