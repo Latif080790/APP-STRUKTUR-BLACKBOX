@@ -1,34 +1,46 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Structure3D } from '@/types/structural';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Button } from '../ui/button';
+import { Progress } from '../ui/progress';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Structure3D } from '../../types/structural';
 import StructureViewer from './3d/StructureViewer';
 import { ResponseSpectrumChart } from './charts/ResponseSpectrumChart';
 import ForceDiagram from './charts/ForceDiagram';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Activity } from 'lucide-react';
 import { AlertCircle, RotateCcw, FileText } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
 import { ReportGenerator } from './ReportGenerator';
+import { 
+  StructuralAnalysisErrorBoundary, 
+  FormErrorBoundary,
+  VisualizationErrorBoundary 
+} from '../common/ErrorBoundary';
+
+// Import forms
+import { 
+  ProjectInfoForm, 
+  GeometryForm, 
+  MaterialForm, 
+  LoadsForm, 
+  SeismicForm 
+} from './forms';
 
 // Import modul validasi dan analisis
-import { validateStructuralModel, ValidationResult } from '@/utils/validation';
-import { performStructuralAnalysis, AnalysisResult } from '@/utils/structuralAnalysis';
+import { validateStructuralModel, ValidationResult } from '../../utils/validation';
+import { performStructuralAnalysis, AnalysisResult } from '../../utils/structuralAnalysis';
 
 // Import all interfaces and types
-import * as Interfaces from './interfaces';
+import { 
+  ProjectInfo, 
+  Geometry, 
+  MaterialProperties, 
+  Loads, 
+  SeismicParameters
+} from './interfaces';
 
-// Import calculation modules
-import * as BasicCalcs from './calculations/basic';
-import * as SeismicCalcs from './calculations/seismic';
-import * as ReinforcementCalcs from './calculations/reinforcement';
-import * as CostCalcs from './calculations/cost';
-import * as FrameCalcs from './calculations/frame-analysis';
-
-import { Node, Element } from '@/types/structural';
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { Element } from '../../types/structural';
 
 
 export default function CompleteStructuralAnalysisSystem() {
@@ -103,42 +115,13 @@ export default function CompleteStructuralAnalysisSystem() {
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
   
-  // Definisikan tipe AnalysisData
-  interface AnalysisData {
-    materials: {
-      fc: number;
-      fy: number;
-    };
-    geometry: {
-      length: number;
-      width: number;
-      heightPerFloor: number;
-      numberOfFloors: number;
-    };
-    loads: {
-      deadLoad: number;
-      liveLoad: number;
-    };
-    seismic?: {
-      zoneFactor: number;
-      soilType: string;
-      importanceFactor: number;
-      responseModifier: number;
-    };
-    soilData?: {
-      soilType: string;
-      bearingCapacity: number;
-      elasticModulus: number;
-      poissonsRatio: number;
-    };
-  }
-
-  const [soilData, setSoilData] = useState<AnalysisData['soilData']>({
-    soilType: 'medium',
-    bearingCapacity: 150, // kN/m2
-    elasticModulus: 30000, // kN/m2
-    poissonsRatio: 0.3,
-  });
+    // State untuk validasi dan analisis
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
+  const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('input');
   
   // State untuk visualisasi 3D
   const [structure3D, setStructure3D] = useState<Structure3D>({ 
@@ -203,8 +186,7 @@ export default function CompleteStructuralAnalysisSystem() {
       if (saved.geometry) setGeometry(saved.geometry);
       if (saved.materials) setMaterials(saved.materials);
       if (saved.loads) setLoads(saved.loads);
-      if (saved.soilData) setSoilData(saved.soilData);
-      if (saved.seismicParams) setSeismicParams((prev) => ({ ...prev, ...saved.seismicParams }));
+      if (saved.seismicParams) setSeismicParams(saved.seismicParams);
     } catch {}
   }, []);
 
@@ -413,11 +395,27 @@ export default function CompleteStructuralAnalysisSystem() {
     
     // Validasi input
     const validation = validateStructuralModel({
-      geometry,
-      materials,
-      loads,
-      soilData,
-      seismicParams
+      materials: {
+        fc: materials.fc,
+        ec: materials.ec,
+        fy: materials.fy
+      },
+      geometry: {
+        length: geometry.length,
+        width: geometry.width,
+        heightPerFloor: geometry.heightPerFloor,
+        numberOfFloors: geometry.numberOfFloors
+      },
+      loads: {
+        liveLoad: loads.liveLoad,
+        deadLoad: loads.deadLoad
+      },
+      seismic: seismicParams.isSeismic ? {
+        zoneFactor: seismicParams.zoneFactor,
+        soilType: seismicParams.soilType,
+        importanceFactor: seismicParams.importance,
+        responseModifier: seismicParams.responseModifier || seismicParams.r
+      } : undefined
     });
 
     setValidationResult(validation);
@@ -445,11 +443,26 @@ export default function CompleteStructuralAnalysisSystem() {
       // Simulasi proses analisis
       setTimeout(() => {
         const results = performStructuralAnalysis({
-          geometry,
-          materials,
-          loads,
-          soilData,
-          seismicParams
+          materials: {
+            fc: materials.fc,
+            fy: materials.fy
+          },
+          geometry: {
+            length: geometry.length,
+            width: geometry.width,
+            heightPerFloor: geometry.heightPerFloor,
+            numberOfFloors: geometry.numberOfFloors
+          },
+          loads: {
+            deadLoad: loads.deadLoad,
+            liveLoad: loads.liveLoad
+          },
+          seismic: seismicParams.isSeismic ? {
+            zoneFactor: seismicParams.zoneFactor,
+            soilType: seismicParams.soilType,
+            importanceFactor: seismicParams.importance,
+            responseModifier: seismicParams.responseModifier || seismicParams.r
+          } : undefined
         });
         
         setAnalysisResults(results);
@@ -463,7 +476,7 @@ export default function CompleteStructuralAnalysisSystem() {
       setError('Terjadi kesalahan saat menganalisis struktur');
       setIsAnalyzing(false);
     }
-  }, [geometry, materials, loads, soilData, seismicParams, generate3DStructure]);
+  }, [geometry, materials, loads, seismicParams, generate3DStructure]);
 
   // Handler untuk error pada model 3D
   const handleModelError = useCallback((error: Error) => {
@@ -732,36 +745,86 @@ export default function CompleteStructuralAnalysisSystem() {
         
         {/* Tab Input */}
         <TabsContent value="input" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Input Data Proyek</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Form input akan ditambahkan di sini */}
-              <Button 
-                onClick={performAnalysis}
-                disabled={isAnalyzing}
-                className="mt-4"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
-                    Menganalisis...
-                  </>
-                ) : 'Analisis Struktur'}
-              </Button>
-              
-              {isAnalyzing && (
-                <div className="mt-4">
-                  <div className="flex justify-between text-sm text-gray-500 mb-1">
-                    <span>Proses Analisis</span>
-                    <span>{analysisProgress}%</span>
+          <div className="space-y-6">
+            {/* Project Information Form */}
+            <ProjectInfoForm 
+              data={projectInfo}
+              onChange={setProjectInfo}
+              errors={[]}
+            />
+            
+            {/* Geometry Form */}
+            <GeometryForm 
+              data={geometry}
+              onChange={setGeometry}
+              errors={[]}
+            />
+            
+            {/* Material Properties Form */}
+            <MaterialForm 
+              data={materials}
+              onChange={setMaterials}
+              errors={[]}
+            />
+            
+            {/* Loads Form */}
+            <LoadsForm 
+              data={loads}
+              onChange={setLoads}
+              errors={[]}
+            />
+            
+            {/* Seismic Parameters Form */}
+            <SeismicForm 
+              data={seismicParams}
+              onChange={setSeismicParams}
+              errors={[]}
+            />
+            
+            {/* Analysis Controls */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Kontrol Analisis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={performAnalysis}
+                  disabled={isAnalyzing}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
+                      Menganalisis...
+                    </>
+                  ) : 'Mulai Analisis Struktur'}
+                </Button>
+                
+                {isAnalyzing && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-gray-500 mb-1">
+                      <span>Progress Analisis</span>
+                      <span>{analysisProgress}%</span>
+                    </div>
+                    <Progress value={analysisProgress} className="h-2" />
                   </div>
-                  <Progress value={analysisProgress} className="h-2" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+                
+                {validationResult && !validationResult.isValid && (
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-1">
+                        <div className="font-medium">Error Validasi:</div>
+                        <div className="text-sm">• {validationResult.message}</div>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         {/* Tab Hasil */}
@@ -784,11 +847,14 @@ export default function CompleteStructuralAnalysisSystem() {
         <TabsContent value="report" className="space-y-6">
           {analysisResults ? (
             <ReportGenerator 
-              projectInfo={projectInfo}
-              geometry={geometry}
-              materials={materials}
-              loads={loads}
-              analysisResults={analysisResults}
+              data={{
+                projectInfo,
+                geometry,
+                materials,
+                loads,
+                seismicParams,
+                analysisResults
+              }}
             />
           ) : (
             <Alert>

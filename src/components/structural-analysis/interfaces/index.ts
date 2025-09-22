@@ -17,15 +17,37 @@ export interface SoilData {
 }
 
 export interface MaterialProperties {
+  // Concrete properties
   fc: number;
   ec: number;
+  Ec?: number; // Alternative naming
   poissonConcrete: number;
   densityConcrete: number;
+  gammaConcrete?: number; // Weight density
+  concreteGrade?: string;
+  
+  // Steel structural properties
   fy: number;
   fu: number;
   es: number;
+  Es?: number; // Alternative naming
   fySteel: number;
   fuSteel: number;
+  gammaSteel?: number; // Weight density
+  poissonSteel?: number;
+  steelGrade?: string;
+  
+  // Rebar properties
+  fyRebar?: number;
+  rebarGrade?: string;
+  
+  // Design factors
+  phiConcrete?: number;
+  phiTension?: number;
+  phiShear?: number;
+  phiTorsion?: number;
+  
+  // Calculated properties
   crackingMoment: number;
   effectiveMomentInertia: number;
 }
@@ -219,6 +241,10 @@ export interface ProjectInfo {
   designLife?: number;
   latitude?: number;
   longitude?: number;
+  description?: string;
+  owner?: string;
+  engineer?: string;
+  projectCode?: string;
 }
 
 export interface Geometry {
@@ -259,4 +285,35 @@ export interface LateralForce {
 export interface ResponseSpectrumPoint {
   period: number;
   acceleration: number;
+}
+
+export interface AnalysisResult {
+  status: 'success' | 'error' | 'warning';
+  timestamp: string;
+  summary: {
+    totalWeight: number;
+    baseShear: number;
+    fundamentalPeriod: number;
+    maxDrift: number;
+    maxStress: number;
+  };
+  frameAnalysis: FrameAnalysisResult;
+  baseShear: BaseShearSummary;
+  lateralForces: LateralForce[];
+  responseSpectrum: ResponseSpectrumPoint[];
+  reinforcement: ReinforcementDetail;
+  serviceability: ServiceabilityCheck;
+  costEstimate: CostEstimate;
+  structure3D: Structure3D;
+  calculations: {
+    [key: string]: any;
+  };
+  warnings: string[];
+  notes: string[];
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationError[];
 }

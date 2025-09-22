@@ -6,6 +6,8 @@
 export interface ValidationResult {
   isValid: boolean;
   message?: string;
+  errors?: string[];
+  warnings?: string[];
 }
 
 /**
@@ -16,7 +18,8 @@ export const validateConcreteProperties = (fc: number, ec: number): ValidationRe
   if (fc < 17 || fc > 83) {
     return {
       isValid: false,
-      message: `Kekuatan beton (fc') ${fc} MPa di luar rentang yang diijinkan (17-83 MPa) sesuai SNI 2847:2019`
+      message: `Kekuatan beton (fc') ${fc} MPa di luar rentang yang diijinkan (17-83 MPa) sesuai SNI 2847:2019`,
+      errors: [`Kekuatan beton (fc') ${fc} MPa di luar rentang yang diijinkan (17-83 MPa) sesuai SNI 2847:2019`]
     };
   }
 
