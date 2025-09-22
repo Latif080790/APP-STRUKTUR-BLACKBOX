@@ -5,6 +5,7 @@ import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Structure3D } from '../../types/structural';
 import StructureViewer from './3d/StructureViewer';
+import { Enhanced3DViewer } from './3d/Advanced3DViewer';
 import { ResponseSpectrumChart } from './charts/ResponseSpectrumChart';
 import ForceDiagram from './charts/ForceDiagram';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -12,6 +13,9 @@ import { Activity } from 'lucide-react';
 import { AlertCircle, RotateCcw, FileText } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
 import { ReportGenerator } from './ReportGenerator';
+import ComprehensiveResultsDashboard from './results/ComprehensiveResultsDashboard';
+import generateDemoResults from './results/demoResultsData';
+import ProjectManager from './project/ProjectManager';
 import { 
   StructuralAnalysisErrorBoundary, 
   FormErrorBoundary,
@@ -605,9 +609,83 @@ export default function CompleteStructuralAnalysisSystem() {
             >
               {structure3D ? (
                 <div className="h-[500px] rounded-md overflow-hidden relative">
-                  <StructureViewer 
-                    structure={structure3D} 
-                    {...viewerProps}
+                  {/* Enhanced 3D Viewer with advanced features */}
+                  <Enhanced3DViewer 
+                    structure={{
+                      nodes: structure3D.nodes.map(node => ({
+                        id: String(node.id),
+                        position: [node.x, node.y, node.z],
+                        displacement: analysisResults?.nodeResults?.find(nr => nr.nodeId === node.id)?.displacement ? 
+                          [
+                            analysisResults.nodeResults.find(nr => nr.nodeId === node.id)?.displacement?.x || 0,
+                            analysisResults.nodeResults.find(nr => nr.nodeId === node.id)?.displacement?.y || 0,
+                            analysisResults.nodeResults.find(nr => nr.nodeId === node.id)?.displacement?.z || 0
+                          ] : undefined,
+                        forces: node.loads ? [node.loads.fx || 0, node.loads.fy || 0, node.loads.fz || 0] : undefined,
+                        moments: node.loads ? [node.loads.mx || 0, node.loads.my || 0, node.loads.mz || 0] : undefined,
+                        support: {
+                          x: node.constraints?.x || false,
+                          y: node.constraints?.y || false,
+                          z: node.constraints?.z || false,
+                          rx: node.constraints?.rx || false,
+                          ry: node.constraints?.ry || false,
+                          rz: node.constraints?.rz || false,
+                        }
+                      })),
+                      elements: structure3D.elements.map(element => ({
+                        id: String(element.id),
+                        type: element.type || 'beam',
+                        startNode: String(element.nodes[0]),
+                        endNode: String(element.nodes[1]),
+                        section: {
+                          width: element.section?.width || 0.3,
+                          height: element.section?.height || 0.5,
+                          thickness: element.section?.area ? Math.sqrt(element.section.area) : undefined
+                        },
+                        material: (element.materialType === 'timber' || element.materialType === 'masonry') ? 'composite' : element.materialType || 'concrete',
+                        utilization: element.analysisResults?.stressMax ? 
+                          Math.min(element.analysisResults.stressMax / 25, 1.0) : undefined, // Normalize to 25 MPa
+                        stresses: element.analysisResults ? {
+                          max: element.analysisResults.stressMax || 0,
+                          min: element.analysisResults.stressMin || 0,
+                          vonMises: [element.analysisResults.stressMax || 0]
+                        } : undefined
+                      })),
+                      loads: structure3D.nodes.filter(node => node.loads).map(node => ({
+                        nodeId: String(node.id),
+                        forces: [node.loads?.fx || 0, node.loads?.fy || 0, node.loads?.fz || 0],
+                        moments: [node.loads?.mx || 0, node.loads?.my || 0, node.loads?.mz || 0]
+                      })),
+                      boundingBox: {
+                        min: [
+                          Math.min(...structure3D.nodes.map(n => n.x)) - 2,
+                          Math.min(...structure3D.nodes.map(n => n.y)) - 2,
+                          Math.min(...structure3D.nodes.map(n => n.z)) - 2
+                        ],
+                        max: [
+                          Math.max(...structure3D.nodes.map(n => n.x)) + 2,
+                          Math.max(...structure3D.nodes.map(n => n.y)) + 2,
+                          Math.max(...structure3D.nodes.map(n => n.z)) + 2
+                        ]
+                      },
+                      scale: 1.0
+                    }}
+                    analysisResults={analysisResults}
+                    showDeformation={analysisResults ? true : false}
+                    deformationScale={5.0}
+                    showStress={analysisResults ? true : false}
+                    showForces={true}
+                    showLabels={showLabels}
+                    viewMode={viewMode}
+                    colorMode={analysisResults ? 'stress' : 'material'}
+                    onElementSelect={(elementId) => {
+                      const element = structure3D.elements.find(e => String(e.id) === elementId);
+                      if (element) setSelectedElement(element);
+                    }}
+                    onNodeSelect={(nodeId) => {
+                      console.log('Node selected:', nodeId);
+                    }}
+                    className="w-full h-full"
                   />
                 </div>
               ) : (
@@ -735,6 +813,26 @@ export default function CompleteStructuralAnalysisSystem() {
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Sistem Analisis Struktur</h1>
       
+      {/* Project Manager */}
+      <ProjectManager 
+        onProjectChange={(project) => {
+          if (project) {
+            // Update form data from loaded project
+            if (project.projectInfo) setProjectInfo(project.projectInfo);
+            if (project.geometry) setGeometry(project.geometry);
+            if (project.materials) setMaterials(project.materials);
+            if (project.loads) setLoads(project.loads);
+            if (project.seismicParams) setSeismicParams(project.seismicParams);
+            if (project.analysisResults) setAnalysisResults(project.analysisResults);
+          }
+        }}
+        onStateUpdate={(updates) => {
+          // Handle state updates from the project manager
+          console.log('State updated:', updates);
+        }}
+        className="mb-6"
+      />
+      
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -832,7 +930,33 @@ export default function CompleteStructuralAnalysisSystem() {
         {/* Tab Hasil */}
         <TabsContent value="results" className="space-y-6">
           {analysisResults ? (
-            <ResultsDisplay results={analysisResults} />
+            <div className="space-y-6">
+              {/* Traditional Results Display */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Traditional Analysis Results</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResultsDisplay results={analysisResults} />
+                </CardContent>
+              </Card>
+              
+              {/* Comprehensive Results Dashboard */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Comprehensive Results Dashboard</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ComprehensiveResultsDashboard 
+                    results={generateDemoResults(projectInfo.name || "Current Project")}
+                    onExport={(format) => {
+                      console.log(`Exporting results as ${format.toUpperCase()}`);
+                      // Implement actual export functionality here
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
           ) : (
             <Alert>
               <AlertDescription>
