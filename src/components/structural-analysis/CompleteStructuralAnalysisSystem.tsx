@@ -1,16 +1,15 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { AlertCircle, RotateCcw } from 'lucide-react';
 import { Structure3D } from '../../types/structural';
 import StructureViewer from './3d/StructureViewer';
 import { Enhanced3DViewer } from './3d/Advanced3DViewer';
 import { ResponseSpectrumChart } from './charts/ResponseSpectrumChart';
 import ForceDiagram from './charts/ForceDiagram';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Activity } from 'lucide-react';
-import { AlertCircle, RotateCcw, FileText } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
 import { ReportGenerator } from './ReportGenerator';
 import ComprehensiveResultsDashboard from './results/ComprehensiveResultsDashboard';
@@ -23,6 +22,11 @@ import {
 } from '../common/ErrorBoundary';
 import CalculationEngineTest from '../test/CalculationEngineTest';
 
+// Store imports  
+import { useProjectStore, useCurrentProject, useRecovery } from '../../stores/projectStore';
+import AutoSaveStatus from '../common/AutoSaveStatus';
+import RecoveryModal from '../common/RecoveryModal';
+
 // Import forms
 import { 
   ProjectInfoForm, 
@@ -32,117 +36,161 @@ import {
   SeismicForm 
 } from './forms';
 
-// Import enhanced validation components
+// Import enhanced validation components  
 import EnhancedInputForm from './components/EnhancedInputForm';
 
-// Import modul validasi dan analisis
+// Import validation and analysis modules
 import { validateStructuralModel, ValidationResult } from '../../utils/validation';
 import { performStructuralAnalysis, AnalysisResult } from '../../utils/structuralAnalysis';
 
-// Import all interfaces and types
-import { 
-  ProjectInfo, 
-  Geometry, 
-  MaterialProperties, 
-  Loads, 
-  SeismicParameters
-} from './interfaces';
-
+// Import interfaces and types
+import * as Interfaces from './interfaces';
 import { Element } from '../../types/structural';
 
-
 export default function CompleteStructuralAnalysisSystem() {
-  const storageKey = 'sas_state_v1';
+  // Store hooks
+  const currentProject = useCurrentProject();
+  const { hasCorruptData } = useRecovery();
+  const store = useProjectStore();
   
-  // State Management
-  const [projectInfo, setProjectInfo] = useState<Interfaces.ProjectInfo>({ 
-    name: 'Proyek Gudang', 
-    location: 'Jakarta', 
-    buildingFunction: 'warehouse', 
-    riskCategory: 'II' 
-  });
+  // Recovery modal state
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   
-  const [geometry, setGeometry] = useState<Interfaces.Geometry>({ 
-    length: 50, 
-    width: 30, 
-    heightPerFloor: 4, 
-    numberOfFloors: 3, 
-    baySpacingX: 6, 
-    baySpacingY: 7.5,
-    columnGridX: 8, 
-    columnGridY: 4 
-  });
+  // Initialize recovery check
+  useEffect(() => {
+    if (hasCorruptData) {
+      setShowRecoveryModal(true);
+    }
+  }, [hasCorruptData]);
   
-  const [materials, setMaterials] = useState<Interfaces.MaterialProperties>({ 
-    fc: 25, 
-    ec: 4700 * Math.sqrt(25), 
-    poissonConcrete: 0.2, 
-    densityConcrete: 2400, 
-    fy: 400, 
-    fu: 550, 
-    es: 200000, 
-    fySteel: 250, 
-    fuSteel: 410, 
-    crackingMoment: 0, 
-    effectiveMomentInertia: 0 
-  });
+  // Legacy state for compatibility (will gradually migrate to store)
+  const [projectInfo, setProjectInfo] = useState<Interfaces.ProjectInfo>(() => 
+    currentProject ? {
+      name: currentProject.name,
+      location: 'Jakarta',
+      buildingFunction: 'warehouse',
+      riskCategory: 'II'
+    } : { 
+      name: 'Proyek Gudang', 
+      location: 'Jakarta', 
+      buildingFunction: 'warehouse', 
+      riskCategory: 'II' 
+    }
+  );
   
-  const [loads, setLoads] = useState<Interfaces.Loads>({ 
-    deadLoad: 5, // kN/m²
-    liveLoad: 4, // kN/m²
-    roofLiveLoad: 1, // kN/m²
-    partitionLoad: 1, // kN/m²
-    claddingLoad: 0.5, // kN/m²
-    windSpeed: 30 // m/s
-  });
+  const [geometry, setGeometry] = useState<Interfaces.Geometry>(() =>
+    currentProject?.geometry || { 
+      length: 50, 
+      width: 30, 
+      heightPerFloor: 4, 
+      numberOfFloors: 3, 
+      baySpacingX: 6, 
+      baySpacingY: 7.5,
+      columnGridX: 8, 
+      columnGridY: 4 
+    }
+  );
   
-  const [seismicParams, setSeismicParams] = useState<Interfaces.SeismicParameters>({ 
-    ss: 0.8, 
-    s1: 0.3, 
-    fa: 1.2, 
-    fv: 1.8, 
-    sds: 0, 
-    sd1: 0, 
-    siteClass: 'SD', 
-    importance: 1.0, 
-    r: 8, 
-    cd: 5.5, 
-    omega: 3, 
-    tl: 12, 
-    ts: 0, 
-    t0: 0,
-    isSeismic: true,
-    zoneFactor: 0.3,
-    soilType: 'Sedang',
-    responseModifier: 6.5,
-    category: 'D'
-  });
+  const [materials, setMaterials] = useState<Interfaces.MaterialProperties>(() =>
+    currentProject?.materials || { 
+      fc: 25, 
+      ec: 4700 * Math.sqrt(25), 
+      poissonConcrete: 0.2, 
+      densityConcrete: 2400, 
+      fy: 400, 
+      fu: 550, 
+      es: 200000, 
+      fySteel: 250, 
+      fuSteel: 410, 
+      crackingMoment: 0, 
+      effectiveMomentInertia: 0 
+    }
+  );
+  
+  const [loads, setLoads] = useState<Interfaces.Loads>(() =>
+    currentProject?.loads || { 
+      deadLoad: 5, // kN/m²
+      liveLoad: 4, // kN/m²
+      roofLiveLoad: 1, // kN/m²
+      partitionLoad: 1, // kN/m²
+      claddingLoad: 0.5, // kN/m²
+      windSpeed: 30 // m/s
+    }
+  );
+  
+  const [seismicParams, setSeismicParams] = useState<Interfaces.SeismicParameters>(() =>
+    currentProject?.seismicParams || { 
+      ss: 0.8, 
+      s1: 0.3, 
+      fa: 1.2, 
+      fv: 1.8, 
+      sds: 0, 
+      sd1: 0, 
+      siteClass: 'SD', 
+      importance: 1.0, 
+      r: 8, 
+      cd: 5.5, 
+      omega: 3, 
+      tl: 12, 
+      ts: 0, 
+      t0: 0,
+      isSeismic: true,
+      zoneFactor: 0.3,
+      soilType: 'Sedang',
+      responseModifier: 6.5,
+      category: 'D'
+    }
+  );
 
-  // State untuk validasi dan analisis
+  // Sync with store when local state changes
+  useEffect(() => {
+    if (currentProject) {
+      store.updateGeometry(geometry);
+    }
+  }, [geometry, currentProject, store]);
+
+  useEffect(() => {
+    if (currentProject) {
+      store.updateMaterials(materials);
+    }
+  }, [materials, currentProject, store]);
+
+  useEffect(() => {
+    if (currentProject) {
+      store.updateLoads(loads);
+    }
+  }, [loads, currentProject, store]);
+
+  useEffect(() => {
+    if (currentProject) {
+      store.updateSeismic(seismicParams);
+    }
+  }, [seismicParams, currentProject, store]);
+  
+  // Additional analysis states
   const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
-  
-    // State untuk validasi dan analisis
+  const [analysisResults, setAnalysisResults] = useState<Interfaces.AnalysisResult | null>(() => 
+    currentProject?.analysisResults || null
+  );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
-  const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('input');
+  const [activeTab, setActiveTab] = useState(() => 
+    currentProject?.activeTab || 'input'
+  );
   
   // State untuk visualisasi 3D
-  const [structure3D, setStructure3D] = useState<Structure3D>({ 
-    nodes: [], 
-    elements: [] 
-  });
+  const [structure3D, setStructure3D] = useState<Interfaces.Structure3D>(() =>
+    currentProject?.structure3D || { nodes: [], elements: [] }
+  );
   const [showLabels, setShowLabels] = useState(true);
   const [viewMode, setViewMode] = useState<'solid' | 'wireframe' | 'both'>('solid');
-  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+  const [selectedElement, setSelectedElement] = useState<Interfaces.Element3D | null>(null);
   const [isModelLoading, setIsModelLoading] = useState<boolean>(true);
   const [modelError, setModelError] = useState<string | null>(null);
   
-  // State tambahan
+  // State tambahan untuk analisis lanjutan
   const [validationErrors, setValidationErrors] = useState<{ field: string; message: string; severity: 'error' | 'warning' | 'info' }[]>([]);
   const [reinforcementDetails, setReinforcementDetails] = useState<Interfaces.ReinforcementDetail | null>(null);
   const [serviceabilityResults, setServiceabilityResults] = useState<Interfaces.ServiceabilityCheck | null>(null);
@@ -151,13 +199,6 @@ export default function CompleteStructuralAnalysisSystem() {
   const [frameAnalysis, setFrameAnalysis] = useState<Interfaces.FrameAnalysisResult | null>(null);
   const [lateralForces, setLateralForces] = useState<Interfaces.LateralForce[] | null>(null);
   const [baseShear, setBaseShear] = useState<Interfaces.BaseShearSummary | null>(null);
-  const [results, setResults] = useState<any>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [calculationProgress, setCalculationProgress] = useState(0);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState('input');
-  const [error, setError] = useState<string | null>(null);
 
   // State untuk visualisasi
   const [responseSpectrum, setResponseSpectrum] = useState<Array<{period: number, acceleration: number}>>([
@@ -184,22 +225,8 @@ export default function CompleteStructuralAnalysisSystem() {
     { position: 8, value: -30 },
   ]);
 
-  // Load saved state on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return;
-      const saved = JSON.parse(raw);
-      if (saved.projectInfo) setProjectInfo(saved.projectInfo);
-      if (saved.geometry) setGeometry(saved.geometry);
-      if (saved.materials) setMaterials(saved.materials);
-      if (saved.loads) setLoads(saved.loads);
-      if (saved.seismicParams) setSeismicParams(saved.seismicParams);
-    } catch {}
-  }, []);
-
   // Fungsi untuk menghasilkan struktur 3D
-  const generate3DStructure = useCallback((geometryOverride?: Interfaces.Geometry): Structure3D => {
+  const generate3DStructure = useCallback((geometryOverride?: Interfaces.Geometry): Interfaces.Structure3D => {
     const currentGeometry = geometryOverride || geometry;
     console.log('Generating 3D structure with geometry:', currentGeometry);
     
@@ -969,7 +996,14 @@ export default function CompleteStructuralAnalysisSystem() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Sistem Analisis Struktur</h1>
+      {/* Header with Auto-Save Status */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Sistem Analisis Struktur</h1>
+        <AutoSaveStatus />
+      </div>
+      
+      {/* Recovery Modal */}
+      <RecoveryModal />
       
       {/* Project Manager */}
       <ProjectManager 
