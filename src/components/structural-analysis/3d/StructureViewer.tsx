@@ -4,6 +4,8 @@ import { OrbitControls, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { Node, Element, Structure3D } from '@/types/structural';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { Enhanced3DErrorBoundary } from './Enhanced3DErrorBoundary';
+import { validateStructure3D } from './advanced-validation';
 
 interface StructureViewerProps {
   structure: Structure3D | null;
@@ -410,35 +412,52 @@ const StructureViewer = memo(({
   className = '',
   style
 }: StructureViewerProps) => {
-  // Gunakan useMemo untuk mencegah re-render yang tidak perlu
-  const sceneProps = useMemo(() => ({
-    structure,
-    showLabels,
-    showStress,
-    viewMode,
-    onElementClick,
-    onLoad,
-  }), [structure, showLabels, showStress, viewMode, onElementClick, onLoad]);
-  if (!structure) {
-    return (
-      <div className="flex items-center justify-center h-full bg-gray-100">
-        <div className="text-center p-4">
-          <div className="text-gray-500 mb-2">
-            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <p className="text-gray-700">Tidak ada data struktur yang tersedia</p>
-          <p className="text-sm text-gray-500 mt-1">Silakan periksa input atau coba lagi nanti</p>
-        </div>
-      </div>
-    );
-  }
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [localShowLabels, setLocalShowLabels] = useState(showLabels);
   const [localViewMode, setLocalViewMode] = useState(viewMode);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
+  const [validatedStructure, setValidatedStructure] = useState<Structure3D | null>(null);
+
+  // Validate structure data when it changes
+  useEffect(() => {
+    if (!structure) {
+      setValidatedStructure(null);
+      return;
+    }
+
+    try {
+      const validation = validateStructure3D(structure);
+      
+      if (validation.isValid && validation.correctedData) {
+        setValidatedStructure(validation.correctedData);
+        setValidationErrors([]);
+        setValidationWarnings(validation.warnings);
+      } else {
+        setValidatedStructure(null);
+        setValidationErrors(validation.errors);
+        setValidationWarnings(validation.warnings);
+        console.error('Structure validation failed:', validation.errors);
+      }
+    } catch (error) {
+      setValidatedStructure(null);
+      setValidationErrors([`Structure validation error: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      setValidationWarnings([]);
+      console.error('Structure validation exception:', error);
+    }
+  }, [structure]);
+
+  // Gunakan useMemo untuk mencegah re-render yang tidak perlu
+  const sceneProps = useMemo(() => ({
+    structure: validatedStructure,
+    showLabels: localShowLabels,
+    showStress,
+    viewMode: localViewMode,
+    onElementClick: handleElementClick,
+    onLoad: handleLoad,
+  }), [validatedStructure, localShowLabels, showStress, localViewMode, onElementClick, onLoad]);
 
   const handleElementClick = useCallback((element: Element) => {
     setSelectedElement(prev => 
@@ -454,8 +473,37 @@ const StructureViewer = memo(({
     if (onLoad) onLoad();
   }, [onLoad]);
 
+  // Show validation errors
+  if (validationErrors.length > 0) {
+    return (
+      <div className="flex items-center justify-center h-full bg-red-50">
+        <div className="text-center p-4 max-w-md">
+          <div className="text-red-500 mb-2">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 19c-.77.833-.23 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <p className="text-red-700 font-semibold mb-2">Data Struktur Tidak Valid</p>
+          <div className="text-red-600 text-sm space-y-1">
+            {validationErrors.map((error, index) => (
+              <p key={index}>• {error}</p>
+            ))}
+          </div>
+          {validationWarnings.length > 0 && (
+            <div className="mt-3 text-yellow-600 text-xs">
+              <p className="font-medium">Peringatan:</p>
+              {validationWarnings.map((warning, index) => (
+                <p key={index}>• {warning}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Tampilkan pesan jika struktur tidak ada
-  if (!structure) {
+  if (!structure || !validatedStructure) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100">
         <div className="text-center p-4">
@@ -472,13 +520,52 @@ const StructureViewer = memo(({
   }
 
   return (
-    <ErrorBoundary>
+    <Enhanced3DErrorBoundary 
+      structure={validatedStructure}
+      fallbackComponent={
+        <div className="flex items-center justify-center h-full bg-yellow-50">
+          <div className="text-center p-4">
+            <div className="text-yellow-600 mb-2">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 19c-.77.833-.23 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <p className="text-yellow-800 font-semibold mb-2">Tidak dapat menampilkan 3D</p>
+            <p className="text-yellow-700 text-sm">Terjadi masalah dengan rendering 3D. Silakan coba refresh halaman.</p>
+          </div>
+        </div>
+      }
+    >
       <div className={`structure-viewer ${className}`} style={style}>
+        {/* Show validation warnings if any */}
+        {validationWarnings.length > 0 && (
+          <div className="absolute top-4 right-4 z-10 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 max-w-sm text-sm rounded shadow-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium">Peringatan Data Struktur:</p>
+                <div className="mt-1 text-xs space-y-1">
+                  {validationWarnings.slice(0, 3).map((warning, index) => (
+                    <p key={index}>• {warning}</p>
+                  ))}
+                  {validationWarnings.length > 3 && (
+                    <p>• ... dan {validationWarnings.length - 3} peringatan lainnya</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <Canvas camera={{ position: [10, 10, 10], fov: 50 }}>
           <StructureScene {...sceneProps} />
         </Canvas>
       </div>
-    </ErrorBoundary>
+    </Enhanced3DErrorBoundary>
   );
 });
 

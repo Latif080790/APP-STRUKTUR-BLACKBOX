@@ -32,6 +32,9 @@ import {
   SeismicForm 
 } from './forms';
 
+// Import enhanced validation components
+import EnhancedInputForm from './components/EnhancedInputForm';
+
 // Import modul validasi dan analisis
 import { validateStructuralModel, ValidationResult } from '../../utils/validation';
 import { performStructuralAnalysis, AnalysisResult } from '../../utils/structuralAnalysis';
@@ -196,16 +199,17 @@ export default function CompleteStructuralAnalysisSystem() {
   }, []);
 
   // Fungsi untuk menghasilkan struktur 3D
-  const generate3DStructure = useCallback((): Structure3D => {
-    console.log('Generating 3D structure with geometry:', geometry);
+  const generate3DStructure = useCallback((geometryOverride?: Interfaces.Geometry): Structure3D => {
+    const currentGeometry = geometryOverride || geometry;
+    console.log('Generating 3D structure with geometry:', currentGeometry);
     
     // Validasi geometry
-    if (!geometry) {
+    if (!currentGeometry) {
       console.error('Geometry is not defined');
       return { nodes: [], elements: [] };
     }
 
-    const { length, width, heightPerFloor, numberOfFloors, baySpacingX, baySpacingY } = geometry;
+    const { length, width, heightPerFloor, numberOfFloors, baySpacingX, baySpacingY } = currentGeometry;
     
     // Validasi input
     if (!length || !width || !heightPerFloor || !numberOfFloors || !baySpacingX || !baySpacingY) {
@@ -394,6 +398,160 @@ export default function CompleteStructuralAnalysisSystem() {
   }, [geometry, generate3DStructure]);
 
   // Fungsi untuk melakukan analisis struktur
+  // Enhanced form submission handler with comprehensive validation
+  const handleEnhancedFormSubmit = useCallback(async (data: {
+    geometry: any;
+    material: any;
+    seismic?: any;
+    options?: any;
+  }) => {
+    try {
+      setIsAnalyzing(true);
+      setAnalysisProgress(10);
+      setError(null);
+      setValidationErrors([]);
+
+      console.log('Enhanced form data received:', data);
+
+      // Update state with validated data
+      const updatedGeometry = {
+        length: data.geometry.length,
+        width: data.geometry.width,
+        heightPerFloor: data.geometry.heightPerFloor,
+        numberOfFloors: data.geometry.numberOfFloors,
+        baySpacingX: data.geometry.columnGridX || 6,
+        baySpacingY: data.geometry.columnGridY || 7.5,
+        columnGridX: Math.ceil(data.geometry.length / (data.geometry.columnGridX || 6)),
+        columnGridY: Math.ceil(data.geometry.width / (data.geometry.columnGridY || 7.5))
+      };
+
+      const updatedMaterials = {
+        fc: data.material.fc,
+        ec: data.material.elasticModulus || 4700 * Math.sqrt(data.material.fc),
+        poissonConcrete: data.material.poissonRatio || 0.2,
+        densityConcrete: data.material.density || 2400,
+        fy: data.material.fy,
+        fu: data.material.fy * 1.25, // Estimate
+        es: 200000,
+        fySteel: 250,
+        fuSteel: 410,
+        crackingMoment: 0,
+        effectiveMomentInertia: 0
+      };
+
+      const updatedSeismic = data.seismic ? {
+        ss: data.seismic.ss,
+        s1: data.seismic.s1,
+        fa: 1.2, // Default
+        fv: 1.8, // Default
+        sds: data.seismic.ss * 1.2 * (2/3), // Simplified calculation
+        sd1: data.seismic.s1 * 1.8 * (2/3), // Simplified calculation
+        siteClass: data.seismic.siteClass,
+        importance: data.seismic.importance,
+        r: data.seismic.responseModification || 8,
+        cd: data.seismic.deflectionAmplificationFactor || 5.5,
+        omega: data.seismic.overstrengthFactor || 3,
+        tl: 12,
+        ts: 0,
+        t0: 0,
+        isSeismic: true,
+        zoneFactor: data.seismic.ss, // Use ss as zone factor
+        soilType: 'Sedang', // Default
+        responseModifier: data.seismic.responseModification || 6.5,
+        category: data.seismic.designCategory
+      } : seismicParams;
+
+      // Update states
+      setGeometry(updatedGeometry);
+      setMaterials(updatedMaterials);
+      setSeismicParams(updatedSeismic);
+
+      setAnalysisProgress(30);
+
+      // Generate 3D structure with validated data
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UI
+      generate3DStructure(updatedGeometry);
+      
+      setAnalysisProgress(50);
+
+      // Perform structural analysis using existing logic
+      const validation = validateStructuralModel({
+        materials: {
+          fc: updatedMaterials.fc,
+          ec: updatedMaterials.ec,
+          fy: updatedMaterials.fy
+        },
+        geometry: updatedGeometry,
+        loads: loads,
+        seismic: updatedSeismic.isSeismic ? {
+          zoneFactor: updatedSeismic.zoneFactor,
+          soilType: updatedSeismic.soilType,
+          importanceFactor: updatedSeismic.importance,
+          responseModifier: updatedSeismic.responseModifier
+        } : undefined
+      });
+
+      setValidationResult(validation);
+      
+      if (!validation.isValid) {
+        throw new Error(validation.message || 'Validation failed');
+      }
+
+      setAnalysisProgress(70);
+
+      // Perform structural analysis
+      const analysisResult = await performStructuralAnalysis({
+        materials: updatedMaterials,
+        geometry: updatedGeometry,
+        loads: loads,
+        seismic: updatedSeismic
+      });
+
+      setAnalysisProgress(90);
+
+      // Generate all results
+      const demoResults = generateDemoResults(updatedGeometry, updatedMaterials, loads, updatedSeismic);
+      
+      setAnalysisResults(analysisResult);
+      setReinforcementDetails(demoResults.reinforcement);
+      setServiceabilityResults(demoResults.serviceability);
+      setResponseSpectrumData(demoResults.responseSpectrum);
+      setCostEstimate(demoResults.cost);
+      setFrameAnalysis(demoResults.frameAnalysis);
+      setLateralForces(demoResults.lateralForces);
+      setBaseShear(demoResults.baseShear);
+
+      setAnalysisProgress(100);
+      
+      // Switch to results tab
+      setActiveTab('results');
+      
+      console.log('Enhanced analysis completed successfully');
+
+    } catch (error) {
+      console.error('Enhanced analysis failed:', error);
+      setError(error instanceof Error ? error.message : 'Terjadi kesalahan saat analisis');
+      setValidationErrors([{
+        field: 'general',
+        message: error instanceof Error ? error.message : 'Terjadi kesalahan saat analisis',
+        severity: 'error'
+      }]);
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisProgress(0);
+    }
+  }, [loads, seismicParams]);
+
+  // Enhanced form error handler
+  const handleEnhancedFormError = useCallback((errors: string[]) => {
+    setValidationErrors(errors.map(error => ({
+      field: 'form',
+      message: error,
+      severity: 'error' as const
+    })));
+    setError(`Terdapat ${errors.length} error pada form yang perlu diperbaiki`);
+  }, []);
+
   const performAnalysis = useCallback(() => {
     // Generate model 3D terlebih dahulu
     generate3DStructure();
@@ -845,86 +1003,134 @@ export default function CompleteStructuralAnalysisSystem() {
         
         {/* Tab Input */}
         <TabsContent value="input" className="space-y-6">
-          <div className="space-y-6">
-            {/* Project Information Form */}
-            <ProjectInfoForm 
-              data={projectInfo}
-              onChange={setProjectInfo}
-              errors={[]}
+          <FormErrorBoundary>
+            {/* Enhanced Input Form with Zod Validation */}
+            <EnhancedInputForm
+              onAnalyze={handleEnhancedFormSubmit}
+              onError={handleEnhancedFormError}
+              initialValues={{
+                geometry: {
+                  length: geometry.length,
+                  width: geometry.width,
+                  heightPerFloor: geometry.heightPerFloor,
+                  numberOfFloors: geometry.numberOfFloors,
+                  columnGridX: geometry.baySpacingX,
+                  columnGridY: geometry.baySpacingY,
+                  foundationDepth: 2
+                },
+                material: {
+                  fc: materials.fc,
+                  fy: materials.fy,
+                  elasticModulus: materials.ec,
+                  poissonRatio: materials.poissonConcrete,
+                  density: materials.densityConcrete
+                },
+                seismic: seismicParams.isSeismic ? {
+                  designCategory: seismicParams.category || 'C',
+                  siteClass: seismicParams.siteClass || 'C',
+                  ss: seismicParams.ss,
+                  s1: seismicParams.s1,
+                  importance: seismicParams.importance,
+                  dampingRatio: 5,
+                  responseModification: seismicParams.r,
+                  overstrengthFactor: seismicParams.omega,
+                  deflectionAmplificationFactor: seismicParams.cd
+                } : undefined,
+                options: {
+                  analysisType: 'static',
+                  includeNonlinear: false,
+                  includeSecondOrder: false,
+                  convergenceTolerance: 1e-6,
+                  maxIterations: 100,
+                  numberOfModes: 10
+                }
+              }}
+              loading={isAnalyzing}
+              disabled={false}
             />
-            
-            {/* Geometry Form */}
-            <GeometryForm 
-              data={geometry}
-              onChange={setGeometry}
-              errors={[]}
-            />
-            
-            {/* Material Properties Form */}
-            <MaterialForm 
-              data={materials}
-              onChange={setMaterials}
-              errors={[]}
-            />
-            
-            {/* Loads Form */}
-            <LoadsForm 
-              data={loads}
-              onChange={setLoads}
-              errors={[]}
-            />
-            
-            {/* Seismic Parameters Form */}
-            <SeismicForm 
-              data={seismicParams}
-              onChange={setSeismicParams}
-              errors={[]}
-            />
-            
-            {/* Analysis Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Kontrol Analisis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={performAnalysis}
-                  disabled={isAnalyzing}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
-                      Menganalisis...
-                    </>
-                  ) : 'Mulai Analisis Struktur'}
-                </Button>
-                
-                {isAnalyzing && (
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm text-gray-500 mb-1">
-                      <span>Progress Analisis</span>
-                      <span>{analysisProgress}%</span>
+
+            {/* Analysis Progress */}
+            {isAnalyzing && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">
+                        Progress Analisis
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {analysisProgress}%
+                      </span>
                     </div>
                     <Progress value={analysisProgress} className="h-2" />
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <RotateCcw className="h-4 w-4 animate-spin" />
+                      <span>
+                        {analysisProgress < 30 && 'Memvalidasi input...'}
+                        {analysisProgress >= 30 && analysisProgress < 50 && 'Membuat model 3D...'}
+                        {analysisProgress >= 50 && analysisProgress < 70 && 'Memvalidasi struktur...'}
+                        {analysisProgress >= 70 && analysisProgress < 90 && 'Menjalankan analisis...'}
+                        {analysisProgress >= 90 && 'Menyelesaikan hasil...'}
+                      </span>
+                    </div>
                   </div>
-                )}
-                
-                {validationResult && !validationResult.isValid && (
-                  <Alert variant="destructive" className="mt-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="space-y-1">
-                        <div className="font-medium">Error Validasi:</div>
-                        <div className="text-sm">• {validationResult.message}</div>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Validation Errors Display */}
+            {validationErrors.length > 0 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="font-medium">Ditemukan error validasi:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      {validationErrors.slice(0, 5).map((error, index) => (
+                        <li key={index}>
+                          <span className="font-medium">{error.field}:</span> {error.message}
+                        </li>
+                      ))}
+                      {validationErrors.length > 5 && (
+                        <li className="text-gray-600">
+                          ... dan {validationErrors.length - 5} error lainnya
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Legacy Forms (Hidden but kept for compatibility) */}
+            <div className="hidden">
+              <ProjectInfoForm 
+                data={projectInfo}
+                onChange={setProjectInfo}
+                errors={[]}
+              />
+              <GeometryForm 
+                data={geometry}
+                onChange={setGeometry}
+                errors={[]}
+              />
+              <MaterialForm 
+                data={materials}
+                onChange={setMaterials}
+                errors={[]}
+              />
+              <LoadsForm 
+                data={loads}
+                onChange={setLoads}
+                errors={[]}
+              />
+              <SeismicForm 
+                data={seismicParams}
+                onChange={setSeismicParams}
+                errors={[]}
+              />
+            </div>
+          </FormErrorBoundary>
         </TabsContent>
         
         {/* Tab Hasil */}
