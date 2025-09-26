@@ -32,6 +32,7 @@ import {
   INCORRECT_TEST_DATA,
   executeSystemTest
 } from './testing/SystemTestData';
+import { testingMonitor } from '../utils/TestingMonitor';
 
 // Professional Engineering Interfaces
 interface ProfessionalProjectData {
@@ -542,8 +543,14 @@ const ProfessionalStructuralAnalysisSystem: React.FC = () => {
                     <button
                       onClick={() => {
                         console.log("🧪 Loading CORRECT test data...");
+                        const testId = testingMonitor.startTest('CORRECT', 'Gedung Office Modern Jakarta');
                         const testData = executeSystemTest(CORRECT_TEST_DATA, "CORRECT DATA TEST");
                         setProjectData(testData);
+                        
+                        // Monitor hasil test setelah data dimuat
+                        setTimeout(() => {
+                          testingMonitor.finishTest();
+                        }, 1000);
                       }}
                       style={{
                         background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
@@ -595,8 +602,14 @@ const ProfessionalStructuralAnalysisSystem: React.FC = () => {
                     <button
                       onClick={() => {
                         console.log("🧪 Loading INCORRECT test data...");
+                        testingMonitor.startTest('INCORRECT', 'Proyek Berbahaya - Test Error');
                         const testData = executeSystemTest(INCORRECT_TEST_DATA, "INCORRECT DATA TEST");
                         setProjectData(testData);
+                        
+                        // Monitor hasil test setelah data dimuat
+                        setTimeout(() => {
+                          testingMonitor.finishTest();
+                        }, 1000);
                       }}
                       style={{
                         background: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
@@ -1096,6 +1109,159 @@ const ProfessionalStructuralAnalysisSystem: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Test Results Monitor */}
+              <div style={{
+                background: '#e3f2fd',
+                border: '2px solid #2196f3',
+                borderRadius: '0.5rem',
+                padding: '2rem',
+                marginBottom: '2rem'
+              }}>
+                <h3 style={{ color: '#1976d2', marginBottom: '1.5rem', textAlign: 'center' }}>
+                  📊 MONITORING HASIL PENGUJIAN SISTEM
+                </h3>
+                
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: '1.5rem'
+                }}>
+                  {/* Test Statistics */}
+                  <div style={{
+                    background: 'white',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '0.5rem',
+                    padding: '1.5rem'
+                  }}>
+                    <h4 style={{ color: '#1976d2', marginBottom: '1rem' }}>
+                      📈 Statistik Pengujian
+                    </h4>
+                    <button
+                      onClick={() => {
+                        const stats = testingMonitor.getTestStatistics();
+                        console.log("📊 STATISTIK PENGUJIAN:");
+                        console.log(`Total Tests: ${stats.totalTests}`);
+                        console.log(`Passed: ${stats.passedTests}`);
+                        console.log(`Failed: ${stats.failedTests}`);
+                        console.log(`Pass Rate: ${stats.passRate.toFixed(1)}%`);
+                      }}
+                      style={{
+                        background: '#2196f3',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        width: '100%'
+                      }}
+                    >
+                      📊 Lihat Statistik Test
+                    </button>
+                  </div>
+
+                  {/* Export Results */}
+                  <div style={{
+                    background: 'white',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '0.5rem',
+                    padding: '1.5rem'
+                  }}>
+                    <h4 style={{ color: '#1976d2', marginBottom: '1rem' }}>
+                      📄 Export Laporan
+                    </h4>
+                    <button
+                      onClick={() => {
+                        const report = testingMonitor.exportTestResults();
+                        console.log("📄 LAPORAN PENGUJIAN LENGKAP:");
+                        console.log(report);
+                        
+                        // Create downloadable file
+                        const blob = new Blob([report], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `structural-analysis-test-report-${new Date().toISOString().split('T')[0]}.txt`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }}
+                      style={{
+                        background: '#ff9800',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        width: '100%'
+                      }}
+                    >
+                      📥 Download Laporan
+                    </button>
+                  </div>
+
+                  {/* Comprehensive Test Suite */}
+                  <div style={{
+                    background: 'white',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '0.5rem',
+                    padding: '1.5rem'
+                  }}>
+                    <h4 style={{ color: '#1976d2', marginBottom: '1rem' }}>
+                      🚀 Comprehensive Testing
+                    </h4>
+                    <div style={{ marginBottom: '1rem', fontSize: '0.85rem', color: '#666' }}>
+                      Jalankan full test suite untuk validasi lengkap sistem zero-tolerance
+                    </div>
+                    <button
+                      onClick={async () => {
+                        console.log("🚀 Starting Comprehensive Test Suite...");
+                        
+                        // Import and run comprehensive test
+                        const { runComprehensiveTestSuite } = await import('../utils/ComprehensiveTestSuite');
+                        const results = await runComprehensiveTestSuite();
+                        
+                        if (results.success) {
+                          console.log("✅ Comprehensive test suite completed successfully!");
+                        } else {
+                          console.error("❌ Comprehensive test suite failed:", results.error);
+                        }
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        width: '100%',
+                        boxShadow: '0 2px 8px rgba(156, 39, 176, 0.3)'
+                      }}
+                    >
+                      🧪 Run Full Test Suite
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{
+                  marginTop: '1.5rem',
+                  padding: '1rem',
+                  background: '#fff3e0',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.9rem',
+                  color: '#e65100'
+                }}>
+                  <strong>🔍 Panduan Pengujian:</strong>
+                  <br />• Gunakan "CORRECT Test Data" untuk memvalidasi sistem dengan data yang aman
+                  <br />• Gunakan "INCORRECT Test Data" untuk memastikan sistem mendeteksi bahaya
+                  <br />• Lihat console browser (F12) untuk detail lengkap proses validasi
+                  <br />• Sistem akan otomatis memblokir konstruksi jika terdeteksi kesalahan
+                </div>
+              </div>
 
               {/* Professional Footer */}
               <div style={{
