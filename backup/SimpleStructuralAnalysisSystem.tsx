@@ -34,7 +34,7 @@ import {
   ValidationResult
 } from './interfaces';
 
-import { Structure3D } from './interfaces';
+import { Structure3D } from '../../types/structural';
 
 // Default Values
 const defaultProjectInfo: ProjectInfo = {
@@ -76,31 +76,15 @@ const defaultLoads: Loads = {
   deadLoad: 5.5,
   liveLoad: 4.0,
   roofLiveLoad: 1.0,
-  partitionLoad: 1.0,
-  claddingLoad: 0.5,
-  windSpeed: 30
+  windLoad: 1.2
 };
 
 const defaultSeismic: SeismicParameters = {
-  ss: 1.2,
-  s1: 0.6,
-  fa: 1.0,
-  fv: 1.5,
-  sds: 0.8,
-  sd1: 0.4,
-  siteClass: 'D',
-  importance: 1.0,
-  r: 8.0,
-  cd: 5.5,
-  omega: 3.0,
-  tl: 8.0,
-  ts: 0.5,
-  t0: 0.1,
-  category: 'D',
-  isSeismic: true,
   zoneFactor: 0.3,
   soilType: 'medium',
-  responseModifier: 8.0
+  importanceFactor: 1.0,
+  responseModifier: 8.0,
+  designCategory: 'D'
 };
 
 export const SimpleStructuralAnalysisSystem = () => {
@@ -115,70 +99,49 @@ export const SimpleStructuralAnalysisSystem = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
-  const [validationResult, setValidationResult] = useState<ValidationResult>({ 
-    isValid: true, 
-    errors: [], 
-    warnings: [] 
-  });
+  const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('input');
 
   // Generate 3D Structure Data
   const generateStructure3D = useCallback((): Structure3D => {
-    const nodes: Array<{
-      id: number;
-      x: number;
-      y: number;
-      z: number;
-      type: 'fixed' | 'pinned' | 'free';
-    }> = [];
-    
-    const elements: Array<{
-      id: number;
-      type: 'column' | 'beam' | 'slab';
-      startNode: number;
-      endNode: number;
-      section: string;
-      material: string;
-    }> = [];
+    const nodes: any[] = [];
+    const elements: any[] = [];
     
     let nodeId = 1;
     let elementId = 1;
     
-    // Calculate grid dimensions
-    const gridX = Math.ceil(geometry.length / geometry.baySpacingX);
-    const gridY = Math.ceil(geometry.width / geometry.baySpacingY);
-    
-    // Generate nodes for the frame structure
+    // Generate nodes for a simple frame
     for (let floor = 0; floor <= geometry.numberOfFloors; floor++) {
-      for (let y = 0; y <= gridY; y++) {
-        for (let x = 0; x <= gridX; x++) {
+      for (let y = 0; y <= geometry.numberOfBays.y; y++) {
+        for (let x = 0; x <= geometry.numberOfBays.x; x++) {
           nodes.push({
             id: nodeId++,
-            x: x * geometry.baySpacingX,
-            y: floor * geometry.heightPerFloor,
-            z: y * geometry.baySpacingY,
-            type: floor === 0 ? 'fixed' : 'free'
+            x: x * geometry.baySpacing.x,
+            y: floor * geometry.height,
+            z: y * geometry.baySpacing.y
           });
         }
       }
     }
     
     // Generate column elements
-    const nodesPerFloor = (gridX + 1) * (gridY + 1);
+    const nodesPerFloor = (geometry.numberOfBays.x + 1) * (geometry.numberOfBays.y + 1);
     for (let floor = 0; floor < geometry.numberOfFloors; floor++) {
-      for (let y = 0; y <= gridY; y++) {
-        for (let x = 0; x <= gridX; x++) {
-          const bottomNode = floor * nodesPerFloor + y * (gridX + 1) + x + 1;
-          const topNode = (floor + 1) * nodesPerFloor + y * (gridX + 1) + x + 1;
+      for (let y = 0; y <= geometry.numberOfBays.y; y++) {
+        for (let x = 0; x <= geometry.numberOfBays.x; x++) {
+          const bottomNode = floor * nodesPerFloor + y * (geometry.numberOfBays.x + 1) + x + 1;
+          const topNode = (floor + 1) * nodesPerFloor + y * (geometry.numberOfBays.x + 1) + x + 1;
           
           elements.push({
             id: elementId++,
             type: 'column',
-            startNode: bottomNode,
-            endNode: topNode,
-            section: 'C400x400',
-            material: 'concrete'
+            nodes: [bottomNode, topNode],
+            section: {
+              width: geometry.columnDimensions.width,
+              height: geometry.columnDimensions.height
+            },
+            materialType: 'concrete'
           });
         }
       }
@@ -186,18 +149,20 @@ export const SimpleStructuralAnalysisSystem = () => {
     
     // Generate beam elements (X direction)
     for (let floor = 1; floor <= geometry.numberOfFloors; floor++) {
-      for (let y = 0; y <= gridY; y++) {
-        for (let x = 0; x < gridX; x++) {
-          const node1 = (floor - 1) * nodesPerFloor + y * (gridX + 1) + x + 1;
-          const node2 = (floor - 1) * nodesPerFloor + y * (gridX + 1) + x + 2;
+      for (let y = 0; y <= geometry.numberOfBays.y; y++) {
+        for (let x = 0; x < geometry.numberOfBays.x; x++) {
+          const node1 = (floor - 1) * nodesPerFloor + y * (geometry.numberOfBays.x + 1) + x + 1;
+          const node2 = (floor - 1) * nodesPerFloor + y * (geometry.numberOfBays.x + 1) + x + 2;
           
           elements.push({
             id: elementId++,
             type: 'beam',
-            startNode: node1,
-            endNode: node2,
-            section: 'B300x600',
-            material: 'concrete'
+            nodes: [node1, node2],
+            section: {
+              width: geometry.beamDimensions.width,
+              height: geometry.beamDimensions.height
+            },
+            materialType: 'concrete'
           });
         }
       }
@@ -205,37 +170,27 @@ export const SimpleStructuralAnalysisSystem = () => {
     
     // Generate beam elements (Y direction)
     for (let floor = 1; floor <= geometry.numberOfFloors; floor++) {
-      for (let y = 0; y < gridY; y++) {
-        for (let x = 0; x <= gridX; x++) {
-          const node1 = (floor - 1) * nodesPerFloor + y * (gridX + 1) + x + 1;
-          const node2 = (floor - 1) * nodesPerFloor + (y + 1) * (gridX + 1) + x + 1;
+      for (let y = 0; y < geometry.numberOfBays.y; y++) {
+        for (let x = 0; x <= geometry.numberOfBays.x; x++) {
+          const node1 = (floor - 1) * nodesPerFloor + y * (geometry.numberOfBays.x + 1) + x + 1;
+          const node2 = (floor - 1) * nodesPerFloor + (y + 1) * (geometry.numberOfBays.x + 1) + x + 1;
           
           elements.push({
             id: elementId++,
             type: 'beam',
-            startNode: node1,
-            endNode: node2,
-            section: 'B300x600',
-            material: 'concrete'
+            nodes: [node1, node2],
+            section: {
+              width: geometry.beamDimensions.width,
+              height: geometry.beamDimensions.height
+            },
+            materialType: 'concrete'
           });
         }
       }
     }
     
-    // Generate loads (simplified)
-    const structureLoads = elements.map((element) => ({
-      type: 'point' as const,
-      element: element.id,
-      magnitude: element.type === 'beam' ? loads.deadLoad + loads.liveLoad : loads.deadLoad,
-      direction: 'y' as const
-    }));
-    
-    return { 
-      nodes, 
-      elements,
-      loads: structureLoads
-    };
-  }, [geometry, loads]);
+    return { nodes, elements };
+  }, [geometry]);
 
   // Simple Analysis Function
   const runAnalysis = useCallback(async () => {
@@ -251,62 +206,30 @@ export const SimpleStructuralAnalysisSystem = () => {
       }
       
       // Simple analysis results
-      const totalHeight = geometry.numberOfFloors * geometry.heightPerFloor;
       const results: AnalysisResult = {
-        status: 'success',
-        timestamp: new Date().toISOString(),
-        summary: {
-          totalWeight: geometry.numberOfFloors * loads.deadLoad * geometry.length * geometry.width,
-          baseShear: seismicParams.zoneFactor * materials.densityConcrete * geometry.length * geometry.width * geometry.numberOfFloors,
-          fundamentalPeriod: Math.sqrt(totalHeight / 10),
-          maxDrift: totalHeight * 0.007,
-          maxStress: 0.85
+        forces: {
+          maxMoment: geometry.length * geometry.width * loads.deadLoad * 1.2,
+          maxShear: geometry.length * loads.deadLoad * 1.5,
+          maxAxial: geometry.numberOfFloors * loads.deadLoad * geometry.length * geometry.width
         },
-        frameAnalysis: {
-          displacements: [],
-          memberForces: [],
-          reactions: [],
-          maxDrift: totalHeight * 0.007,
-          maxStress: 0.85
+        displacements: {
+          maxDeflection: geometry.height / 250,
+          maxDrift: geometry.height * 0.007
         },
-        baseShear: {
-          V: seismicParams.zoneFactor * materials.densityConcrete * geometry.length * geometry.width * geometry.numberOfFloors,
-          Cs: seismicParams.zoneFactor,
-          seismicWeight: geometry.numberOfFloors * loads.deadLoad * geometry.length * geometry.width
+        periods: {
+          fundamental: Math.sqrt(geometry.height / 10)
         },
-        lateralForces: [],
-        responseSpectrum: [],
-        reinforcement: {
-          columnLongitudinal: { diameter: 25, count: 8, ratio: 0.02, arrangement: 'rectangular' },
-          columnTransverse: { diameter: 10, spacing: [150, 200], confinementZone: 400 },
-          beamTension: { diameter: 22, count: 4, layers: 1, area: 1520 },
-          beamCompression: { diameter: 19, count: 2, area: 568 },
-          beamShear: { diameter: 10, spacing: [150, 200], legs: 2 },
-          slabMain: { diameter: 12, spacing: 150, area: 754 },
-          slabDistribution: { diameter: 10, spacing: 200, area: 393 }
+        baseShear: seismicParams.zoneFactor * materials.densityConcrete * geometry.length * geometry.width * geometry.numberOfFloors,
+        utilization: {
+          maxStress: 0.85,
+          safetyFactor: 2.5
         },
-        serviceability: {
-          deflection: { immediate: 12, longTerm: 18, allowable: 25, ratio: 0.72, status: 'OK' },
-          crack: { width: 0.2, allowable: 0.3, status: 'OK' },
-          vibration: { frequency: 4.2, acceleration: 0.05, status: 'OK' }
-        },
-        costEstimate: {
-          material: { concrete: 50000, steel: 30000, rebar: 25000, formwork: 15000 },
-          labor: { foundation: 20000, structure: 40000, finishing: 25000 },
-          equipment: 15000,
-          overhead: 18000,
-          contingency: 23800,
-          total: 261800,
-          perSquareMeter: 873.27
-        },
-        structure3D: generateStructure3D(),
-        calculations: {},
-        warnings: [],
-        notes: ['Analysis completed successfully', 'Structure meets all safety requirements']
+        isValid: true,
+        warnings: []
       };
       
       setAnalysisResults(results);
-      setValidationResult({ isValid: true, errors: [], warnings: [] });
+      setValidationResult({ isValid: true });
       setActiveTab('results');
       
     } catch (err) {
@@ -378,8 +301,8 @@ export const SimpleStructuralAnalysisSystem = () => {
                       <input
                         type="text"
                         className="w-full p-2 border rounded"
-                        value={projectInfo.name}
-                        onChange={(e) => setProjectInfo(prev => ({ ...prev, name: e.target.value }))}
+                        value={projectInfo.projectName}
+                        onChange={(e) => setProjectInfo(prev => ({ ...prev, projectName: e.target.value }))}
                       />
                     </div>
                     <div>
@@ -387,8 +310,8 @@ export const SimpleStructuralAnalysisSystem = () => {
                       <input
                         type="text"
                         className="w-full p-2 border rounded"
-                        value={projectInfo.location}
-                        onChange={(e) => setProjectInfo(prev => ({ ...prev, location: e.target.value }))}
+                        value={projectInfo.projectLocation}
+                        onChange={(e) => setProjectInfo(prev => ({ ...prev, projectLocation: e.target.value }))}
                       />
                     </div>
                     <div>
@@ -396,8 +319,8 @@ export const SimpleStructuralAnalysisSystem = () => {
                       <input
                         type="text"
                         className="w-full p-2 border rounded"
-                        value={projectInfo.engineer}
-                        onChange={(e) => setProjectInfo(prev => ({ ...prev, engineer: e.target.value }))}
+                        value={projectInfo.engineerName}
+                        onChange={(e) => setProjectInfo(prev => ({ ...prev, engineerName: e.target.value }))}
                       />
                     </div>
                   </CardContent>
@@ -434,8 +357,8 @@ export const SimpleStructuralAnalysisSystem = () => {
                           type="number"
                           step="0.1"
                           className="w-full p-2 border rounded"
-                          value={geometry.heightPerFloor}
-                          onChange={(e) => setGeometry(prev => ({ ...prev, heightPerFloor: parseFloat(e.target.value) || 0 }))}
+                          value={geometry.height}
+                          onChange={(e) => setGeometry(prev => ({ ...prev, height: parseFloat(e.target.value) || 0 }))}
                         />
                       </div>
                       <div>
@@ -569,28 +492,14 @@ export const SimpleStructuralAnalysisSystem = () => {
                   <CardTitle>Visualisasi 3D</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-96 flex items-center justify-center bg-gray-50 rounded">
-                    <div className="text-center">
-                      <div className="text-4xl mb-4">🏗️</div>
-                      <h3 className="text-lg font-semibold mb-2">Visualisasi 3D</h3>
-                      <p className="text-gray-600 mb-4">
-                        Model 3D struktur bangunan {geometry.numberOfFloors} lantai
-                      </p>
-                      <div className="text-sm text-gray-500 space-y-1">
-                        <div>📐 Dimensi: {geometry.length}m × {geometry.width}m</div>
-                        <div>🏢 Jumlah Lantai: {geometry.numberOfFloors}</div>
-                        <div>📏 Tinggi per Lantai: {geometry.heightPerFloor}m</div>
-                        <div>⚡ Grid X: {geometry.baySpacingX}m, Grid Y: {geometry.baySpacingY}m</div>
-                      </div>
-                      {analysisResults && (
-                        <div className="mt-4 p-3 bg-green-50 rounded text-sm">
-                          <div className="text-green-800 font-semibold">✅ Struktur Valid</div>
-                          <div className="text-green-600">
-                            Base Shear: {analysisResults.summary.baseShear.toFixed(2)} kN
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  <div className="h-96">
+                    <Simple3DViewer 
+                      structure={generateStructure3D()}
+                      onElementClick={(element) => {
+                        console.log('Element clicked:', element);
+                      }}
+                      className="w-full h-full"
+                    />
                   </div>
                 </CardContent>
               </Card>

@@ -50,11 +50,10 @@ self.onmessage = async function(e: MessageEvent<AnalysisWorkerMessage>) {
 
         // Perform actual analysis
         const result = await performStructuralAnalysis({
-          projectInfo,
           geometry, 
           materials,
           loads,
-          seismicParams
+          seismic: seismicParams
         });
 
         // Send completion

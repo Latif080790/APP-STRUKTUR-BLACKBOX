@@ -104,7 +104,14 @@ export const performStructuralAnalysis = (model: {
   };
 }): AnalysisResult => {
   // Validasi input terlebih dahulu
-  const validation = validateStructuralModel(model);
+  const modelWithEc = {
+    ...model,
+    materials: {
+      ...model.materials,
+      ec: model.materials.fc * 4700 // Standard approximation
+    }
+  };
+  const validation = validateStructuralModel(modelWithEc);
   if (!validation.isValid) {
     return {
       success: false,

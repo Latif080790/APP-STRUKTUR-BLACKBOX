@@ -164,7 +164,7 @@ const AutoSaveStatus: React.FC<AutoSaveStatusProps> = ({ className = '' }) => {
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-700">Auto-save</span>
                     {!isOnline && (
-                      <WifiOff className="h-4 w-4 text-red-500" title="Requires internet connection" />
+                      <WifiOff className="h-4 w-4 text-red-500" aria-label="Requires internet connection" />
                     )}
                   </div>
                   <button

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 interface TabsProps {
-  defaultValue: string;
+  defaultValue?: string;
   value?: string;
   onValueChange?: (value: string) => void;
   className?: string;
@@ -35,7 +35,7 @@ const TabsContext = React.createContext<{
 });
 
 export const Tabs: React.FC<TabsProps> = ({
-  defaultValue,
+  defaultValue = '',
   value: controlledValue,
   onValueChange,
   className = '',

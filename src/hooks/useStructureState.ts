@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useReducer, useCallback } from 'react';
 import { Node, Element, Structure3D } from '@/types/structural';
 
 interface StructureState extends Structure3D {
@@ -37,7 +37,7 @@ const structureReducer = (state: StructureState, action: StructureAction): Struc
 };
 
 export const useStructureState = (initialStructure: Structure3D) => {
-  const [state, dispatch] = useState(structureReducer, {
+  const [state, dispatch] = useReducer(structureReducer, {
     nodes: initialStructure.nodes || [],
     elements: initialStructure.elements || [],
     selectedElement: null,
