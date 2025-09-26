@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { AlertCircle, RotateCcw } from 'lucide-react';
 import { Structure3D } from '../../types/structural';
 import StructureViewer from './3d/StructureViewer';
+import { Enhanced3DViewer } from './3d/Enhanced3DViewer';
+import Enhanced3DControls from './3d/Enhanced3DControls';
 import { Enhanced3DViewer } from './3d/Advanced3DViewer';
 import { ResponseSpectrumChart } from './charts/ResponseSpectrumChart';
 import ForceDiagram from './charts/ForceDiagram';
@@ -22,10 +24,18 @@ import {
 } from '../common/ErrorBoundary';
 import CalculationEngineTest from '../test/CalculationEngineTest';
 
-// Store imports  
-import { useProjectStore, useCurrentProject, useRecovery } from '../../stores/projectStore';
-import AutoSaveStatus from '../common/AutoSaveStatus';
-import RecoveryModal from '../common/RecoveryModal';
+// Performance optimized imports
+import { 
+  SuspenseWrapper, 
+  LazyExportManager,
+  LazyReportGenerator,
+  LazyCalculationEngineTest,
+  LazyComprehensiveResultsDashboard,
+  ComponentLoader,
+  withPerformanceMonitoring
+} from './performance/OptimizedComponents';
+import PerformanceMonitor from './performance/PerformanceMonitor';
+import StructuralAnalysisWorker from './performance/StructuralAnalysisWorker';
 
 // Import forms
 import { 
@@ -697,51 +707,76 @@ export default function CompleteStructuralAnalysisSystem() {
     return (
       <TabsContent value="visualization" className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold">Visualisasi Struktur</h3>
-          <div className="flex space-x-2">
-            <Button
-              variant={viewMode === 'solid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('solid')}
-              disabled={isModelLoading || !!modelError}
-            >
-              3D View
-            </Button>
-            <Button
-              variant={viewMode === 'wireframe' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('wireframe')}
-              disabled={isModelLoading || !!modelError}
-            >
-              Wireframe
-            </Button>
-            <Button
-              variant={showLabels ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowLabels(!showLabels)}
-              disabled={isModelLoading || !!modelError}
-            >
-              {showLabels ? 'Sembunyikan Label' : 'Tampilkan Label'}
-            </Button>
-            <select
-              value={viewMode}
-              onChange={(e) => setViewMode(e.target.value as 'solid' | 'wireframe' | 'both')}
-              className="border rounded px-2 py-1 text-sm"
-              disabled={isModelLoading || !!modelError}
-            >
-              <option value="solid">Solid</option>
-              <option value="wireframe">Wireframe</option>
-              <option value="both">Keduanya</option>
-            </select>
+          <h3 className="text-xl font-semibold">Enhanced 3D Visualization</h3>
+          <div className="flex items-center gap-2">
+            <Badge variant={structure3D?.nodes?.length ? 'default' : 'secondary'}>
+              {structure3D?.nodes?.length || 0} Nodes, {structure3D?.elements?.length || 0} Elements
+            </Badge>
           </div>
         </div>
 
+        {/* Enhanced 3D Viewer */}
+        <div className="h-[800px]">
+          <Enhanced3DViewer
+            structure={structure3D}
+            analysisResults={analysisResults}
+            onElementSelect={(element) => {
+              console.log('Selected element:', element);
+              // Handle element selection
+            }}
+            onNodeSelect={(node) => {
+              console.log('Selected node:', node);
+              // Handle node selection
+            }}
+            showControls={true}
+            showStats={false}
+            className="w-full h-full"
+          />
+        </div>
+
+        {/* Legacy 3D Viewer (fallback) */}
         <Card className="relative">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Model 3D Struktur</CardTitle>
+              <CardTitle>Legacy 3D Model (Fallback)</CardTitle>
               <div className="flex space-x-2">
                 <Button
+                  variant={viewMode === 'solid' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('solid')}
+                  disabled={isModelLoading || !!modelError}
+                >
+                  3D View
+                </Button>
+                <Button
+                  variant={viewMode === 'wireframe' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('wireframe')}
+                  disabled={isModelLoading || !!modelError}
+                >
+                  Wireframe
+                </Button>
+                <Button
+                  variant={showLabels ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowLabels(!showLabels)}
+                  disabled={isModelLoading || !!modelError}
+                >
+                  {showLabels ? 'Sembunyikan Label' : 'Tampilkan Label'}
+                </Button>
+                <select
+                  value={viewMode}
+                  onChange={(e) => setViewMode(e.target.value as 'solid' | 'wireframe' | 'both')}
+                  className="border rounded px-2 py-1 text-sm"
+                  disabled={isModelLoading || !!modelError}
+                >
+                  <option value="solid">Solid</option>
+                  <option value="wireframe">Wireframe</option>
+                  <option value="both">Keduanya</option>
+                </select>
+              </div>
+            </div>
+          </CardHeader>
                   variant="outline"
                   size="sm"
                   onClick={() => {
@@ -989,6 +1024,8 @@ export default function CompleteStructuralAnalysisSystem() {
         <TabsTrigger value="results" disabled={!analysisResults}>Hasil</TabsTrigger>
         <TabsTrigger value="visualization">Visualisasi</TabsTrigger>
         <TabsTrigger value="report" disabled={!analysisResults}>Laporan</TabsTrigger>
+        <TabsTrigger value="export" disabled={!currentProject}>Export</TabsTrigger>
+        <TabsTrigger value="performance">Performance</TabsTrigger>
         <TabsTrigger value="test">Test Engine</TabsTrigger>
       </TabsList>
     );
@@ -1171,6 +1208,19 @@ export default function CompleteStructuralAnalysisSystem() {
         <TabsContent value="results" className="space-y-6">
           {analysisResults ? (
             <div className="space-y-6">
+              {/* Export Manager */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Export & Reports</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ExportManager 
+                    analysisResults={analysisResults}
+                    className="mb-4"
+                  />
+                </CardContent>
+              </Card>
+
               {/* Traditional Results Display */}
               <Card>
                 <CardHeader>
@@ -1231,9 +1281,63 @@ export default function CompleteStructuralAnalysisSystem() {
           )}
         </TabsContent>
         
+        {/* Tab Export */}
+        <TabsContent value="export" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Export Project & Reports</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SuspenseWrapper message="Loading Export Manager...">
+                <LazyExportManager 
+                  analysisResults={analysisResults}
+                />
+              </SuspenseWrapper>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Performance */}
+        <TabsContent value="performance" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PerformanceMonitor showDetails={true} />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Analysis Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">Web Worker Support</h4>
+                    <p className="text-sm text-blue-800 mb-3">
+                      Heavy calculations are performed in background threads to keep UI responsive.
+                    </p>
+                    <Badge variant="outline" className="text-blue-700 border-blue-300">
+                      {typeof Worker !== 'undefined' ? 'Supported' : 'Not Supported'}
+                    </Badge>
+                  </div>
+
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-green-900 mb-2">Optimizations Active</h4>
+                    <div className="space-y-1 text-sm text-green-800">
+                      <div>• React.memo for component optimization</div>
+                      <div>• Lazy loading for code splitting</div>
+                      <div>• Web Workers for calculations</div>
+                      <div>• Performance monitoring</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
         {/* Tab Test Engine */}
         <TabsContent value="test" className="space-y-6">
-          <CalculationEngineTest />
+          <SuspenseWrapper message="Loading Test Engine...">
+            <LazyCalculationEngineTest />
+          </SuspenseWrapper>
         </TabsContent>
       </Tabs>
     </div>
