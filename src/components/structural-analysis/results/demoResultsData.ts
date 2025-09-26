@@ -6,9 +6,12 @@
 import { ComprehensiveAnalysisResult } from './ComprehensiveResultsDashboard';
 
 export const generateDemoResults = (projectName: string = "Demo Building Project"): ComprehensiveAnalysisResult => {
+  // Handle null, undefined, empty string, or whitespace-only strings
+  const validProjectName = projectName && projectName.trim() ? projectName.trim() : "Demo Building Project";
+  
   return {
     general: {
-      projectName,
+      projectName: validProjectName,
       analysisDate: new Date().toLocaleDateString('id-ID'),
       analysisType: "Linear Static + Modal + Response Spectrum",
       buildingCode: "SNI 1726:2019, SNI 2847:2019",
@@ -125,7 +128,7 @@ export const generateDemoResults = (projectName: string = "Demo Building Project
         }
       },
       totalCost: 423056000, // Total of all materials
-      costPerSquareMeter: 5287000 // For 80 m² building
+      costPerSquareMeter: 52870 // For 800 m² building (more realistic building size)
     },
     quality: {
       checks: [

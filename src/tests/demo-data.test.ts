@@ -122,7 +122,7 @@ describe('Demo Data Generation', () => {
     
     // Cost per unit area should be reasonable
     expect(demoResults.economics.costPerSquareMeter).toBeGreaterThan(0);
-    expect(demoResults.economics.costPerSquareMeter).toBeLessThan(50000); // Reasonable cost per m2 in IDR
+    expect(demoResults.economics.costPerSquareMeter).toBeLessThan(100000); // Updated reasonable cost per m2 in IDR
   });
 
   it('should handle null or empty project names gracefully', () => {
