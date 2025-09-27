@@ -23,6 +23,8 @@ import { ResultsDisplay } from './ResultsDisplay';
 import { ReportGenerator } from './ReportGenerator';
 import Simple3DViewer from './3d/Simple3DViewer';
 import AdvancedAnalysisEngine from './AdvancedAnalysisEngine';
+import { CostEstimationSystem } from './CostEstimationSystem';
+import { BIMIntegrationSystem } from './BIMIntegrationSystem';
 
 // Import Types
 import { 
@@ -116,6 +118,7 @@ export const SimpleStructuralAnalysisSystem = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
+  const [costResults, setCostResults] = useState<any>(null);
   const [validationResult, setValidationResult] = useState<ValidationResult>({ 
     isValid: true, 
     errors: [], 
@@ -356,11 +359,13 @@ export const SimpleStructuralAnalysisSystem = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="input">Input Data</TabsTrigger>
             <TabsTrigger value="analysis" disabled={isAnalyzing}>Advanced Analysis</TabsTrigger>
             <TabsTrigger value="results" disabled={!analysisResults}>Results</TabsTrigger>
             <TabsTrigger value="visualization">3D View</TabsTrigger>
+            <TabsTrigger value="cost" disabled={!projectInfo.name}>Cost Estimation</TabsTrigger>
+            <TabsTrigger value="bim" disabled={!projectInfo.name}>BIM Integration</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
@@ -592,6 +597,32 @@ export const SimpleStructuralAnalysisSystem = () => {
                 </CardContent>
               </Card>
             </VisualizationErrorBoundary>
+          </TabsContent>
+
+          {/* Cost Estimation Tab */}
+          <TabsContent value="cost">
+            <CostEstimationSystem 
+              geometry={geometry}
+              materials={materials}
+              analysisResults={analysisResults}
+              onCostUpdate={(costData) => {
+                setCostResults(costData);
+                console.log('Cost data updated:', costData);
+              }}
+            />
+          </TabsContent>
+
+          {/* BIM Integration Tab */}
+          <TabsContent value="bim">
+            <BIMIntegrationSystem 
+              geometry={geometry}
+              materials={materials}
+              analysisResults={analysisResults}
+              costResults={costResults}
+              onBIMUpdate={(bimData) => {
+                console.log('BIM data updated:', bimData);
+              }}
+            />
           </TabsContent>
 
           {/* Reports Tab */}

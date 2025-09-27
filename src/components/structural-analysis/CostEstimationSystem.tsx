@@ -14,7 +14,8 @@ import {
   PieChart,
   Download,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  FileText
 } from 'lucide-react';
 
 interface CostEstimationSystemProps {
