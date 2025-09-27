@@ -20,15 +20,17 @@ interface Enhanced3DNode {
 
 interface Enhanced3DElement {
   id: string;
-  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation';
+  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation' | 'pile-cap' | 'pile' | 'pedestal';
   startNode: string;
   endNode: string;
   section: {
     width: number;
     height: number;
     thickness?: number;
+    diameter?: number; // For piles
   };
-  material: 'concrete' | 'steel' | 'composite';
+  material: 'concrete' | 'steel' | 'composite' | 'concrete-steel';
+  direction?: 'X' | 'Y' | 'Z'; // Element direction
   utilization?: number;
   isSelected?: boolean;
 }
@@ -93,10 +95,17 @@ const Simple3DElement: React.FC<{
   const startPos = startNode.position;
   const endPos = endNode.position;
   
+  // Calculate direction vector and length
+  const direction = [
+    endPos[0] - startPos[0],
+    endPos[1] - startPos[1], 
+    endPos[2] - startPos[2]
+  ];
+  
   const length = Math.sqrt(
-    Math.pow(endPos[0] - startPos[0], 2) +
-    Math.pow(endPos[1] - startPos[1], 2) +
-    Math.pow(endPos[2] - startPos[2], 2)
+    Math.pow(direction[0], 2) +
+    Math.pow(direction[1], 2) +
+    Math.pow(direction[2], 2)
   );
   
   const center: [number, number, number] = [
@@ -111,25 +120,152 @@ const Simple3DElement: React.FC<{
   }, [element.id, onClick]);
 
   const getElementColor = () => {
-    switch (element.material) {
-      case 'concrete': return '#95a5a6';
-      case 'steel': return '#34495e';
-      case 'composite': return '#9b59b6';
-      default: return '#3498db';
+    if (element.isSelected) return '#ff6b6b';
+    
+    switch (element.type) {
+      case 'column': return '#4ecdc4';
+      case 'beam': return '#45b7d1';
+      case 'slab': return '#96ceb4';
+      case 'foundation': return '#8b4513';
+      case 'pile-cap': return '#a0522d';
+      case 'pile': return '#654321';
+      case 'pedestal': return '#5f4e37';
+      case 'wall': return '#dda0dd';
+      default:
+        switch (element.material) {
+          case 'concrete': return '#95a5a6';
+          case 'steel': return '#34495e';
+          case 'composite': return '#9b59b6';
+          case 'concrete-steel': return '#7f8c8d';
+          default: return '#3498db';
+        }
     }
   };
 
+  // Calculate rotation for proper orientation
+  const getRotation = (): [number, number, number] => {
+    if (element.type === 'slab' || element.type === 'foundation' || element.type === 'pile-cap') {
+      return [0, 0, 0]; // Horizontal slabs
+    }
+    
+    if (element.type === 'column' || element.type === 'pedestal' || element.type === 'pile') {
+      return [0, 0, 0]; // Vertical elements
+    }
+    
+    // For beams - proper horizontal orientation
+    const normalizedDir = [
+      direction[0] / length,
+      direction[1] / length,
+      direction[2] / length
+    ];
+    
+    // Beam along X-direction (no rotation)
+    if (Math.abs(normalizedDir[0]) > 0.7) {
+      return [0, 0, 0];
+    }
+    // Beam along Z-direction (rotate 90° around Y)
+    else if (Math.abs(normalizedDir[2]) > 0.7) {
+      return [0, Math.PI / 2, 0];
+    }
+    
+    return [0, 0, 0];
+  };
+
+  // Get proper dimensions based on element type
+  const getDimensions = (): [number, number, number] => {
+    const baseScale = scale;
+    
+    switch (element.type) {
+      case 'column':
+      case 'pedestal':
+        return [
+          element.section.width * baseScale,
+          length, // Vertical height
+          element.section.width * baseScale
+        ];
+        
+      case 'pile':
+        const diameter = element.section.diameter || element.section.width;
+        return [
+          diameter * baseScale,
+          length, // Pile length
+          diameter * baseScale
+        ];
+        
+      case 'slab':
+        return [
+          Math.max(20, element.section.width * baseScale), // Building width
+          element.section.thickness! * baseScale,
+          Math.max(20, element.section.height * baseScale) // Building depth
+        ];
+        
+      case 'pile-cap':
+        return [
+          element.section.width * baseScale * 1.5,
+          element.section.thickness! * baseScale,
+          element.section.height * baseScale * 1.5
+        ];
+        
+      case 'foundation':
+        return [
+          element.section.width * baseScale * 2,
+          element.section.thickness! * baseScale,
+          element.section.height * baseScale * 2
+        ];
+        
+      case 'beam':
+      default:
+        return [
+          length, // Beam length
+          element.section.height * baseScale,
+          element.section.width * baseScale
+        ];
+    }
+  };
+
+  const rotation = getRotation();
+  const dimensions = getDimensions();
+
+  // Special positioning for different element types
+  const getPosition = (): [number, number, number] => {
+    switch (element.type) {
+      case 'slab':
+        // Position slab at floor level
+        const floorLevel = Math.min(startPos[1], endPos[1]);
+        return [center[0], floorLevel, center[2]];
+        
+      case 'foundation':
+        // Foundation below ground level
+        return [center[0], center[1] - 2, center[2]];
+        
+      case 'pile-cap':
+        // Pile cap slightly below ground
+        return [center[0], center[1] - 1, center[2]];
+        
+      case 'pile':
+        // Pile extends deep into ground
+        return [startPos[0], startPos[1] - length/2, startPos[2]];
+        
+      case 'pedestal':
+        // Pedestal on foundation
+        return [center[0], startPos[1], center[2]];
+        
+      default:
+        return center;
+    }
+  };
+
+  const position = getPosition();
+
   return (
-    <mesh position={center} onClick={handleClick}>
-      <boxGeometry args={[
-        element.section.width * scale,
-        length,
-        element.section.height * scale
-      ]} />
+    <mesh position={position} rotation={rotation} onClick={handleClick}>
+      <boxGeometry args={dimensions} />
       <meshStandardMaterial 
         color={getElementColor()}
-        transparent={element.isSelected}
-        opacity={element.isSelected ? 0.7 : 1.0}
+        transparent={element.type === 'slab' || element.isSelected}
+        opacity={element.type === 'slab' ? 0.4 : (element.isSelected ? 0.8 : 1.0)}
+        metalness={element.material === 'steel' ? 0.8 : 0.1}
+        roughness={element.material === 'steel' ? 0.2 : 0.8}
       />
     </mesh>
   );

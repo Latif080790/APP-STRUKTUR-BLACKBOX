@@ -107,15 +107,26 @@ const defaultSeismic: SeismicParameters = {
 };
 
 // Converter function for Enhanced3D structure
-const convertToEnhanced3DStructure = (geometry: Geometry, analysisResults?: any) => {
+const convertToEnhanced3DStructure = (
+  geometry: Geometry, 
+  analysisResults?: any, 
+  materialSelection?: any, 
+  foundationParams?: any
+) => {
   const nodes = [];
   const elements = [];
   
-  // Use default values if undefined
-  const gridX = geometry.columnGridX || 4;
-  const gridY = geometry.columnGridY || 3;
+  // 🔧 UNIFIED GRID CALCULATION: Use analysis engine method for consistency
+  const gridX = Math.ceil(geometry.length / geometry.baySpacingX);
+  const gridY = Math.ceil(geometry.width / geometry.baySpacingY);
   
-  // Generate nodes based on column grid
+  console.log('🏗️ 3D Model Grid Info:');
+  console.log('- Building Size:', geometry.length, '×', geometry.width, 'm');
+  console.log('- Bay Spacing:', geometry.baySpacingX, '×', geometry.baySpacingY, 'm');  
+  console.log('- Grid Size:', gridX, '×', gridY, 'bays');
+  console.log('- Columns:', gridX + 1, '×', gridY + 1);
+  
+  // Generate nodes based on calculated grid
   for (let i = 0; i <= gridX; i++) {
     for (let j = 0; j <= gridY; j++) {
       for (let k = 0; k <= geometry.numberOfFloors; k++) {
@@ -206,12 +217,129 @@ const convertToEnhanced3DStructure = (geometry: Geometry, analysisResults?: any)
     }
   }
   
+  // Generate slab elements (floors)
+  for (let k = 1; k <= geometry.numberOfFloors; k++) {
+    const elementId = `SLAB${k}`;
+    elements.push({
+      id: elementId,
+      type: 'slab' as const,
+      startNode: `N0${0}${k}`,
+      endNode: `N${gridX}${gridY}${k}`,
+      section: {
+        width: geometry.length,
+        height: geometry.width, 
+        thickness: materialSelection?.primaryStructure === 'steel' ? 0.12 : 0.15
+      },
+      material: 'concrete' as const
+    });
+  }
+
+  // Generate foundation system
+  for (let i = 0; i <= gridX; i++) {
+    for (let j = 0; j <= gridY; j++) {
+      // Pile Cap
+      const pileCapId = `PC${i}${j}`;
+      elements.push({
+        id: pileCapId,
+        type: 'pile-cap' as const,
+        startNode: `N${i}${j}0`,
+        endNode: `N${i}${j}0`,
+        section: {
+          width: 1.5,
+          height: 1.5,
+          thickness: 0.6
+        },
+        material: 'concrete' as const
+      });
+    }
+  }
+
+  // Generate slab elements (floors)
+  for (let k = 1; k <= geometry.numberOfFloors; k++) {
+    const elementId = `SLAB${k}`;
+    elements.push({
+      id: elementId,
+      type: 'slab' as const,
+      startNode: `N0${0}${k}`,
+      endNode: `N${gridX}${gridY}${k}`,
+      section: {
+        width: geometry.length,
+        height: geometry.width, 
+        thickness: materialSelection?.primaryStructure === 'steel' ? 0.12 : 0.15
+      },
+      material: 'concrete' as const
+    });
+  }
+
+  // Generate foundation system
+  for (let i = 0; i <= gridX; i++) {
+    for (let j = 0; j <= gridY; j++) {
+      // Pile Cap
+      const pileCapId = `PC${i}${j}`;
+      elements.push({
+        id: pileCapId,
+        type: 'pile-cap' as const,
+        startNode: `N${i}${j}0`,
+        endNode: `N${i}${j}0`,
+        section: {
+          width: 1.5,
+          height: 1.5,
+          thickness: 0.6
+        },
+        material: 'concrete' as const
+      });
+
+      // Generate piles (typically 4-9 piles per pile cap)  
+      const pilesPerCap = Math.min(4, Math.max(2, Math.floor(geometry.numberOfFloors / 2)));
+      
+      for (let p = 0; p < pilesPerCap; p++) {
+        const pileId = `P${i}${j}_${p}`;
+        elements.push({
+          id: pileId,
+          type: 'pile' as const,
+          startNode: `N${i}${j}0`,
+          endNode: `N${i}${j}0`, // Will be positioned differently
+          section: {
+            width: 0.6, // Default diameter
+            height: 0.6,
+            diameter: 0.6
+          },
+          material: 'concrete' as const,
+          direction: 'Z' as const
+        });
+      }
+
+      // Pedestal column (if needed for larger buildings)
+      if (geometry.numberOfFloors > 3) {
+        const pedestalId = `PED${i}${j}`;
+        elements.push({
+          id: pedestalId,
+          type: 'pedestal' as const,
+          startNode: `N${i}${j}0`,
+          endNode: `N${i}${j}0`,
+          section: {
+            width: 0.5,
+            height: 0.5,
+            thickness: 1.0
+          },
+          material: 'concrete' as const
+        });
+      }
+    }
+  }
+
+  console.log('Generated 3D structure with foundation:', {
+    nodes: nodes.length,
+    elements: elements.length,
+    foundations: elements.filter(e => ['pile-cap', 'pile', 'pedestal'].includes(e.type)).length
+  });
+
   // Calculate bounding box
   const positions = nodes.map(n => n.position);
   const xCoords = positions.map(p => p[0]);
   const yCoords = positions.map(p => p[1]);
   const zCoords = positions.map(p => p[2]);
-  
+
   return {
     nodes,
     elements,
@@ -232,6 +360,29 @@ export const SimpleStructuralAnalysisSystem = () => {
   const [loads, setLoads] = useState<Loads>(defaultLoads);
   const [seismicParams, setSeismicParams] = useState<SeismicParameters>(defaultSeismic);
   
+  // Enhanced Material & Foundation Selection
+  const [materialSelection, setMaterialSelection] = useState({
+    primaryStructure: 'concrete' as 'concrete' | 'steel' | 'concrete-steel' | 'steel-composite',
+    foundation: 'pile-cap-bored' as 'pile-cap-bored' | 'pile-cap-driven' | 'mat-foundation',
+    soilCondition: 'medium' as 'good' | 'medium' | 'poor' | 'very-poor',
+    allowableStress: 25, // MPa for concrete, 250 MPa for steel
+    seismicZone: 3 as 1 | 2 | 3 | 4 | 5 | 6
+  });
+
+  const [foundationParams, setFoundationParams] = useState({
+    pileType: 'bored-pile' as 'bored-pile' | 'driven-pile' | 'micro-pile',
+    pileDiameter: 0.6, // meters
+    pileLength: 20, // meters
+    pilesPerCap: 4,
+    capDimensions: {
+      length: 2.0,
+      width: 2.0,
+      thickness: 0.8
+    },
+    allowableBearing: 200, // kN/m2
+    groundwaterLevel: 3 // meters below ground
+  });
+  
   // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -244,6 +395,71 @@ export const SimpleStructuralAnalysisSystem = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('input');
+
+  // Enhanced foundation recommendation logic based on technical criteria
+  const determinePileType = (buildingLoad: number, soilCondition: string, floors: number) => {
+    const buildingArea = 400; // Assume default building area for calculation
+    const loadPerArea = buildingLoad / buildingArea; // kN/m²
+    
+    // CHOOSE BORED PILE if:
+    // - Tanah lunak, berair, atau tidak stabil
+    // - Area padat/sensitif terhadap getaran  
+    // - Memerlukan kedalaman dan diameter fleksibel
+    // - Meminimalisir gangguan lingkungan
+    if (
+      soilCondition === 'poor' || soilCondition === 'very-poor' || // Tanah lunak/berair
+      floors >= 8 || // Bangunan tinggi butuh fleksibilitas
+      (soilCondition === 'medium' && floors >= 5) || // Tanah sedang + bangunan menengah
+      loadPerArea < 100 // Beban sedang, butuh precision
+    ) {
+      const diameter = soilCondition === 'very-poor' ? 0.8 : 
+                      soilCondition === 'poor' ? 0.6 : 0.5;
+      const length = soilCondition === 'very-poor' ? 30 :
+                    soilCondition === 'poor' ? 25 : 20;
+      
+      return {
+        type: 'bor-pile',
+        diameter: diameter,
+        length: length,
+        material: 'concrete',
+        reason: 'Bored pile: Tanah lunak/berair, minimal getaran, instalasi presisi'
+      };
+    }
+    
+    // CHOOSE DRIVEN PILE if:
+    // - Tanah keras atau lapisan batuan
+    // - Beban struktur sangat besar dan akses luas
+    // - Waktu pemasangan harus singkat
+    // - Ketersediaan alat dan biaya mendukung
+    else if (
+      soilCondition === 'good' && // Tanah keras/batuan
+      loadPerArea > 150 && // Beban struktur besar
+      floors <= 6 && // Tidak terlalu tinggi
+      floors >= 3 // Minimal 3 lantai untuk justify driven pile
+    ) {
+      return {
+        type: 'driven-pile',
+        diameter: 0.4,
+        length: 15,
+        material: 'concrete',
+        reason: 'Driven pile: Tanah keras, beban besar, instalasi cepat'
+      };
+    }
+    
+    // DEFAULT: BORED PILE untuk fleksibilitas
+    else {
+      const diameter = soilCondition === 'good' ? 0.4 : 0.5;
+      const length = floors > 5 ? 20 : 15;
+      
+      return {
+        type: 'bor-pile',
+        diameter: diameter,
+        length: length,
+        material: 'concrete',
+        reason: 'Bored pile: Solusi fleksibel, kontrol instalasi optimal'
+      };
+    }
+  };
 
   // Generate 3D Structure Data
   const generateStructure3D = useCallback((): Structure3D => {
@@ -576,6 +792,151 @@ export const SimpleStructuralAnalysisSystem = () => {
                   </CardContent>
                 </Card>
 
+                {/* Material & Foundation Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>🏗️ Material & Pondasi</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Jenis Material Struktur</label>
+                      <select
+                        className="w-full p-2 border rounded"
+                        value={materialSelection.primaryStructure}
+                        onChange={(e) => setMaterialSelection(prev => ({ 
+                          ...prev, 
+                          primaryStructure: e.target.value as any
+                        }))}
+                      >
+                        <option value="concrete">Beton Bertulang</option>
+                        <option value="steel">Struktur Baja</option>
+                        <option value="concrete-steel">Beton + Baja Komposit</option>
+                        <option value="steel-composite">Baja Komposit</option>
+                      </select>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Tipe Pondasi</label>
+                        <select
+                          className="w-full p-2 border rounded"
+                          value={materialSelection.foundation}
+                          onChange={(e) => setMaterialSelection(prev => ({ 
+                            ...prev, 
+                            foundation: e.target.value as any
+                          }))}
+                        >
+                          <option value="pile-cap-bored">Pile Cap + Bor Pile</option>
+                          <option value="pile-cap-driven">Pile Cap + Pancang</option>
+                          <option value="mat-foundation">Mat Foundation</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Kondisi Tanah</label>
+                        <select
+                          className="w-full p-2 border rounded"
+                          value={materialSelection.soilCondition}
+                          onChange={(e) => setMaterialSelection(prev => ({ 
+                            ...prev, 
+                            soilCondition: e.target.value as any
+                          }))}
+                        >
+                          <option value="good">Baik (Hard Clay/Rock)</option>
+                          <option value="medium">Sedang (Medium Clay)</option>
+                          <option value="poor">Buruk (Soft Clay)</option>
+                          <option value="very-poor">Sangat Buruk (Organik)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Zona Seismik</label>
+                        <select
+                          className="w-full p-2 border rounded"
+                          value={materialSelection.seismicZone}
+                          onChange={(e) => setMaterialSelection(prev => ({ 
+                            ...prev, 
+                            seismicZone: parseInt(e.target.value) as any
+                          }))}
+                        >
+                          <option value={1}>Zona 1 (Rendah)</option>
+                          <option value={2}>Zona 2</option>
+                          <option value={3}>Zona 3 (Sedang)</option>
+                          <option value={4}>Zona 4</option>
+                          <option value={5}>Zona 5</option>
+                          <option value={6}>Zona 6 (Tinggi)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Diameter Pile (m)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          className="w-full p-2 border rounded"
+                          value={foundationParams.pileDiameter}
+                          onChange={(e) => setFoundationParams(prev => ({ 
+                            ...prev, 
+                            pileDiameter: parseFloat(e.target.value) || 0 
+                          }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Panjang Pile (m)</label>
+                        <input
+                          type="number"
+                          className="w-full p-2 border rounded"
+                          value={foundationParams.pileLength}
+                          onChange={(e) => setFoundationParams(prev => ({ 
+                            ...prev, 
+                            pileLength: parseFloat(e.target.value) || 0 
+                          }))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Automatic Recommendation Display */}
+                    <div className="mt-4 p-3 bg-blue-50 rounded border">
+                      <h4 className="font-medium text-sm text-blue-800 mb-2">💡 Rekomendasi Sistem:</h4>
+                      <div className="text-sm text-blue-700 space-y-2">
+                        <p><strong>Material:</strong> {materialSelection.primaryStructure === 'concrete' ? 'Beton bertulang cocok untuk bangunan hingga 15 lantai' :
+                           materialSelection.primaryStructure === 'steel' ? 'Struktur baja cocok untuk bentang panjang dan bangunan tinggi' :
+                           'Material komposit memberikan kekuatan optimal dengan berat ringan'}</p>
+                        
+                        {(() => {
+                          const buildingLoad = (geometry.width * geometry.length) * geometry.numberOfFloors * 15; // Rough estimate kN
+                          const recommendedPile = determinePileType(
+                            buildingLoad,
+                            materialSelection.soilCondition,
+                            geometry.numberOfFloors
+                          );
+                          
+                          return (
+                            <div className="bg-white p-2 rounded border-l-4 border-blue-400">
+                              <p><strong>Pondasi Rekomendasi:</strong> {recommendedPile.type === 'bor-pile' ? 'BORED PILE' : 'DRIVEN PILE'}</p>
+                              <p className="text-xs mt-1"><strong>Alasan:</strong> {recommendedPile.reason}</p>
+                              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                                <div>
+                                  <span className="font-medium">Diameter:</span> {recommendedPile.diameter}m
+                                </div>
+                                <div>
+                                  <span className="font-medium">Panjang:</span> {recommendedPile.length}m
+                                </div>
+                                <div>
+                                  <span className="font-medium">Material:</span> {recommendedPile.material}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Kondisi:</span> Zona seismik {materialSelection.seismicZone}, tanah {materialSelection.soilCondition}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Materials */}
                 <Card>
                   <CardHeader>
@@ -691,7 +1052,7 @@ export const SimpleStructuralAnalysisSystem = () => {
                 <CardContent>
                   <div className="h-[600px]">
                     <Simple3DViewer
-                      structure={convertToEnhanced3DStructure(geometry, analysisResults)}
+                      structure={convertToEnhanced3DStructure(geometry, analysisResults, materialSelection, foundationParams)}
                       analysisResults={analysisResults}
                       showDeformation={true}
                       deformationScale={10}
