@@ -513,3 +513,36 @@ export const calculateSlab = (geometry: Geometry, loads: Loads) => {
     reinforcementRatio: isTwoWay ? 0.0018 : 0.002
   };
 };
+
+// FOUNDATION CAPACITY CALCULATION
+export const calculateFoundationCapacity = (
+  soilData: SoilData, 
+  foundationType: FoundationSystem, 
+  loads: { dead: number; live: number; seismic: number }
+): { capacity: number; safetyFactor: number; isAdequate: boolean } => {
+  
+  const avgSPT = (soilData.nspt || [10]).reduce((sum, val) => sum + val, 0) / (soilData.nspt || [10]).length;
+  
+  // Simplified bearing capacity calculation
+  let bearingCapacity = 0;
+  
+  if (['isolated_footing', 'combined_footing'].includes(foundationType.type)) {
+    // Shallow foundation
+    bearingCapacity = avgSPT * 40; // kN/m² (conservative)
+  } else if (['bored_pile', 'driven_pile', 'micro_pile'].includes(foundationType.type)) {
+    // Pile foundation
+    bearingCapacity = avgSPT * 200; // kN per pile (conservative)
+  } else {
+    // Mat foundation or caisson
+    bearingCapacity = avgSPT * 60; // kN/m² (conservative)
+  }
+  
+  const totalLoad = loads.dead + loads.live + loads.seismic;
+  const safetyFactor = bearingCapacity / totalLoad;
+  
+  return {
+    capacity: bearingCapacity,
+    safetyFactor: safetyFactor,
+    isAdequate: safetyFactor >= 2.5
+  };
+};

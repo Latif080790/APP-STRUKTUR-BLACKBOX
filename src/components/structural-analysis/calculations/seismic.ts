@@ -471,3 +471,27 @@ export const calculateStoryDrift = (
   
   return driftResults;
 };
+
+// SIMPLE SEISMIC FORCE CALCULATION FOR SNI SYSTEM
+export const calculateSeismicForce = (seismicParams: SeismicParameters, geometry: Geometry, materials: MaterialProperties, loads: Loads) => {
+  const { ss = 0, s1 = 0, siteClass = 'SD' } = seismicParams;
+  
+  if (ss === 0 || s1 === 0) {
+    return { V: 0, Cs: 0.01, CsMax: 0.5, CsMin: 0.01 };
+  }
+  
+  // Simple calculation using existing functions
+  const sds = ss * 0.67; // Simplified site coefficient
+  const sd1 = s1 * 0.67; // Simplified site coefficient
+  
+  const cs = Math.max(0.044 * sds, 0.01);
+  const weight = (geometry.length || 10) * (geometry.width || 10) * (geometry.numberOfFloors || 1) * 12; // kN
+  const baseShear = cs * weight;
+  
+  return {
+    V: baseShear,
+    Cs: cs,
+    CsMax: cs * 1.5,
+    CsMin: Math.max(0.044 * sds, 0.01)
+  };
+};

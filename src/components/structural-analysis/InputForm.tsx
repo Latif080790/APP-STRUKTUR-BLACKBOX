@@ -5,17 +5,17 @@
 // =====================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { Button } from '../../ui/button';
-import { Input } from '../../ui/input';
-import { Label } from '../../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { Textarea } from '../../ui/textarea';
-import { Alert, AlertDescription } from '../../ui/alert';
-import { Badge } from '../../ui/badge';
-import { Progress } from '../../ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
-import { Separator } from '../../ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Badge } from '../ui/badge';
+import { Progress } from '../ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Separator } from '../ui/separator';
 import { 
   AlertTriangle, 
   CheckCircle, 
@@ -40,7 +40,7 @@ import {
   SoilData,
   ValidationError,
   CodeViolation
-} from '../interfaces';
+} from './interfaces';
 
 import {
   validateCompleteSystem,
@@ -52,9 +52,9 @@ import {
   getValidationSummary,
   getMustFixIssues,
   ValidationResult
-} from '../calculations/validation-system';
+} from './calculations/validation-system';
 
-import { LIVE_LOADS_BY_OCCUPANCY } from '../calculations/load-library';
+import { LIVE_LOADS_BY_OCCUPANCY } from './calculations/load-library';
 
 // INTERFACES
 interface InputFormProps {
@@ -99,8 +99,8 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({ validation }) => 
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Status Keseluruhan:</span>
           <Badge 
-            variant={validation.isValid ? 'success' : 'destructive'}
-            className="text-xs"
+            variant={validation.isValid ? 'secondary' : 'destructive'}
+            className={validation.isValid ? 'bg-green-100 text-green-800 border-green-200' : ''}
           >
             {validation.isValid ? 'VALID' : 'TIDAK VALID'}
           </Badge>
@@ -127,7 +127,10 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({ validation }) => 
           </div>
           <div className="flex justify-between">
             <span>Pelanggaran Major:</span>
-            <Badge variant={majorCount > 0 ? 'warning' : 'secondary'}>
+            <Badge 
+              variant={majorCount > 0 ? 'destructive' : 'secondary'}
+              className={majorCount > 0 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : ''}
+            >
               {majorCount}
             </Badge>
           </div>
@@ -139,7 +142,10 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({ validation }) => 
           </div>
           <div className="flex justify-between">
             <span>Warnings:</span>
-            <Badge variant={warningCount > 0 ? 'warning' : 'secondary'}>
+            <Badge 
+              variant={warningCount > 0 ? 'destructive' : 'secondary'}
+              className={warningCount > 0 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : ''}
+            >
               {warningCount}
             </Badge>
           </div>
@@ -150,7 +156,7 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({ validation }) => 
           <div>
             <h4 className="font-semibold text-red-600 mb-2">Harus Diperbaiki:</h4>
             <div className="space-y-2 max-h-40 overflow-y-auto">
-              {mustFixIssues.map((issue, index) => (
+              {mustFixIssues.map((issue: any, index: number) => (
                 <Alert key={index} className="border-red-200 bg-red-50">
                   <AlertCircle className="h-4 w-4 text-red-600" />
                   <AlertDescription className="text-sm">
@@ -221,11 +227,11 @@ export const InputForm: React.FC<InputFormProps> = ({
     }
   }, [geometry, loads, materials, soilData, seismicParams, projectInfo, onValidationChange]);
   
-  // Auto-validate when data changes
-  useEffect(() => {
-    const debounceTimeout = setTimeout(runValidation, 1000);
-    return () => clearTimeout(debounceTimeout);
-  }, [runValidation]);
+  // Auto-validate when data changes (disabled for better UX)
+  // useEffect(() => {
+  //   const debounceTimeout = setTimeout(runValidation, 2000);
+  //   return () => clearTimeout(debounceTimeout);
+  // }, [runValidation]);
   
   // Generate occupancy options from load library
   const occupancyOptions = useMemo(() => {

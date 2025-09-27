@@ -5,13 +5,13 @@
 // =====================================
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Progress } from '../ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Separator } from '../ui/separator';
 import { 
   CheckCircle, 
   XCircle, 
@@ -27,7 +27,7 @@ import {
   Download
 } from 'lucide-react';
 
-import { ValidationResult } from '../calculations/validation-system';
+import { ValidationResult } from './calculations/validation-system';
 
 interface AnalysisResults {
   // Foundation Analysis
@@ -101,7 +101,7 @@ const ComplianceIndicator: React.FC<{
       )}
       <span className="font-medium">{title}</span>
     </div>
-    <Badge variant={isCompliant ? 'success' : 'destructive'}>
+    <Badge variant={isCompliant ? 'secondary' : 'destructive'} className={isCompliant ? 'bg-green-500' : ''}>
       {isCompliant ? 'SESUAI' : 'TIDAK SESUAI'}
     </Badge>
     {violations.length > 0 && (

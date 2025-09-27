@@ -77,7 +77,7 @@ export const SelectContent: React.FC<SelectContentProps & any> = ({
   if (!isOpen) return null;
   
   return (
-    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+    <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           return React.cloneElement(child as any, {
