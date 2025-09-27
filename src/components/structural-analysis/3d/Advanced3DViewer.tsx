@@ -1,425 +1,1102 @@
-/**import React, { useEffect, useRef, useState } from 'react';import React, { useEffect, useRef, useState } from 'react';/**
+/**/**
 
- * Advanced 3D Structure Viewer with Deformation Analysis
+ * Advanced 3D Structure Viewer with Deformation Analysis * Advanced 3D Structure Viewer with Deformation Analysis
 
- * Professional Three.js implementation with post-analysis visualizationimport * as THREE from 'three';
+ * Professional Three.js implementation with post-analysis visualization * Professional Three.js implementation with post-analysis visualization
 
- */
+ */ */
 
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';import * as THREE from 'three'; * Enhanced 3D Structure Viewer with Advanced Features
 
-import React, { useState, useCallback, useMemo } from 'react';
 
-import { Canvas } from '@react-three/fiber';import { Button } from '../../ui/button';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 
-import { OrbitControls, Grid, Environment, Html, Text } from '@react-three/drei';
+import * as THREE from 'three';import * as THREE from 'three';
 
-import * as THREE from 'three';import { RotateCcw, Eye, Settings, Move3D } from 'lucide-react';import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'; * Professional-grade 3D visualization for structural analysis
+import { Canvas, useThree, useFrame } from '@react-three/fiber';import { Canvas, useThree, useFrame } from '@react-three/fiber';
 
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
+import { import { 
 
-import { Button } from '../../ui/button';
+  OrbitControls,   OrbitControls, 
 
-import { Badge } from '../../ui/badge';
+  Grid,   Grid, 
 
-import { interface Advanced3DViewerProps {import { Button } from '../../ui/button'; */
+  Environment,   Environment, 
 
-  Eye, 
+  Html,   Html, 
 
-  EyeOff,   structure: {
+  Text,  Text,
 
-  RotateCcw, 
+  ContactShadows,  ContactShadows,
 
-  ZoomIn,     nodes: Array<{import { RotateCcw, ZoomIn, ZoomOut, Move3D, Eye, Settings } from 'lucide-react';
+  PerspectiveCamera,  PerspectiveCamera,
 
-  ZoomOut, 
+  Box,  Box,
 
-  Grid3x3,      id: number;
+  Sphere,  Sphere,
 
-  Activity,
+  Line  Line
 
-  BarChart3,      x: number;import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+} from '@react-three/drei';} from '@react-three/drei';
 
-  Download,
+import { import { 
 
-  Settings      y: number;
+  ZoomIn,   ZoomIn, 
 
-} from 'lucide-react';
+  ZoomOut,   ZoomOut, 
 
-      z: number;interface Advanced3DViewerProps {import { Canvas, useThree, useFrame } from '@react-three/fiber';
+  RotateCcw,  RotateCcw,
+
+  Grid3x3,  Grid3x3,
+
+  Activity,  Activity,
+
+  BarChart3,  BarChart3,
+
+  Download,  Download,
+
+  Settings  Settings
+
+} from 'lucide-react';} from 'lucide-react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
+
+import { Button } from '../../ui/button';import { Button } from '../../ui/button';
+
+import { Checkbox } from '../../ui/checkbox';import { Checkbox } from '../../ui/checkbox';
+
+import { Badge } from '../../ui/badge';import { Badge } from '../../ui/badge';
+
+} from '@react-three/drei';
 
 interface Enhanced3DNode {
 
-  id: string;      type: 'fixed' | 'pinned' | 'free';
+  id: number;import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 
-  position: [number, number, number];
+  x: number;import { Button } from '../../ui/button';
 
-  displacement?: [number, number, number];    }>;  structure: {import { 
+  y: number;import { Badge } from '../../ui/badge';
 
-  reaction?: [number, number, number];
+  z: number;import { Slider } from '../../ui/slider';
 
-  support: {    elements: Array<{
+  restraint?: {import { 
 
-    x: boolean;
+    x: boolean;  RotateCcw, 
 
-    y: boolean;      id: number;    nodes: Array<{  OrbitControls, 
+    y: boolean;  ZoomIn, 
 
-    z: boolean;
+    z: boolean;  ZoomOut, 
 
-    rx: boolean;      type: 'column' | 'beam' | 'slab';
+    rx: boolean;  Eye, 
 
-    ry: boolean;
+    ry: boolean;  EyeOff,
 
-    rz: boolean;      startNode: number;      id: number;  Text, 
+    rz: boolean;  Grid3X3,
 
-  };
+  };  Lightbulb,
 
-  isSelected?: boolean;      endNode: number;
+  displacement?: [number, number, number];  Camera,
+
+  reaction?: [number, number, number];  BarChart3,
+
+  isSelected?: boolean;  Activity,
+
+}  Maximize2,
+
+  Download,
+
+interface Enhanced3DElement {  Settings,
+
+  id: number;  Move3D
+
+  type: 'column' | 'beam' | 'slab';} from 'lucide-react';
+
+  startNode: number;
+
+  endNode: number;// Types for enhanced 3D visualization
+
+  dimensions: {interface Enhanced3DNode {
+
+    width: number;  id: string;
+
+    height: number;  position: [number, number, number];
+
+    thickness?: number;  displacement?: [number, number, number];
+
+    diameter?: number;  rotation?: [number, number, number];
+
+  };  forces?: [number, number, number];
+
+  material: 'concrete' | 'steel' | 'composite' | 'concrete-steel';  moments?: [number, number, number];
+
+  forces?: {  support: {
+
+    axial: number;    x: boolean;
+
+    shearY: number;    y: boolean;
+
+    shearZ: number;    z: boolean;
+
+    momentY: number;    rx: boolean;
+
+    momentZ: number;    ry: boolean;
+
+  };    rz: boolean;
+
+  stress?: number;  };
+
+  utilization?: number;  isSelected?: boolean;
+
+  isSelected?: boolean;}
 
 }
-
-      section: string;      x: number;  Html, 
 
 interface Enhanced3DElement {
 
-  id: string;      material: string;
+interface Enhanced3DStructure {  id: string;
 
-  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation' | 'pile-cap' | 'pile' | 'pedestal';
+  nodes: Enhanced3DNode[];  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation';
 
-  startNode: string;    }>;      y: number;  Environment,
+  elements: Enhanced3DElement[];  startNode: string;
 
-  endNode: string;
+  analysisResults?: {  endNode: string;
 
-  section: {  };
+    summary: {  section: {
 
-    width: number;
+      maxStress: number;    width: number;
 
-    height: number;  analysisResults?: {      z: number;  Grid,
+      maxDrift: number;    height: number;
 
-    thickness?: number;
+      baseShear: number;    thickness?: number;
 
-    diameter?: number;    summary: {
+    };  };
 
-  };
+  };  material: 'concrete' | 'steel' | 'composite';
 
-  material: 'concrete' | 'steel' | 'composite' | 'concrete-steel';      maxStress: number;      type: 'fixed' | 'pinned' | 'free';  ContactShadows,
+}  forces?: {
 
-  forces?: {
+    axial: number[];
 
-    axial: number;      maxDrift: number;
+interface Advanced3DViewerProps {    shear: number[];
 
-    shearY: number;
+  structure: Enhanced3DStructure;    moment: number[];
 
-    shearZ: number;      baseShear: number;    }>;  PerspectiveCamera,
+  onElementClick?: (element: any) => void;    positions: number[];
 
-    momentY: number;
+  showStress?: boolean;  };
 
-    momentZ: number;    };
+  showDeformation?: boolean;  stresses?: {
 
-    torsion: number;
+}    max: number;
 
-  };  };    elements: Array<{  Box,
+    min: number;
 
-  utilization?: number;
+// Enhanced 3D Node Component    vonMises: number[];
 
-  isSelected?: boolean;  onElementClick?: (element: any) => void;
+const Enhanced3DNodeComponent: React.FC<{   };
 
-}
+  node: Enhanced3DNode;   utilization?: number;
 
-  showStress?: boolean;      id: number;  Sphere,
+  scale: number;  isSelected?: boolean;
 
-interface Enhanced3DStructure {
+  showLabels: boolean;}
 
-  nodes: Enhanced3DNode[];  showDeformation?: boolean;
+  onClick?: () => void;
 
-  elements: Enhanced3DElement[];
+}> = ({ node, scale, showLabels, onClick }) => {interface Enhanced3DStructure {
 
-  boundingBox: {}      type: 'column' | 'beam' | 'slab';  Line
+  const meshRef = useRef<THREE.Mesh>(null);  nodes: Enhanced3DNode[];
 
-    min: [number, number, number];
+    elements: Enhanced3DElement[];
+
+  const restraintColor = useMemo(() => {  loads: {
+
+    if (!node.restraint) return '#4A90E2';    nodeId: string;
+
+    const restraintCount = Object.values(node.restraint).filter(Boolean).length;    forces: [number, number, number];
+
+    if (restraintCount === 6) return '#E74C3C'; // Fixed - Red    moments: [number, number, number];
+
+    if (restraintCount > 0) return '#F39C12'; // Partial - Orange  }[];
+
+    return '#4A90E2'; // Free - Blue  boundingBox: {
+
+  }, [node.restraint]);    min: [number, number, number];
 
     max: [number, number, number];
 
-  };
+  const deformedPosition = useMemo(() => {  };
 
-  scale: number;export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({       startNode: number;} from '@react-three/drei';
+    if (!node.displacement) return [node.x, node.y, node.z];  scale: number;
 
-}
+    const deformationScale = 100; // Amplification factor}
 
-  structure, 
+    return [
 
-interface Advanced3DViewerProps {
+      node.x + (node.displacement[0] * deformationScale),interface Enhanced3DViewerProps {
 
-  structure: Enhanced3DStructure | null;  analysisResults,      endNode: number;import * as THREE from 'three';
+      node.y + (node.displacement[1] * deformationScale),  structure: Enhanced3DStructure | null;
 
-  analysisResults?: any;
+      node.z + (node.displacement[2] * deformationScale)  analysisResults?: any;
 
-  showDeformation?: boolean;  onElementClick,
+    ] as [number, number, number];  showDeformation?: boolean;
 
-  deformationScale?: number;
+  }, [node.x, node.y, node.z, node.displacement]);  deformationScale?: number;
 
-  showStress?: boolean;  showStress = false,      section: string;import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+  showStress?: boolean;
 
-  showForces?: boolean;
+  return (  showForces?: boolean;
 
-  showLabels?: boolean;  showDeformation = false
+    <group position={deformedPosition}>  showLabels?: boolean;
 
-  showSupports?: boolean;
+      <Sphere   viewMode?: 'solid' | 'wireframe' | 'both';
 
-  viewMode?: 'solid' | 'wireframe' | 'both';}) => {      material: string;import { Button } from '@/components/ui/button';
+        ref={meshRef}  colorMode?: 'material' | 'stress' | 'utilization' | 'forces';
 
-  colorMode?: 'material' | 'stress' | 'utilization' | 'forces';
+        args={[0.1 * scale, 16, 16]}  onElementSelect?: (elementId: string) => void;
 
-  onElementSelect?: (elementId: string) => void;  const mountRef = useRef<HTMLDivElement>(null);
+        onClick={onClick}  onNodeSelect?: (nodeId: string) => void;
 
-  onNodeSelect?: (nodeId: string) => void;
+      >  className?: string;
 
-  className?: string;  const sceneRef = useRef<THREE.Scene>();    }>;import { Badge } from '@/components/ui/badge';
+        <meshPhongMaterial }
 
-}
+          color={node.isSelected ? '#FF6B6B' : restraintColor}
 
-  const rendererRef = useRef<THREE.WebGLRenderer>();
+          transparent={true}interface Advanced3DViewerProps {
 
-// Advanced Node Component with Deformation
+          opacity={0.8}  structure: {
 
-const Advanced3DNode: React.FC<{  const cameraRef = useRef<THREE.PerspectiveCamera>();  };import { Slider } from '@/components/ui/slider';
+        />    nodes: Array<{
 
-  node: Enhanced3DNode;
+      </Sphere>      id: number;
 
-  scale: number;  const frameRef = useRef<number>();
+            x: number;
 
-  showDeformation: boolean;
+      {/* Restraint Indicators */}      y: number;
 
-  deformationScale: number;    analysisResults?: {import { 
+      {node.restraint && (      z: number;
 
-  showSupports: boolean;
+        <>      type: 'fixed' | 'pinned' | 'free';
 
-  showLabels: boolean;  const [isWireframe, setIsWireframe] = useState(false);
+          {node.restraint.x && (    }>;
 
-  onClick: (nodeId: string) => void;
+            <Box args={[0.2 * scale, 0.05 * scale, 0.05 * scale]} position={[0.15 * scale, 0, 0]}>    elements: Array<{
 
-}> = ({ node, scale, showDeformation, deformationScale, showSupports, showLabels, onClick }) => {  const [showGrid, setShowGrid] = useState(true);    summary: {  RotateCcw, 
+              <meshBasicMaterial color="#E74C3C" />      id: number;
 
-  const [hovered, setHovered] = useState(false);
+            </Box>      type: 'column' | 'beam' | 'slab';
 
+          )}      startNode: number;
 
+          {node.restraint.y && (      endNode: number;
 
-  // Calculate deformed position
+            <Box args={[0.05 * scale, 0.2 * scale, 0.05 * scale]} position={[0, 0.15 * scale, 0]}>      section: string;
 
-  const deformedPosition = useMemo(() => {  useEffect(() => {      maxStress: number;  ZoomIn, 
+              <meshBasicMaterial color="#E74C3C" />      material: string;
 
-    if (!showDeformation || !node.displacement) return node.position;
+            </Box>    }>;
 
-    return [    if (!mountRef.current) return;
+          )}  };
 
-      node.position[0] + node.displacement[0] * deformationScale,
+          {node.restraint.z && (  analysisResults?: {
 
-      node.position[1] + node.displacement[1] * deformationScale,      maxDrift: number;  ZoomOut, 
+            <Box args={[0.05 * scale, 0.05 * scale, 0.2 * scale]} position={[0, 0, 0.15 * scale]}>    summary: {
 
-      node.position[2] + node.displacement[2] * deformationScale
+              <meshBasicMaterial color="#E74C3C" />      maxStress: number;
 
-    ] as [number, number, number];    // Scene setup
+            </Box>      maxDrift: number;
 
-  }, [node.position, node.displacement, showDeformation, deformationScale]);
+          )}      baseShear: number;
 
-    const scene = new THREE.Scene();      baseShear: number;  Eye, 
+        </>    };
 
-  const handleClick = useCallback((e: any) => {
+      )}  };
 
-    e.stopPropagation();    scene.background = new THREE.Color(0xf8fafc);
+        onElementClick?: (element: any) => void;
 
-    onClick(node.id);
+      {/* Node Labels */}  showStress?: boolean;
 
-  }, [node.id, onClick]);    sceneRef.current = scene;    };  EyeOff,
+      {showLabels && (  showDeformation?: boolean;
 
+        <Html distanceFactor={10}>}
 
+          <div className="bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
 
-  const nodeColor = useMemo(() => {
+            Node {node.id}  ZoomOut, 
 
-    if (node.isSelected) return '#e74c3c';
+            {node.displacement && (
 
-    if (hovered) return '#f39c12';    // Camera setup  };  Grid3X3,
+              <div className="text-xs text-yellow-300">  Grid3x3,      id: number;
 
-    
+                Δ: {node.displacement.map(d => d.toFixed(3)).join(', ')}
 
-    // Color by support conditions    const camera = new THREE.PerspectiveCamera(
-
-    const hasSupport = Object.values(node.support).some(Boolean);
-
-    if (hasSupport) return '#2ecc71';      75,  onElementClick?: (element: any) => void;  Lightbulb,
-
-    
-
-    return '#3498db';      mountRef.current.clientWidth / mountRef.current.clientHeight,
-
-  }, [node.isSelected, hovered, node.support]);
-
-      0.1,  showStress?: boolean;  Camera,
-
-  // Support visualization
-
-  const renderSupport = () => {      1000
-
-    if (!showSupports) return null;
-
-        );  showDeformation?: boolean;  BarChart3,
-
-    const hasSupport = Object.values(node.support).some(Boolean);
-
-    if (!hasSupport) return null;    camera.position.set(50, 40, 50);
-
-
-
-    return (    cameraRef.current = camera;}  Activity,
-
-      <group position={[0, -0.3, 0]}>
-
-        {/* Support base */}
-
-        <mesh>
-
-          <coneGeometry args={[0.2 * scale, 0.3 * scale, 8]} />    // Renderer setup  Maximize2,
-
-          <meshStandardMaterial color="#34495e" />
-
-        </mesh>    const renderer = new THREE.WebGLRenderer({ 
-
-        
-
-        {/* Support symbols */}      antialias: true,export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({   Download
-
-        {node.support.x && (
-
-          <mesh position={[0.3 * scale, 0, 0]}>      alpha: true
-
-            <boxGeometry args={[0.1 * scale, 0.1 * scale, 0.02 * scale]} />
-
-            <meshStandardMaterial color="#e74c3c" />    });  structure, } from 'lucide-react';
-
-          </mesh>
-
-        )}    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
-
-        {node.support.y && (
-
-          <mesh position={[0, 0.3 * scale, 0]}>    renderer.shadowMap.enabled = true;  analysisResults,
-
-            <boxGeometry args={[0.02 * scale, 0.1 * scale, 0.1 * scale]} />
-
-            <meshStandardMaterial color="#e74c3c" />    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-          </mesh>
-
-        )}    rendererRef.current = renderer;  onElementClick,// Types for enhanced 3D visualization
-
-        {node.support.z && (
-
-          <mesh position={[0, 0, 0.3 * scale]}>
-
-            <boxGeometry args={[0.1 * scale, 0.02 * scale, 0.1 * scale]} />
-
-            <meshStandardMaterial color="#e74c3c" />    // Lighting setup  showStress = false,interface Enhanced3DNode {
-
-          </mesh>
-
-        )}    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-
-      </group>
-
-    );    scene.add(ambientLight);  showDeformation = false  id: string;
-
-  };
-
-
-
-  return (
-
-    <group position={deformedPosition}>    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);}) => {  position: [number, number, number];
-
-      {/* Original position indicator (if deformed) */}
-
-      {showDeformation && node.displacement && (    directionalLight.position.set(100, 100, 50);
-
-        <group position={node.position}>
-
-          <mesh>    directionalLight.castShadow = true;  const mountRef = useRef<HTMLDivElement>(null);  displacement?: [number, number, number];
-
-            <sphereGeometry args={[0.08 * scale, 12, 12]} />
-
-            <meshBasicMaterial color="#bdc3c7" opacity={0.5} transparent />    directionalLight.shadow.mapSize.width = 2048;
-
-          </mesh>
-
-        </group>    directionalLight.shadow.mapSize.height = 2048;  const sceneRef = useRef<THREE.Scene>();  rotation?: [number, number, number];
-
-      )}
-
-          scene.add(directionalLight);
-
-      {/* Main node */}
-
-      <mesh  const rendererRef = useRef<THREE.WebGLRenderer>();  forces?: [number, number, number];
-
-        onClick={handleClick}
-
-        onPointerEnter={() => setHovered(true)}    // Grid helper
-
-        onPointerLeave={() => setHovered(false)}
-
-      >    const gridHelper = new THREE.GridHelper(100, 50);  const cameraRef = useRef<THREE.PerspectiveCamera>();  moments?: [number, number, number];
-
-        <sphereGeometry args={[0.12 * scale, 16, 16]} />
-
-        <meshStandardMaterial     gridHelper.material.opacity = 0.3;
-
-          color={nodeColor}
-
-          metalness={0.3}    gridHelper.material.transparent = true;  const controlsRef = useRef<any>();  support: {
-
-          roughness={0.4}
-
-        />    scene.add(gridHelper);
-
-      </mesh>
-
-  const frameRef = useRef<number>();    x: boolean;
-
-      {/* Support visualization */}
-
-      {renderSupport()}    // Simple mouse controls
-
-
-
-      {/* Node label */}    let mouseDown = false;      y: boolean;
-
-      {showLabels && (
-
-        <Html distanceFactor={10}>    let mouseX = 0;
-
-          <div className="bg-white px-2 py-1 rounded shadow text-xs">
-
-            Node: {node.id}    let mouseY = 0;  const [isWireframe, setIsWireframe] = useState(false);    z: boolean;
-
-            {node.displacement && showDeformation && (
-
-              <div className="text-orange-600">
-
-                Δ: {(Math.sqrt(
-
-                  Math.pow(node.displacement[0], 2) +    const onMouseDown = (event: MouseEvent) => {  const [showGrid, setShowGrid] = useState(true);    rx: boolean;
-
-                  Math.pow(node.displacement[1], 2) +
-
-                  Math.pow(node.displacement[2], 2)      mouseDown = true;
-
-                ) * 1000).toFixed(1)}mm
-
-              </div>      mouseX = event.clientX;  const [cameraMode, setCameraMode] = useState<'perspective' | 'orthographic'>('perspective');    ry: boolean;
+              </div>  Activity,
 
             )}
 
+          </div>  BarChart3,      x: number;import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+
+        </Html>
+
+      )}  Download,
+
+    </group>
+
+  );  Settings      y: number;
+
+};
+
+} from 'lucide-react';
+
+// Enhanced 3D Element Component
+
+const Enhanced3DElementComponent: React.FC<{      z: number;interface Advanced3DViewerProps {import { Canvas, useThree, useFrame } from '@react-three/fiber';
+
+  element: Enhanced3DElement;
+
+  nodes: Enhanced3DNode[];interface Enhanced3DNode {
+
+  scale: number;
+
+  showStress: boolean;  id: string;      type: 'fixed' | 'pinned' | 'free';
+
+  showDeformation: boolean;
+
+  onClick?: () => void;  position: [number, number, number];
+
+}> = ({ element, nodes, scale, showStress, showDeformation, onClick }) => {
+
+  const startNode = nodes.find(n => n.id === element.startNode);  displacement?: [number, number, number];    }>;  structure: {import { 
+
+  const endNode = nodes.find(n => n.id === element.endNode);
+
+    reaction?: [number, number, number];
+
+  if (!startNode || !endNode) return null;
+
+  support: {    elements: Array<{
+
+  const getDeformedPosition = (node: Enhanced3DNode): [number, number, number] => {
+
+    if (!showDeformation || !node.displacement) return [node.x, node.y, node.z];    x: boolean;
+
+    const deformationScale = 100;
+
+    return [    y: boolean;      id: number;    nodes: Array<{  OrbitControls, 
+
+      node.x + (node.displacement[0] * deformationScale),
+
+      node.y + (node.displacement[1] * deformationScale),    z: boolean;
+
+      node.z + (node.displacement[2] * deformationScale)
+
+    ];    rx: boolean;      type: 'column' | 'beam' | 'slab';
+
+  };
+
+    ry: boolean;
+
+  const start = getDeformedPosition(startNode);
+
+  const end = getDeformedPosition(endNode);    rz: boolean;      startNode: number;      id: number;  Text, 
+
+  
+
+  const midpoint: [number, number, number] = [  };
+
+    (start[0] + end[0]) / 2,
+
+    (start[1] + end[1]) / 2,  isSelected?: boolean;      endNode: number;
+
+    (start[2] + end[2]) / 2
+
+  ];}
+
+
+
+  const length = Math.sqrt(      section: string;      x: number;  Html, 
+
+    Math.pow(end[0] - start[0], 2) +
+
+    Math.pow(end[1] - start[1], 2) +interface Enhanced3DElement {
+
+    Math.pow(end[2] - start[2], 2)
+
+  );  id: string;      material: string;
+
+
+
+  const direction = new THREE.Vector3(  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation' | 'pile-cap' | 'pile' | 'pedestal';
+
+    end[0] - start[0],
+
+    end[1] - start[1],  startNode: string;    }>;      y: number;  Environment,
+
+    end[2] - start[2]
+
+  ).normalize();  endNode: string;
+
+
+
+  // Material color based on type and stress  section: {  };
+
+  const getElementColor = () => {
+
+    if (element.isSelected) return '#FF6B6B';    width: number;
+
+    
+
+    if (showStress && element.stress !== undefined) {    height: number;  analysisResults?: {      z: number;  Grid,
+
+      const stressRatio = Math.min(element.stress / 250, 1); // Assuming 250 MPa max
+
+      if (stressRatio > 0.8) return '#E74C3C'; // High stress - Red    thickness?: number;
+
+      if (stressRatio > 0.6) return '#F39C12'; // Medium stress - Orange
+
+      if (stressRatio > 0.4) return '#F1C40F'; // Low-medium stress - Yellow    diameter?: number;    summary: {
+
+      return '#2ECC71'; // Low stress - Green
+
+    }  };
+
+    
+
+    switch (element.material) {  material: 'concrete' | 'steel' | 'composite' | 'concrete-steel';      maxStress: number;      type: 'fixed' | 'pinned' | 'free';  ContactShadows,
+
+      case 'steel': return '#95A5A6';
+
+      case 'concrete': return '#BDC3C7';  forces?: {
+
+      case 'composite': return '#9B59B6';
+
+      case 'concrete-steel': return '#34495E';    axial: number;      maxDrift: number;
+
+      default: return '#7F8C8D';
+
+    }    shearY: number;
+
+  };
+
+    shearZ: number;      baseShear: number;    }>;  PerspectiveCamera,
+
+  const elementColor = getElementColor();
+
+  const elementSize = element.type === 'column' ? 0.15 * scale : 0.1 * scale;    momentY: number;
+
+
+
+  return (    momentZ: number;    };
+
+    <group>
+
+      {/* Main Element */}    torsion: number;
+
+      <Line
+
+        points={[start, end]}  };  };    elements: Array<{  Box,
+
+        color={elementColor}
+
+        lineWidth={element.type === 'column' ? 4 : 2}  utilization?: number;
+
+        onClick={onClick}
+
+      />  isSelected?: boolean;  onElementClick?: (element: any) => void;
+
+      
+
+      {/* Element representation based on type */}}
+
+      <group position={midpoint}>
+
+        {element.type === 'column' && (  showStress?: boolean;      id: number;  Sphere,
+
+          <Box args={[elementSize, length, elementSize]} onClick={onClick}>
+
+            <meshPhongMaterial interface Enhanced3DStructure {
+
+              color={elementColor}
+
+              transparent={true}  nodes: Enhanced3DNode[];  showDeformation?: boolean;
+
+              opacity={0.7}
+
+            />  elements: Enhanced3DElement[];
+
+          </Box>
+
+        )}  boundingBox: {}      type: 'column' | 'beam' | 'slab';  Line
+
+        
+
+        {element.type === 'beam' && (    min: [number, number, number];
+
+          <Box args={[length, elementSize * 0.7, elementSize * 1.2]} onClick={onClick}>
+
+            <meshPhongMaterial     max: [number, number, number];
+
+              color={elementColor}
+
+              transparent={true}  };
+
+              opacity={0.7}
+
+            />  scale: number;export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({       startNode: number;} from '@react-three/drei';
+
+          </Box>
+
+        )}}
+
+        
+
+        {element.type === 'slab' && (  structure, 
+
+          <Box args={[length, elementSize * 0.3, elementSize * 1.5]} onClick={onClick}>
+
+            <meshPhongMaterial interface Advanced3DViewerProps {
+
+              color={elementColor}
+
+              transparent={true}  structure: Enhanced3DStructure | null;  analysisResults,      endNode: number;import * as THREE from 'three';
+
+              opacity={0.5}
+
+            />  analysisResults?: any;
+
+          </Box>
+
+        )}  showDeformation?: boolean;  onElementClick,
+
+      </group>
+
+  deformationScale?: number;
+
+      {/* Stress/Force Indicators */}
+
+      {showStress && element.forces && (  showStress?: boolean;  showStress = false,      section: string;import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+        <Html position={midpoint} distanceFactor={15}>
+
+          <div className="bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">  showForces?: boolean;
+
+            <div>Axial: {element.forces.axial.toFixed(1)} kN</div>
+
+            <div>Moment: {element.forces.momentY.toFixed(1)} kNm</div>  showLabels?: boolean;  showDeformation = false
+
+            {element.utilization && (
+
+              <div className="text-yellow-300">  showSupports?: boolean;
+
+                Util: {(element.utilization * 100).toFixed(1)}%
+
+              </div>  viewMode?: 'solid' | 'wireframe' | 'both';}) => {      material: string;import { Button } from '@/components/ui/button';
+
+            )}
+
+          </div>  colorMode?: 'material' | 'stress' | 'utilization' | 'forces';
+
+        </Html>
+
+      )}  onElementSelect?: (elementId: string) => void;  const mountRef = useRef<HTMLDivElement>(null);
+
+    </group>
+
+  );  onNodeSelect?: (nodeId: string) => void;
+
+};
+
+  className?: string;  const sceneRef = useRef<THREE.Scene>();    }>;import { Badge } from '@/components/ui/badge';
+
+// Main Advanced 3D Viewer Component
+
+const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({}
+
+  structure,
+
+  onElementClick,  const rendererRef = useRef<THREE.WebGLRenderer>();
+
+  showStress = false,
+
+  showDeformation = false// Advanced Node Component with Deformation
+
+}) => {
+
+  const [viewOptions, setViewOptions] = useState({const Advanced3DNode: React.FC<{  const cameraRef = useRef<THREE.PerspectiveCamera>();  };import { Slider } from '@/components/ui/slider';
+
+    showGrid: true,
+
+    showLabels: false,  node: Enhanced3DNode;
+
+    showStress: showStress,
+
+    showDeformation: showDeformation,  scale: number;  const frameRef = useRef<number>();
+
+    wireframe: false,
+
+    showEnvironment: true  showDeformation: boolean;
+
+  });
+
+  deformationScale: number;    analysisResults?: {import { 
+
+  const [selectedElement, setSelectedElement] = useState<number | null>(null);
+
+  const controlsRef = useRef<any>();  showSupports: boolean;
+
+
+
+  // Calculate scale based on structure size  showLabels: boolean;  const [isWireframe, setIsWireframe] = useState(false);
+
+  const scale = useMemo(() => {
+
+    const allNodes = structure.nodes;  onClick: (nodeId: string) => void;
+
+    if (allNodes.length === 0) return 1;
+
+    }> = ({ node, scale, showDeformation, deformationScale, showSupports, showLabels, onClick }) => {  const [showGrid, setShowGrid] = useState(true);    summary: {  RotateCcw, 
+
+    const bounds = allNodes.reduce((acc, node) => ({
+
+      minX: Math.min(acc.minX, node.x),  const [hovered, setHovered] = useState(false);
+
+      maxX: Math.max(acc.maxX, node.x),
+
+      minY: Math.min(acc.minY, node.y),
+
+      maxY: Math.max(acc.maxY, node.y),
+
+      minZ: Math.min(acc.minZ, node.z),  // Calculate deformed position
+
+      maxZ: Math.max(acc.maxZ, node.z)
+
+    }), {  const deformedPosition = useMemo(() => {  useEffect(() => {      maxStress: number;  ZoomIn, 
+
+      minX: Infinity, maxX: -Infinity,
+
+      minY: Infinity, maxY: -Infinity,    if (!showDeformation || !node.displacement) return node.position;
+
+      minZ: Infinity, maxZ: -Infinity
+
+    });    return [    if (!mountRef.current) return;
+
+
+
+    const maxDimension = Math.max(      node.position[0] + node.displacement[0] * deformationScale,
+
+      bounds.maxX - bounds.minX,
+
+      bounds.maxY - bounds.minY,      node.position[1] + node.displacement[1] * deformationScale,      maxDrift: number;  ZoomOut, 
+
+      bounds.maxZ - bounds.minZ
+
+    );      node.position[2] + node.displacement[2] * deformationScale
+
+
+
+    return Math.max(0.5, Math.min(2.0, 20 / maxDimension));    ] as [number, number, number];    // Scene setup
+
+  }, [structure.nodes]);
+
+  }, [node.position, node.displacement, showDeformation, deformationScale]);
+
+  const handleNodeClick = useCallback((node: Enhanced3DNode) => {
+
+    setSelectedElement(node.id);    const scene = new THREE.Scene();      baseShear: number;  Eye, 
+
+    if (onElementClick) {
+
+      onElementClick(node);  const handleClick = useCallback((e: any) => {
+
+    }
+
+  }, [onElementClick]);    e.stopPropagation();    scene.background = new THREE.Color(0xf8fafc);
+
+
+
+  const handleElementClick = useCallback((element: Enhanced3DElement) => {    onClick(node.id);
+
+    setSelectedElement(element.id);
+
+    if (onElementClick) {  }, [node.id, onClick]);    sceneRef.current = scene;    };  EyeOff,
+
+      onElementClick(element);
+
+    }
+
+  }, [onElementClick]);
+
+  const nodeColor = useMemo(() => {
+
+  const resetView = () => {
+
+    if (controlsRef.current) {    if (node.isSelected) return '#e74c3c';
+
+      controlsRef.current.reset();
+
+    }    if (hovered) return '#f39c12';    // Camera setup  };  Grid3X3,
+
+  };
+
+    
+
+  return (
+
+    <div className="w-full h-full bg-gray-50">    // Color by support conditions    const camera = new THREE.PerspectiveCamera(
+
+      {/* Control Panel */}
+
+      <Card className="absolute top-4 left-4 z-10 w-80">    const hasSupport = Object.values(node.support).some(Boolean);
+
+        <CardHeader className="pb-3">
+
+          <CardTitle className="text-lg flex items-center gap-2">    if (hasSupport) return '#2ecc71';      75,  onElementClick?: (element: any) => void;  Lightbulb,
+
+            <Activity className="h-5 w-5" />
+
+            3D Structure Viewer    
+
+          </CardTitle>
+
+        </CardHeader>    return '#3498db';      mountRef.current.clientWidth / mountRef.current.clientHeight,
+
+        <CardContent className="space-y-4">
+
+          {/* View Options */}  }, [node.isSelected, hovered, node.support]);
+
+          <div className="grid grid-cols-2 gap-2">
+
+            <label className="flex items-center space-x-2 text-sm">      0.1,  showStress?: boolean;  Camera,
+
+              <Checkbox 
+
+                checked={viewOptions.showGrid}  // Support visualization
+
+                onCheckedChange={(checked) => 
+
+                  setViewOptions(prev => ({ ...prev, showGrid: !!checked }))  const renderSupport = () => {      1000
+
+                }
+
+              />    if (!showSupports) return null;
+
+              <span>Grid</span>
+
+            </label>        );  showDeformation?: boolean;  BarChart3,
+
+            
+
+            <label className="flex items-center space-x-2 text-sm">    const hasSupport = Object.values(node.support).some(Boolean);
+
+              <Checkbox 
+
+                checked={viewOptions.showLabels}    if (!hasSupport) return null;    camera.position.set(50, 40, 50);
+
+                onCheckedChange={(checked) => 
+
+                  setViewOptions(prev => ({ ...prev, showLabels: !!checked }))
+
+                }
+
+              />    return (    cameraRef.current = camera;}  Activity,
+
+              <span>Labels</span>
+
+            </label>      <group position={[0, -0.3, 0]}>
+
+            
+
+            <label className="flex items-center space-x-2 text-sm">        {/* Support base */}
+
+              <Checkbox 
+
+                checked={viewOptions.showStress}        <mesh>
+
+                onCheckedChange={(checked) => 
+
+                  setViewOptions(prev => ({ ...prev, showStress: !!checked }))          <coneGeometry args={[0.2 * scale, 0.3 * scale, 8]} />    // Renderer setup  Maximize2,
+
+                }
+
+              />          <meshStandardMaterial color="#34495e" />
+
+              <span>Stress</span>
+
+            </label>        </mesh>    const renderer = new THREE.WebGLRenderer({ 
+
+            
+
+            <label className="flex items-center space-x-2 text-sm">        
+
+              <Checkbox 
+
+                checked={viewOptions.showDeformation}        {/* Support symbols */}      antialias: true,export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({   Download
+
+                onCheckedChange={(checked) => 
+
+                  setViewOptions(prev => ({ ...prev, showDeformation: !!checked }))        {node.support.x && (
+
+                }
+
+              />          <mesh position={[0.3 * scale, 0, 0]}>      alpha: true
+
+              <span>Deformation</span>
+
+            </label>            <boxGeometry args={[0.1 * scale, 0.1 * scale, 0.02 * scale]} />
+
+          </div>
+
+            <meshStandardMaterial color="#e74c3c" />    });  structure, } from 'lucide-react';
+
+          {/* Analysis Results Summary */}
+
+          {structure.analysisResults && (          </mesh>
+
+            <div className="space-y-2">
+
+              <h4 className="font-semibold text-sm">Analysis Results</h4>        )}    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+
+              <div className="grid grid-cols-1 gap-1 text-xs">
+
+                <div className="flex justify-between">        {node.support.y && (
+
+                  <span>Max Stress:</span>
+
+                  <Badge variant="outline">          <mesh position={[0, 0.3 * scale, 0]}>    renderer.shadowMap.enabled = true;  analysisResults,
+
+                    {structure.analysisResults.summary.maxStress.toFixed(1)} MPa
+
+                  </Badge>            <boxGeometry args={[0.02 * scale, 0.1 * scale, 0.1 * scale]} />
+
+                </div>
+
+                <div className="flex justify-between">            <meshStandardMaterial color="#e74c3c" />    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+                  <span>Max Drift:</span>
+
+                  <Badge variant="outline">          </mesh>
+
+                    {(structure.analysisResults.summary.maxDrift * 100).toFixed(2)}%
+
+                  </Badge>        )}    rendererRef.current = renderer;  onElementClick,// Types for enhanced 3D visualization
+
+                </div>
+
+                <div className="flex justify-between">        {node.support.z && (
+
+                  <span>Base Shear:</span>
+
+                  <Badge variant="outline">          <mesh position={[0, 0, 0.3 * scale]}>
+
+                    {structure.analysisResults.summary.baseShear.toFixed(0)} kN
+
+                  </Badge>            <boxGeometry args={[0.1 * scale, 0.02 * scale, 0.1 * scale]} />
+
+                </div>
+
+              </div>            <meshStandardMaterial color="#e74c3c" />    // Lighting setup  showStress = false,interface Enhanced3DNode {
+
+            </div>
+
+          )}          </mesh>
+
+
+
+          {/* Controls */}        )}    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+
+          <div className="flex gap-2">
+
+            <Button variant="outline" size="sm" onClick={resetView}>      </group>
+
+              <RotateCcw className="h-4 w-4 mr-1" />
+
+              Reset View    );    scene.add(ambientLight);  showDeformation = false  id: string;
+
+            </Button>
+
+            <Button variant="outline" size="sm">  };
+
+              <Download className="h-4 w-4 mr-1" />
+
+              Export
+
+            </Button>
+
+          </div>  return (
+
+        </CardContent>
+
+      </Card>    <group position={deformedPosition}>    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);}) => {  position: [number, number, number];
+
+
+
+      {/* 3D Canvas */}      {/* Original position indicator (if deformed) */}
+
+      <Canvas
+
+        camera={{ position: [10, 10, 10], fov: 50 }}      {showDeformation && node.displacement && (    directionalLight.position.set(100, 100, 50);
+
+        style={{ width: '100%', height: '100%' }}
+
+      >        <group position={node.position}>
+
+        <PerspectiveCamera makeDefault position={[10, 10, 10]} />
+
+                  <mesh>    directionalLight.castShadow = true;  const mountRef = useRef<HTMLDivElement>(null);  displacement?: [number, number, number];
+
+        {/* Lighting */}
+
+        <ambientLight intensity={0.4} />            <sphereGeometry args={[0.08 * scale, 12, 12]} />
+
+        <directionalLight 
+
+          position={[10, 10, 5]}             <meshBasicMaterial color="#bdc3c7" opacity={0.5} transparent />    directionalLight.shadow.mapSize.width = 2048;
+
+          intensity={0.8} 
+
+          castShadow           </mesh>
+
+          shadow-mapSize-width={2048}
+
+          shadow-mapSize-height={2048}        </group>    directionalLight.shadow.mapSize.height = 2048;  const sceneRef = useRef<THREE.Scene>();  rotation?: [number, number, number];
+
+        />
+
+        <pointLight position={[-10, -10, -5]} intensity={0.3} />      )}
+
+
+
+        {/* Environment */}          scene.add(directionalLight);
+
+        {viewOptions.showEnvironment && (
+
+          <Environment preset="city" background={false} />      {/* Main node */}
+
+        )}
+
+      <mesh  const rendererRef = useRef<THREE.WebGLRenderer>();  forces?: [number, number, number];
+
+        {/* Grid */}
+
+        {viewOptions.showGrid && (        onClick={handleClick}
+
+          <Grid 
+
+            args={[20, 20]}         onPointerEnter={() => setHovered(true)}    // Grid helper
+
+            cellSize={1} 
+
+            cellThickness={0.5}        onPointerLeave={() => setHovered(false)}
+
+            cellColor="#888"
+
+            sectionSize={5}      >    const gridHelper = new THREE.GridHelper(100, 50);  const cameraRef = useRef<THREE.PerspectiveCamera>();  moments?: [number, number, number];
+
+            sectionThickness={1}
+
+            sectionColor="#444"        <sphereGeometry args={[0.12 * scale, 16, 16]} />
+
+          />
+
+        )}        <meshStandardMaterial     gridHelper.material.opacity = 0.3;
+
+
+
+        {/* Structure Nodes */}          color={nodeColor}
+
+        {structure.nodes.map((node) => (
+
+          <Enhanced3DNodeComponent          metalness={0.3}    gridHelper.material.transparent = true;  const controlsRef = useRef<any>();  support: {
+
+            key={node.id}
+
+            node={node}          roughness={0.4}
+
+            scale={scale}
+
+            showLabels={viewOptions.showLabels}        />    scene.add(gridHelper);
+
+            onClick={() => handleNodeClick(node)}
+
+          />      </mesh>
+
+        ))}
+
+  const frameRef = useRef<number>();    x: boolean;
+
+        {/* Structure Elements */}
+
+        {structure.elements.map((element) => (      {/* Support visualization */}
+
+          <Enhanced3DElementComponent
+
+            key={element.id}      {renderSupport()}    // Simple mouse controls
+
+            element={element}
+
+            nodes={structure.nodes}
+
+            scale={scale}
+
+            showStress={viewOptions.showStress}      {/* Node label */}    let mouseDown = false;      y: boolean;
+
+            showDeformation={viewOptions.showDeformation}
+
+            onClick={() => handleElementClick(element)}      {showLabels && (
+
+          />
+
+        ))}        <Html distanceFactor={10}>    let mouseX = 0;
+
+
+
+        {/* Ground Plane */}          <div className="bg-white px-2 py-1 rounded shadow text-xs">
+
+        <ContactShadows 
+
+          position={[0, -0.5, 0]}             Node: {node.id}    let mouseY = 0;  const [isWireframe, setIsWireframe] = useState(false);    z: boolean;
+
+          opacity={0.3} 
+
+          scale={20}             {node.displacement && showDeformation && (
+
+          blur={1.5} 
+
+          far={10}               <div className="text-orange-600">
+
+        />
+
+                Δ: {(Math.sqrt(
+
+        {/* Camera Controls */}
+
+        <OrbitControls                   Math.pow(node.displacement[0], 2) +    const onMouseDown = (event: MouseEvent) => {  const [showGrid, setShowGrid] = useState(true);    rx: boolean;
+
+          ref={controlsRef}
+
+          enablePan={true}                  Math.pow(node.displacement[1], 2) +
+
+          enableZoom={true}
+
+          enableRotate={true}                  Math.pow(node.displacement[2], 2)      mouseDown = true;
+
+          minDistance={5}
+
+          maxDistance={50}                ) * 1000).toFixed(1)}mm
+
+        />
+
+      </Canvas>              </div>      mouseX = event.clientX;  const [cameraMode, setCameraMode] = useState<'perspective' | 'orthographic'>('perspective');    ry: boolean;
+
+    </div>
+
+  );            )}
+
+};
+
           </div>      mouseY = event.clientY;
 
+export default Advanced3DViewer;
         </Html>
 
       )}    };    rz: boolean;
