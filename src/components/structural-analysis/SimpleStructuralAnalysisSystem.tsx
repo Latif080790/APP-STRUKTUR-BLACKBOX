@@ -22,6 +22,7 @@ import {
 import { ResultsDisplay } from './ResultsDisplay';
 import { ReportGenerator } from './ReportGenerator';
 import Simple3DViewer from './3d/Simple3DViewer';
+import AdvancedAnalysisEngine from './AdvancedAnalysisEngine';
 
 // Import Types
 import { 
@@ -355,11 +356,12 @@ export const SimpleStructuralAnalysisSystem = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="input">Input Data</TabsTrigger>
-            <TabsTrigger value="analysis" disabled={isAnalyzing}>Analisis</TabsTrigger>
-            <TabsTrigger value="results" disabled={!analysisResults}>Hasil</TabsTrigger>
+            <TabsTrigger value="analysis" disabled={isAnalyzing}>Advanced Analysis</TabsTrigger>
+            <TabsTrigger value="results" disabled={!analysisResults}>Results</TabsTrigger>
             <TabsTrigger value="visualization">3D View</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
           {/* Input Tab */}
@@ -534,24 +536,19 @@ export const SimpleStructuralAnalysisSystem = () => {
             </FormErrorBoundary>
           </TabsContent>
 
-          {/* Analysis Tab */}
+          {/* Advanced Analysis Tab */}
           <TabsContent value="analysis">
-            <Card>
-              <CardHeader>
-                <CardTitle>Analisis Struktur</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">
-                    Klik tombol di bawah untuk memulai analisis struktur
-                  </p>
-                  <Button onClick={runAnalysis} disabled={isAnalyzing}>
-                    <Activity className="w-4 h-4 mr-2" />
-                    {isAnalyzing ? 'Menganalisis...' : 'Mulai Analisis'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <AdvancedAnalysisEngine
+              geometry={geometry}
+              materials={materials}
+              loads={loads}
+              seismicParams={seismicParams}
+              onAnalysisComplete={(results) => {
+                setAnalysisResults(results);
+                setValidationResult({ isValid: true, errors: [], warnings: [] });
+                setActiveTab('results');
+              }}
+            />
           </TabsContent>
 
           {/* Results Tab */}
@@ -586,7 +583,7 @@ export const SimpleStructuralAnalysisSystem = () => {
                         <div className="mt-4 p-3 bg-green-50 rounded text-sm">
                           <div className="text-green-800 font-semibold">✅ Struktur Valid</div>
                           <div className="text-green-600">
-                            Base Shear: {analysisResults.summary.baseShear.toFixed(2)} kN
+                            Base Shear: {analysisResults.summary ? analysisResults.summary.baseShear.toFixed(2) : 'N/A'} kN
                           </div>
                         </div>
                       )}
@@ -595,6 +592,30 @@ export const SimpleStructuralAnalysisSystem = () => {
                 </CardContent>
               </Card>
             </VisualizationErrorBoundary>
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports">
+            {analysisResults ? (
+              <ReportGenerator 
+                analysisResults={analysisResults}
+                projectInfo={projectInfo}
+                geometry={geometry}
+                materials={materials}
+                loads={loads}
+                seismicParams={seismicParams}
+              />
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <div className="text-gray-500">
+                    <div className="text-4xl mb-4">📊</div>
+                    <h3 className="text-lg font-semibold mb-2">Professional Reports</h3>
+                    <p>Jalankan analisis terlebih dahulu untuk menghasilkan laporan</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
