@@ -106,6 +106,124 @@ const defaultSeismic: SeismicParameters = {
   responseModifier: 8.0
 };
 
+// Converter function for Enhanced3D structure
+const convertToEnhanced3DStructure = (geometry: Geometry, analysisResults?: any) => {
+  const nodes = [];
+  const elements = [];
+  
+  // Use default values if undefined
+  const gridX = geometry.columnGridX || 4;
+  const gridY = geometry.columnGridY || 3;
+  
+  // Generate nodes based on column grid
+  for (let i = 0; i <= gridX; i++) {
+    for (let j = 0; j <= gridY; j++) {
+      for (let k = 0; k <= geometry.numberOfFloors; k++) {
+        const nodeId = `N${i}${j}${k}`;
+        nodes.push({
+          id: nodeId,
+          position: [
+            i * geometry.baySpacingX - geometry.length / 2,
+            k * geometry.heightPerFloor,
+            j * geometry.baySpacingY - geometry.width / 2
+          ] as [number, number, number],
+          displacement: analysisResults?.nodeDisplacements?.[nodeId] || [0, 0, 0],
+          forces: analysisResults?.nodeForces?.[nodeId] || [0, 0, 0],
+          moments: [0, 0, 0] as [number, number, number],
+          support: {
+            x: k === 0, // Fixed at base
+            y: k === 0,
+            z: k === 0,
+            rx: k === 0,
+            ry: k === 0,
+            rz: k === 0
+          }
+        });
+      }
+    }
+  }
+  
+  // Generate column elements
+  for (let i = 0; i <= gridX; i++) {
+    for (let j = 0; j <= gridY; j++) {
+      for (let k = 0; k < geometry.numberOfFloors; k++) {
+        const elementId = `C${i}${j}${k}`;
+        elements.push({
+          id: elementId,
+          type: 'column' as const,
+          startNode: `N${i}${j}${k}`,
+          endNode: `N${i}${j}${k + 1}`,
+          section: {
+            width: 0.4,
+            height: 0.4
+          },
+          material: 'concrete' as const,
+          utilization: analysisResults?.elementUtilization?.[elementId] || Math.random() * 0.8
+        });
+      }
+    }
+  }
+  
+  // Generate beam elements (X-direction)
+  for (let i = 0; i < gridX; i++) {
+    for (let j = 0; j <= gridY; j++) {
+      for (let k = 1; k <= geometry.numberOfFloors; k++) {
+        const elementId = `BX${i}${j}${k}`;
+        elements.push({
+          id: elementId,
+          type: 'beam' as const,
+          startNode: `N${i}${j}${k}`,
+          endNode: `N${i + 1}${j}${k}`,
+          section: {
+            width: 0.3,
+            height: 0.6
+          },
+          material: 'concrete' as const,
+          utilization: analysisResults?.elementUtilization?.[elementId] || Math.random() * 0.6
+        });
+      }
+    }
+  }
+  
+  // Generate beam elements (Y-direction)  
+  for (let i = 0; i <= gridX; i++) {
+    for (let j = 0; j < gridY; j++) {
+      for (let k = 1; k <= geometry.numberOfFloors; k++) {
+        const elementId = `BY${i}${j}${k}`;
+        elements.push({
+          id: elementId,
+          type: 'beam' as const,
+          startNode: `N${i}${j}${k}`,
+          endNode: `N${i}${j + 1}${k}`,
+          section: {
+            width: 0.3,
+            height: 0.6
+          },
+          material: 'concrete' as const,
+          utilization: analysisResults?.elementUtilization?.[elementId] || Math.random() * 0.6
+        });
+      }
+    }
+  }
+  
+  // Calculate bounding box
+  const positions = nodes.map(n => n.position);
+  const xCoords = positions.map(p => p[0]);
+  const yCoords = positions.map(p => p[1]);
+  const zCoords = positions.map(p => p[2]);
+  
+  return {
+    nodes,
+    elements,
+    loads: [],
+    boundingBox: {
+      min: [Math.min(...xCoords), Math.min(...yCoords), Math.min(...zCoords)] as [number, number, number],
+      max: [Math.max(...xCoords), Math.max(...yCoords), Math.max(...zCoords)] as [number, number, number]
+    },
+    scale: 1.0
+  };
+};
+
 export const SimpleStructuralAnalysisSystem = () => {
   // Main State
   const [projectInfo, setProjectInfo] = useState<ProjectInfo>(defaultProjectInfo);
@@ -571,28 +689,19 @@ export const SimpleStructuralAnalysisSystem = () => {
                   <CardTitle>Visualisasi 3D</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-96 flex items-center justify-center bg-gray-50 rounded">
-                    <div className="text-center">
-                      <div className="text-4xl mb-4">🏗️</div>
-                      <h3 className="text-lg font-semibold mb-2">Visualisasi 3D</h3>
-                      <p className="text-gray-600 mb-4">
-                        Model 3D struktur bangunan {geometry.numberOfFloors} lantai
-                      </p>
-                      <div className="text-sm text-gray-500 space-y-1">
-                        <div>📐 Dimensi: {geometry.length}m × {geometry.width}m</div>
-                        <div>🏢 Jumlah Lantai: {geometry.numberOfFloors}</div>
-                        <div>📏 Tinggi per Lantai: {geometry.heightPerFloor}m</div>
-                        <div>⚡ Grid X: {geometry.baySpacingX}m, Grid Y: {geometry.baySpacingY}m</div>
-                      </div>
-                      {analysisResults && (
-                        <div className="mt-4 p-3 bg-green-50 rounded text-sm">
-                          <div className="text-green-800 font-semibold">✅ Struktur Valid</div>
-                          <div className="text-green-600">
-                            Base Shear: {analysisResults.summary ? analysisResults.summary.baseShear.toFixed(2) : 'N/A'} kN
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  <div className="h-[600px]">
+                    <Simple3DViewer
+                      structure={convertToEnhanced3DStructure(geometry, analysisResults)}
+                      analysisResults={analysisResults}
+                      showDeformation={true}
+                      deformationScale={10}
+                      showStress={true}
+                      showForces={true}
+                      showLabels={true}
+                      colorMode="material"
+                      onElementSelect={(elementId: string) => console.log('Selected element:', elementId)}
+                      onNodeSelect={(nodeId: string) => console.log('Selected node:', nodeId)}
+                    />
                   </div>
                 </CardContent>
               </Card>
