@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import SimpleTestSystem from './components/SimpleTestSystem'
-import './index-simple.css'
+import SimpleStructuralAnalysisSystem from './components/structural-analysis/SimpleStructuralAnalysisSystem'
+import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <SimpleTestSystem />
+    <SimpleStructuralAnalysisSystem />
   </StrictMode>,
 )
