@@ -32,6 +32,12 @@ import {
 // Import 3D Viewer
 import Structure3DViewer from './3d/Structure3DViewer';
 
+// Import Analysis Modules
+import StaticAnalysisEngine, { StaticAnalysisInput } from './analysis/StaticAnalysisEngine';
+import DynamicAnalysisEngine, { DynamicAnalysisInput } from './analysis/DynamicAnalysisEngine';
+import AnalysisResultsManager, { CombinedAnalysisResults, AnalysisMetadata } from './analysis/AnalysisResultsManager';
+import AnalysisVisualization from './analysis/AnalysisVisualization';
+
 // Type definitions
 interface ProjectInfo {
   name: string;
@@ -160,7 +166,9 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
   });
 
   const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
+  const [combinedResults, setCombinedResults] = useState<CombinedAnalysisResults | null>(null);
   const [validationErrors, setValidationErrors] = useState<any[]>([]);
+  const [showDetailedCharts, setShowDetailedCharts] = useState(false);
 
   // Working SimpleSelect component
   const SimpleSelect: React.FC<{
@@ -207,7 +215,7 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
     return { status: 'success', message: 'All inputs valid', color: 'success' };
   }, [geometry, loads, materialProperties]);
 
-  // Advanced calculations
+  // Advanced calculations with integrated analysis engines
   const performAdvancedAnalysis = async () => {
     if (validationStatus.status === 'error') {
       alert('Please fix all errors before running analysis');
@@ -218,55 +226,169 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
     setCalculationProgress(0);
 
     try {
-      // Simulate calculation progress
-      for (let i = 0; i <= 100; i += 10) {
-        setCalculationProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
+      // Create analysis metadata
+      const metadata: AnalysisMetadata = {
+        projectName: projectInfo.name,
+        analysisDate: new Date(),
+        engineerName: projectInfo.engineer,
+        analysisType: 'combined',
+        codeReferences: ['SNI 1726:2019', 'SNI 1727:2020', 'SNI 2847:2019'],
+        analysisMethod: 'Response Spectrum Analysis',
+        softwareVersion: '1.0.0',
+        computationTime: 0
+      };
 
-      // Perform comprehensive calculations
+      const resultsManager = new AnalysisResultsManager(metadata);
+      const startTime = Date.now();
+
+      // Progress: 0-20% - Prepare input data
+      setCalculationProgress(10);
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Prepare static analysis input
+      const staticInput: StaticAnalysisInput = {
+        geometry: {
+          length: geometry.length,
+          width: geometry.width,
+          height: geometry.numberOfFloors * geometry.heightPerFloor,
+          numberOfFloors: geometry.numberOfFloors,
+          baySpacingX: geometry.baySpacingX,
+          baySpacingY: geometry.baySpacingY,
+          irregularity: geometry.irregularity
+        },
+        materials: {
+          fc: materialProperties.fc,
+          fy: materialProperties.fy,
+          Es: materialProperties.Es,
+          concreteType: materialProperties.concreteType
+        },
+        loads: {
+          deadLoad: loads.deadLoad,
+          liveLoad: loads.liveLoad,
+          windSpeed: loads.windSpeed,
+          roofLoad: loads.roofLoad,
+          rainLoad: loads.rainLoad
+        },
+        buildingData: {
+          buildingType: projectInfo.buildingType,
+          riskCategory: projectInfo.riskCategory,
+          latitude: projectInfo.latitude,
+          longitude: projectInfo.longitude
+        },
+        soilData: {
+          siteClass: soilData.siteClass,
+          cu: soilData.cu,
+          phi: soilData.phi,
+          gamma: soilData.gamma
+        }
+      };
+
+      // Progress: 20-50% - Static analysis
+      setCalculationProgress(25);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const staticEngine = new StaticAnalysisEngine(staticInput);
+      const staticResults = staticEngine.performAnalysis();
+      resultsManager.addStaticAnalysis(staticResults);
+
+      setCalculationProgress(50);
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      // Prepare dynamic analysis input
+      const totalMass = geometry.length * geometry.width * geometry.numberOfFloors * 2.5; // Approximate mass
+      const floorMass = Array(geometry.numberOfFloors).fill(totalMass / geometry.numberOfFloors);
+      
+      const dynamicInput: DynamicAnalysisInput = {
+        geometry: staticInput.geometry,
+        materials: {
+          fc: materialProperties.fc,
+          fy: materialProperties.fy,
+          Es: materialProperties.Es,
+          Ec: 4700 * Math.sqrt(materialProperties.fc) // MPa
+        },
+        masses: {
+          floorMass,
+          totalMass,
+          centerOfMass: Array(geometry.numberOfFloors).fill({ 
+            x: geometry.length / 2, 
+            y: geometry.width / 2 
+          })
+        },
+        stiffness: {
+          lateral: 1e6, // Simplified
+          torsional: 1e8,
+          vertical: 1e9
+        },
+        damping: {
+          ratio: 0.05,
+          type: 'rayleigh' as const
+        },
+        seismicParameters: {
+          siteClass: soilData.siteClass as any,
+          latitude: projectInfo.latitude,
+          longitude: projectInfo.longitude,
+          riskCategory: projectInfo.riskCategory as any,
+          ss: 1.0, // Will be calculated in engine
+          s1: 0.4,
+          fa: 1.2,
+          fv: 1.5
+        }
+      };
+
+      // Progress: 50-85% - Dynamic analysis
+      setCalculationProgress(60);
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const dynamicEngine = new DynamicAnalysisEngine(dynamicInput);
+      const dynamicResults = dynamicEngine.performDynamicAnalysis();
+      resultsManager.addDynamicAnalysis(dynamicResults);
+
+      setCalculationProgress(80);
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      // Progress: 85-95% - Generate recommendations
+      resultsManager.generateRecommendations();
+      
+      setCalculationProgress(95);
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Completion
+      const endTime = Date.now();
+      metadata.computationTime = endTime - startTime;
+
+      const combinedResults = resultsManager.getResults();
+      setCombinedResults(combinedResults);
+
+      setCalculationProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Legacy results for backward compatibility
       const totalArea = geometry.length * geometry.width;
       const totalVolume = totalArea * geometry.heightPerFloor * geometry.numberOfFloors;
       const totalHeight = geometry.heightPerFloor * geometry.numberOfFloors;
       const totalLoad = totalVolume * 25 + totalArea * geometry.numberOfFloors * (loads.deadLoad + loads.liveLoad);
 
       // Cost estimation with current Indonesian prices
-      const concreteVolume = totalVolume * 0.15; // Rough estimate
-      const steelWeight = concreteVolume * 120; // kg
+      const concreteVolume = totalVolume * 0.15;
+      const steelWeight = concreteVolume * 120;
       const formworkArea = totalArea * geometry.numberOfFloors * 6;
 
-      const concreteCost = concreteVolume * 1050000; // K-350 price
+      const concreteCost = concreteVolume * 1050000;
       const steelCost = steelWeight * 14500;
       const formworkCost = formworkArea * 85000;
       const totalCost = concreteCost + steelCost + formworkCost;
 
-      // Safety rating
-      const getSafetyRating = (): 'Excellent' | 'Good' | 'Adequate' | 'Needs Review' | 'Unsafe' => {
-        const errorCount = validationErrors.filter(e => e.severity === 'error').length;
-        const warningCount = validationErrors.filter(e => e.severity === 'warning').length;
-        
-        if (errorCount > 0) return 'Unsafe';
-        if (warningCount > 3) return 'Needs Review';
-        if (warningCount > 1) return 'Adequate';
-        if (warningCount === 1) return 'Good';
-        return 'Excellent';
-      };
-
-      // Foundation type based on soil conditions
-      const avgSPT = soilData.nspt.reduce((sum, val) => sum + val, 0) / soilData.nspt.length;
-      const foundationType = avgSPT > 15 ? 'shallow_foundation' : 'deep_foundation';
-
-      const results: AnalysisResults = {
-        isValid: validationStatus.status !== 'error',
+      const legacyResults: AnalysisResults = {
+        isValid: combinedResults.validation.isValid,
         summary: {
           totalArea,
           totalVolume,
           totalHeight,
           totalLoad: Math.round(totalLoad),
-          foundationType: foundationType === 'shallow_foundation' ? 'Mat Foundation' : 'Bored Pile',
-          seismicCategory: 'C', // Simplified
+          foundationType: staticResults.utilization.maxUtilization > 0.8 ? 'Deep Foundation' : 'Shallow Foundation',
+          seismicCategory: dynamicResults.seismicCategory.sdc,
           buildingWeight: Math.round(totalVolume * 25),
-          safetyRating: getSafetyRating()
+          safetyRating: combinedResults.performanceSummary.overallRating as any
         },
         cost: {
           concrete: Math.round(concreteCost),
@@ -277,7 +399,7 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
         }
       };
 
-      setAnalysisResults(results);
+      setAnalysisResults(legacyResults);
       setActiveTab('results');
 
     } catch (error) {
@@ -1012,6 +1134,73 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
                 </Card>
               </div>
               
+              {/* Advanced Analysis Results */}
+              {combinedResults && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold">Advanced Analysis Results</h3>
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={() => setShowDetailedCharts(!showDetailedCharts)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        {showDetailedCharts ? 'Hide' : 'Show'} Details
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Analysis Visualization Component */}
+                  <AnalysisVisualization 
+                    results={combinedResults} 
+                    showDetailedCharts={showDetailedCharts}
+                  />
+                  
+                  {/* Design Recommendations */}
+                  {combinedResults.designRecommendations.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Target className="h-5 w-5" />
+                          <span>Design Recommendations</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {combinedResults.designRecommendations.map((rec, index) => (
+                            <div key={index} className="p-4 border border-gray-200 rounded-lg">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <Badge variant={
+                                      rec.priority === 'critical' ? 'destructive' : 
+                                      rec.priority === 'high' ? 'default' : 'secondary'
+                                    }>
+                                      {rec.priority}
+                                    </Badge>
+                                    <Badge variant="outline">
+                                      {rec.category}
+                                    </Badge>
+                                  </div>
+                                  <h4 className="font-semibold text-sm mb-1">{rec.description}</h4>
+                                  <p className="text-xs text-gray-600 mb-2">{rec.technicalBasis}</p>
+                                  {rec.estimatedCostImpact && (
+                                    <p className="text-xs text-blue-600 font-medium">
+                                      Estimated Impact: Rp {(rec.estimatedCostImpact / 1000000).toFixed(1)}M
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+              
               {/* Cost Estimation */}
               <Card>
                 <CardHeader>
@@ -1067,10 +1256,10 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
               <CardContent className="text-center py-12">
                 <Calculator className="h-16 w-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  Ready for Analysis
+                  Ready for Advanced Analysis
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  Complete all input tabs and run structural analysis
+                  Complete all input tabs and run comprehensive static & dynamic analysis
                 </p>
                 <Button 
                   onClick={performAdvancedAnalysis}
@@ -1093,7 +1282,7 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center space-y-4">
               <div className="animate-spin h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-              <h3 className="text-lg font-semibold">Running Structural Analysis</h3>
+              <h3 className="text-lg font-semibold">Running Advanced Structural Analysis</h3>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div 
                   className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
@@ -1101,10 +1290,10 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
                 ></div>
               </div>
               <p className="text-sm text-gray-500">
-                {calculationProgress < 30 && "Validating inputs..."}
-                {calculationProgress >= 30 && calculationProgress < 60 && "Performing structural calculations..."}
-                {calculationProgress >= 60 && calculationProgress < 90 && "Analyzing seismic parameters..."}
-                {calculationProgress >= 90 && "Generating results..."}
+                {calculationProgress < 20 && "Preparing input data and validating..."}
+                {calculationProgress >= 20 && calculationProgress < 50 && "Performing static analysis..."}
+                {calculationProgress >= 50 && calculationProgress < 85 && "Running dynamic analysis and seismic calculations..."}
+                {calculationProgress >= 85 && "Generating recommendations and finalizing results..."}
               </p>
             </div>
           </div>
