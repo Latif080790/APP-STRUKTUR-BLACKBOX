@@ -67,7 +67,7 @@ export const selectFoundationType = (
           depth: Math.max(1.5, buildingHeight * 0.1), // m
           width: Math.sqrt(totalLoad / (avgSPT * 10)), // Rough sizing
           length: Math.sqrt(totalLoad / (avgSPT * 10)),
-          bearingCapacity: calculateBearingCapacityDetailed(soilData, avgSPT),
+          bearingCapacity: calculateBearingCapacity(soilData, avgSPT),
           settlement: calculateSettlement(soilData, totalLoad, avgSPT)
         }
       };
@@ -92,7 +92,7 @@ export const selectFoundationType = (
         depth: Math.max(1.2, buildingHeight * 0.08),
         width: Math.sqrt(totalLoad / (avgSPT * 15)),
         length: Math.sqrt(totalLoad / (avgSPT * 15)),
-        bearingCapacity: calculateBearingCapacityDetailed(soilData, avgSPT),
+        bearingCapacity: calculateBearingCapacity(soilData, avgSPT),
         settlement: calculateSettlement(soilData, totalLoad, avgSPT)
       }
     };
@@ -208,7 +208,7 @@ const calculatePileCapacity = (
 };
 
 // BEARING CAPACITY - Terzaghi/Meyerhof Method
-const calculateBearingCapacityDetailed = (
+const calculateBearingCapacity = (
   soilData: SoilData,
   avgSPT: number
 ): { ultimate: number; allowable: number; safetyFactor: 2.5 | 3.0 | 3.5 } => {
@@ -430,7 +430,7 @@ export const performBasicCalculations = (
   
   // Determine foundation recommendation based on corrected logic
   const avgSPT = soilData.nspt.reduce((sum: number, value: number) => sum + value, 0) / soilData.nspt.length;
-  const foundationRecommendation = selectFoundationType(soilData, totalLoad, 'C', totalHeight);
+  const foundationRecommendation = selectFoundationType(totalLoad, totalLoad, 'C', totalHeight);
   
   return {
     totalArea,
@@ -440,7 +440,7 @@ export const performBasicCalculations = (
     avgSPT: Math.round(avgSPT * 10) / 10,
     foundationRecommendation,
     // Legacy compatibility
-    bearingCapacity: calculateBearingCapacityDetailed(soilData, avgSPT),
+    calculateBearingCapacity: () => calculateBearingCapacity(soilData, avgSPT),
   };
 };
 
@@ -455,10 +455,10 @@ export const getLoadCombinations = (): LoadCombination[] => {
   ];
 };
 
-// Legacy functions for compatibility - simplified interface
+// Legacy functions for compatibility
 export const calculateBearingCapacity = (soilData: SoilData): number => {
   const avgSPT = soilData.nspt.reduce((sum: number, value: number) => sum + value, 0) / soilData.nspt.length;
-  const result = calculateBearingCapacityDetailed(soilData, avgSPT);
+  const result = calculateBearingCapacity(soilData, avgSPT);
   return result.allowable;
 };
 
@@ -512,4 +512,75 @@ export const calculateSlab = (geometry: Geometry, loads: Loads) => {
     type: isTwoWay ? 'Two-way' : 'One-way',
     reinforcementRatio: isTwoWay ? 0.0018 : 0.002
   };
+};
+
+export const getLoadCombinations = (): LoadCombination[] => {
+  return [
+    { id: 'U1', name: 'Dead only', formula: '1.4D', dead: 1.4, live: 0, wind: 0, earthquake: 0, roof: 0, rain: 0 },
+    { id: 'U2', name: 'Dead + Live', formula: '1.2D + 1.6L + 0.5Lr', dead: 1.2, live: 1.6, wind: 0, earthquake: 0, roof: 0.5, rain: 0 },
+    { id: 'U3', name: 'Dead + Wind', formula: '1.2D + 1.0W + L + 0.5Lr', dead: 1.2, live: 1.0, wind: 1.0, earthquake: 0, roof: 0.5, rain: 0 },
+    { id: 'U4', name: 'Dead + Seismic', formula: '1.2D + 1.0E + L', dead: 1.2, live: 1.0, wind: 0, earthquake: 1.0, roof: 0, rain: 0 },
+    { id: 'U5', name: 'Reduced Dead + Wind', formula: '0.9D + 1.0W', dead: 0.9, live: 0, wind: 1.0, earthquake: 0, roof: 0, rain: 0 },
+    { id: 'U6', name: 'Reduced Dead + Seismic', formula: '0.9D + 1.0E', dead: 0.9, live: 0, wind: 0, earthquake: 1.0, roof: 0, rain: 0 }
+  ];
+};
+
+export const calculateBearingCapacity = (soilData: SoilData): number => {
+    const c = soilData.cu; // kPa
+    const phi = soilData.phi * Math.PI / 180; // Convert to radians
+    const gamma = soilData.gamma; // kN/m³
+    const B = 2; // Assumed foundation width (m)
+    const Df = 1.5; // Foundation depth (m)
+    
+    let Nq: number, Nc: number, Ngamma: number;
+    if (Math.abs(phi) < 1e-6) {
+        // For phi ≈ 0°, typical values
+        Nq = 1;
+        Nc = 5.7;
+        Ngamma = 0;
+    } else {
+        const tanPhi = Math.tan(phi);
+        const term = Math.tan(Math.PI / 4 + phi / 2);
+        Nq = Math.exp(Math.PI * tanPhi) * Math.pow(term, 2);
+        Nc = (Nq - 1) / tanPhi;
+        Ngamma = 2 * (Nq + 1) * tanPhi;
+    }
+    
+    const qu = c * Nc + gamma * Df * Nq + 0.5 * gamma * B * Ngamma;
+    const SF = 3;
+    const qa = qu / SF;
+    
+    return qa;
+};
+
+export const calculateColumn = (floor: number, geometry: Geometry, loads: Loads, materials: MaterialProperties) => {
+    // Simplified logic
+    const tributaryArea = (geometry.baySpacingX * geometry.baySpacingY);
+    const gf = 9.81 / 1000; // kN per kg
+    const deadLoad = (loads.deadLoad + loads.partitionLoad) * gf; // kN/m²
+    const liveLoad = loads.liveLoad * gf; // kN/m²
+    const Pu = (1.2 * deadLoad + 1.6 * liveLoad) * tributaryArea * (geometry.numberOfFloors - floor + 1); // kN
+    const Ag = Pu * 1000 / (0.65 * 0.8 * (0.85 * materials.fc * 0.99 + materials.fy * 0.01));
+    const side = Math.sqrt(Ag);
+    return { dimension: Math.ceil(side / 50) * 50, demand: Pu };
+};
+
+export const calculateBeam = (type: 'main' | 'secondary', geometry: Geometry, loads: Loads) => {
+    const span = type === 'main' ? geometry.baySpacingX : geometry.baySpacingY;
+    const tributaryWidth = type === 'main' ? geometry.baySpacingY / 2 : geometry.baySpacingX / 2;
+    const gf = 9.81 / 1000; // kN per kg
+    const deadLoad = (loads.deadLoad + loads.partitionLoad) * gf; // kN/m²
+    const liveLoad = loads.liveLoad * gf; // kN/m²
+    const wu = (1.2 * deadLoad + 1.6 * liveLoad) * tributaryWidth; // kN/m
+    const Mu = wu * span * span / 8; // kNm
+    return { moment: Mu };
+};
+
+export const calculateSlab = (geometry: Geometry, loads: Loads) => {
+    const Lx = Math.min(geometry.baySpacingX, geometry.baySpacingY);
+    const Ly = Math.max(geometry.baySpacingX, geometry.baySpacingY);
+    const ratio = Ly / Lx;
+    const isTwoWay = ratio <= 2;
+    const hMin = isTwoWay ? Lx * 1000 / 30 : Lx * 1000 / 24;
+    return { thickness: Math.max(hMin, 120), type: isTwoWay ? 'Two-way' : 'One-way' };
 };

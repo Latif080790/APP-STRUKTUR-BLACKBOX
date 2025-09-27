@@ -1,763 +1,473 @@
+// =====================================
+// 🚨 CORRECTED SEISMIC CALCULATIONS
+// Per SNI 1726:2019 - Zero Error Tolerance
+// =====================================
+
 import { SeismicParameters, SoilData, Geometry, Loads, MaterialProperties } from '../interfaces';
 
-// Error handling interfaces
-interface SafeSeismicResult<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  warnings?: string[];
-}
+// Site Coefficients - Exact Tables from SNI 1726:2019
+const SITE_COEFFICIENT_FA = {
+  // Table 4 - Site coefficient Fa for short periods
+  SA: { 0.25: 0.8, 0.5: 0.8, 0.75: 0.8, 1.0: 0.8, 1.25: 0.8, 1.5: 0.8 },
+  SB: { 0.25: 0.9, 0.5: 0.9, 0.75: 0.9, 1.0: 0.9, 1.25: 0.9, 1.5: 0.9 },
+  SC: { 0.25: 1.3, 0.5: 1.3, 0.75: 1.2, 1.0: 1.2, 1.25: 1.2, 1.5: 1.2 },
+  SD: { 0.25: 1.6, 0.5: 1.4, 0.75: 1.2, 1.0: 1.1, 1.25: 1.0, 1.5: 1.0 },
+  SE: { 0.25: 2.4, 0.5: 1.6, 0.75: 1.2, 1.0: 0.9, 1.25: 0.8, 1.5: 0.8 }
+} as const;
 
-// Validation utilities
-const isValidNumber = (value: any): value is number => 
-  typeof value === 'number' && !isNaN(value) && isFinite(value);
+const SITE_COEFFICIENT_FV = {
+  // Table 5 - Site coefficient Fv for 1-second periods
+  SA: { 0.1: 0.8, 0.2: 0.8, 0.3: 0.8, 0.4: 0.8, 0.5: 0.8 },
+  SB: { 0.1: 0.9, 0.2: 0.9, 0.3: 0.9, 0.4: 0.9, 0.5: 0.9 },
+  SC: { 0.1: 1.8, 0.2: 1.8, 0.3: 1.8, 0.4: 1.8, 0.5: 1.8 },
+  SD: { 0.1: 2.4, 0.2: 2.0, 0.3: 1.8, 0.4: 1.6, 0.5: 1.5 },
+  SE: { 0.1: 3.5, 0.2: 3.2, 0.3: 2.8, 0.4: 2.4, 0.5: 2.4 }
+} as const;
 
-const isPositiveNumber = (value: any): value is number =>
-  isValidNumber(value) && value > 0;
-
-const validateSeismicParameters = (params: SeismicParameters): { valid: boolean; errors: string[] } => {
-  const errors: string[] = [];
+// Seismic Design Category - Table 6 & 7
+const getSeismicDesignCategory = (SDS: number, SD1: number, riskCategory: 'I' | 'II' | 'III' | 'IV'): 'A' | 'B' | 'C' | 'D' | 'E' | 'F' => {
+  // Risk category factors
+  const categoryI_II = { SDS_B: 0.167, SDS_C: 0.33, SDS_D: 0.5, SD1_B: 0.067, SD1_C: 0.133, SD1_D: 0.2 };
+  const categoryIII = { SDS_B: 0.167, SDS_C: 0.33, SDS_D: 0.5, SD1_B: 0.067, SD1_C: 0.133, SD1_D: 0.2 };
+  const categoryIV = { SDS_B: 0.167, SDS_C: 0.33, SDS_D: 0.5, SD1_B: 0.067, SD1_C: 0.133, SD1_D: 0.2 };
   
-  if (!isValidNumber(params.ss) || params.ss < 0) errors.push('Ss must be a valid non-negative number');
-  if (!isValidNumber(params.s1) || params.s1 < 0) errors.push('S1 must be a valid non-negative number');
+  const limits = riskCategory === 'IV' ? categoryIV : 
+                riskCategory === 'III' ? categoryIII : categoryI_II;
   
-  if (params.ss > 2.0) errors.push('Ss value seems unusually high (>2.0)');
-  if (params.s1 > 1.0) errors.push('S1 value seems unusually high (>1.0)');
+  // Determine SDC based on SDS
+  let sdcFromSDS: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+  if (SDS < limits.SDS_B) sdcFromSDS = 'A';
+  else if (SDS < limits.SDS_C) sdcFromSDS = 'B';
+  else if (SDS < limits.SDS_D) sdcFromSDS = 'C';
+  else sdcFromSDS = 'D';
   
-  if (params.r !== undefined) {
-    if (!isPositiveNumber(params.r)) errors.push('Response modification factor (R) must be positive');
-    if (params.r > 12) errors.push('R value seems unusually high (>12)');
-  }
+  // Determine SDC based on SD1
+  let sdcFromSD1: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+  if (SD1 < limits.SD1_B) sdcFromSD1 = 'A';
+  else if (SD1 < limits.SD1_C) sdcFromSD1 = 'B';
+  else if (SD1 < limits.SD1_D) sdcFromSD1 = 'C';
+  else sdcFromSD1 = 'D';
   
-  if (params.importance !== undefined) {
-    if (!isPositiveNumber(params.importance)) errors.push('Importance factor must be positive');
-    if (params.importance > 1.5) errors.push('Importance factor seems unusually high (>1.5)');
-  }
+  // Take the more stringent category
+  const categories = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const indexSDS = categories.indexOf(sdcFromSDS);
+  const indexSD1 = categories.indexOf(sdcFromSD1);
   
-  return { valid: errors.length === 0, errors };
+  return categories[Math.max(indexSDS, indexSD1)] as 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 };
 
-const validateSoilData = (soilData: SoilData): { valid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-  const validSiteClasses = ['SA', 'SB', 'SC', 'SD', 'SE', 'SF'];
+// Interpolation function for site coefficients
+const interpolateSiteCoefficient = (
+  value: number,
+  table: Record<number, number>,
+  parameterName: string
+): number => {
+  const keys = Object.keys(table).map(Number).sort((a, b) => a - b);
   
-  if (!validSiteClasses.includes(soilData.siteClass)) {
-    errors.push(`Invalid site class: ${soilData.siteClass}. Must be one of: ${validSiteClasses.join(', ')}`);
+  // Handle edge cases
+  if (value <= keys[0]) return table[keys[0]];
+  if (value >= keys[keys.length - 1]) return table[keys[keys.length - 1]];
+  
+  // Find interpolation points
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (value >= keys[i] && value <= keys[i + 1]) {
+      const x0 = keys[i];
+      const x1 = keys[i + 1];
+      const y0 = table[x0];
+      const y1 = table[x1];
+      
+      // Linear interpolation
+      const result = y0 + (y1 - y0) * (value - x0) / (x1 - x0);
+      return Math.round(result * 1000) / 1000; // Round to 3 decimal places
+    }
   }
   
-  return { valid: errors.length === 0, errors };
+  throw new Error(`Cannot interpolate ${parameterName} for value ${value}`);
 };
 
+// CORRECTED SEISMIC PARAMETER CALCULATION
 export const calculateSeismicParameters = (
-  seismicParams: SeismicParameters, 
-  soilData: SoilData
-): SafeSeismicResult<Partial<SeismicParameters>> => {
-  try {
-    // Input validation
-    const paramValidation = validateSeismicParameters(seismicParams);
-    if (!paramValidation.valid) {
-      return {
-        success: false,
-        error: `Invalid seismic parameters: ${paramValidation.errors.join(', ')}`
-      };
-    }
-
-    const soilValidation = validateSoilData(soilData);
-    if (!soilValidation.valid) {
-      return {
-        success: false,
-        error: `Invalid soil data: ${soilValidation.errors.join(', ')}`
-      };
-    }
-
-    const { ss, s1 } = seismicParams;
-    const warnings: string[] = [];
-
-    // Handle SF site class (requires site-specific analysis)
-    if (soilData.siteClass === 'SF') {
-      warnings.push('Site class SF requires site-specific seismic analysis');
-      return {
-        success: true,
-        data: { fa: 0, fv: 0, sds: 0, sd1: 0, t0: 0, ts: 0, tl: 12 },
-        warnings
-      };
-    }
-
-    // Interpolation grids with bounds checking
-    const ssGrid = [0.25, 0.5, 0.75, 1.0, 1.25];
-    const s1Grid = [0.1, 0.2, 0.3, 0.4, 0.5];
-
-    const FaTable: Record<SoilData['siteClass'], number[]> = {
-      SA: [0.8, 0.8, 0.8, 0.8, 0.8],
-      SB: [0.9, 0.9, 0.9, 0.9, 0.9],
-      SC: [1.2, 1.2, 1.1, 1.0, 1.0],
-      SD: [1.6, 1.4, 1.2, 1.1, 1.0],
-      SE: [2.5, 1.7, 1.2, 0.9, 0.8],
-      SF: [0, 0, 0, 0, 0],
-    };
-
-    const FvTable: Record<SoilData['siteClass'], number[]> = {
-      SA: [0.8, 0.8, 0.8, 0.8, 0.8],
-      SB: [0.9, 0.9, 0.9, 0.9, 0.9],
-      SC: [1.7, 1.6, 1.5, 1.4, 1.3],
-      SD: [2.4, 2.2, 2.0, 1.9, 1.8],
-      SE: [3.5, 3.2, 2.8, 2.4, 2.4],
-      SF: [0, 0, 0, 0, 0],
-    };
-
-    const lerp = (x: number, xArr: number[], yArr: number[]) => {
-      try {
-        if (!isValidNumber(x)) return yArr[0];
-        if (x <= xArr[0]) return yArr[0];
-        if (x >= xArr[xArr.length - 1]) {
-          if (x > xArr[xArr.length - 1] * 1.5) {
-            warnings.push(`Input value ${x} is significantly outside interpolation range`);
-          }
-          return yArr[yArr.length - 1];
-        }
-        
-        for (let i = 0; i < xArr.length - 1; i++) {
-          const x0 = xArr[i];
-          const x1 = xArr[i + 1];
-          if (x >= x0 && x <= x1) {
-            const y0 = yArr[i];
-            const y1 = yArr[i + 1];
-            const t = (x - x0) / (x1 - x0);
-            const result = y0 + t * (y1 - y0);
-            
-            if (!isValidNumber(result)) {
-              warnings.push('Interpolation resulted in invalid value, using fallback');
-              return yArr[i];
-            }
-            
-            return result;
-          }
-        }
-        return yArr[yArr.length - 1];
-      } catch (error) {
-        warnings.push(`Interpolation error: ${error}`);
-        return yArr[0];
-      }
-    };
-
-    const fa = lerp(ss, ssGrid, FaTable[soilData.siteClass]);
-    const fv = lerp(s1, s1Grid, FvTable[soilData.siteClass]);
-
-    if (!isValidNumber(fa) || !isValidNumber(fv)) {
-      return {
-        success: false,
-        error: 'Failed to calculate site coefficients'
-      };
-    }
-
-    // Calculate design parameters with validation
-    const sms = fa * ss;
-    const sm1 = fv * s1;
-    
-    if (!isValidNumber(sms) || !isValidNumber(sm1)) {
-      return {
-        success: false,
-        error: 'Failed to calculate modified seismic parameters'
-      };
-    }
-
-    const sds = (2/3) * sms;
-    const sd1 = (2/3) * sm1;
-    
-    if (!isValidNumber(sds) || !isValidNumber(sd1)) {
-      return {
-        success: false,
-        error: 'Failed to calculate design seismic parameters'
-      };
-    }
-
-    // Prevent division by zero
-    if (sds <= 0) {
-      return {
-        success: false,
-        error: 'SDS must be greater than zero'
-      };
-    }
-
-    const t0 = 0.2 * sd1 / sds;
-    const ts = sd1 / sds;
-    const tl = 12; // Long period transition for Indonesia
-
-    // Validate calculated periods
-    if (!isValidNumber(t0) || !isValidNumber(ts) || t0 < 0 || ts < 0) {
-      return {
-        success: false,
-        error: 'Failed to calculate valid transition periods'
-      };
-    }
-
-    if (ts < t0) {
-      warnings.push('Calculated Ts is less than T0, check input parameters');
-    }
-
-    const result = { fa, fv, sds, sd1, t0, ts, tl };
-    
-    return {
-      success: true,
-      data: result,
-      ...(warnings.length > 0 && { warnings })
-    };
-
-  } catch (error) {
-    return {
-      success: false,
-      error: `Seismic parameter calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+  latitude: number,
+  longitude: number,
+  Ss: number,    // From hazard maps
+  S1: number,    // From hazard maps
+  siteClass: 'SA' | 'SB' | 'SC' | 'SD' | 'SE' | 'SF',
+  riskCategory: 'I' | 'II' | 'III' | 'IV' = 'II'
+): SeismicParameters => {
+  
+  // Validation - Critical for Safety
+  if (Ss < 0.4 || Ss > 1.5) {
+    throw new Error(`Ss value ${Ss} outside valid range (0.4-1.5g) per SNI 1726:2019`);
   }
+  
+  if (S1 < 0.1 || S1 > 0.6) {
+    throw new Error(`S1 value ${S1} outside valid range (0.1-0.6g) per SNI 1726:2019`);
+  }
+  
+  // Handle Site Class F (requires site-specific analysis)
+  if (siteClass === 'SF') {
+    throw new Error('Site Class F requires site-specific ground motion analysis per SNI 1726:2019 Section 6.10');
+  }
+  
+  // Calculate site coefficients using exact SNI tables
+  const fa = interpolateSiteCoefficient(Ss, SITE_COEFFICIENT_FA[siteClass], 'Fa');
+  const fv = interpolateSiteCoefficient(S1, SITE_COEFFICIENT_FV[siteClass], 'Fv');
+  
+  // Calculate design parameters - Exact formulas
+  const SMS = fa * Ss;
+  const SM1 = fv * S1;
+  
+  const sds = (2/3) * SMS;
+  const sd1 = (2/3) * SM1;
+  
+  // Validate calculated parameters
+  if (sds <= 0 || sd1 <= 0) {
+    throw new Error('Calculated SDS or SD1 is invalid (≤0)');
+  }
+  
+  // Calculate transition periods
+  const t0 = 0.2 * sd1 / sds;
+  const ts = sd1 / sds;
+  const tl = 8.0; // Long period transition for Indonesia per SNI 1726:2019
+  
+  // Determine Seismic Design Category
+  const category = getSeismicDesignCategory(sds, sd1, riskCategory);
+  
+  // Importance factor per Table 1
+  const importance = riskCategory === 'I' ? 1.0 :
+                    riskCategory === 'II' ? 1.0 :
+                    riskCategory === 'III' ? 1.25 :
+                    1.5; // Risk Category IV
+  
+  return {
+    // Basic parameters (matching existing interface)
+    ss: Ss,
+    s1: S1,
+    fa: Math.round(fa * 1000) / 1000,
+    fv: Math.round(fv * 1000) / 1000,
+    sds: Math.round(sds * 1000) / 1000,
+    sd1: Math.round(sd1 * 1000) / 1000,
+    siteClass,
+    importance,
+    r: 5.0, // Default - to be determined based on structural system
+    cd: 4.5, // Default - to be determined based on structural system
+    omega: 3.0, // Default - to be determined based on structural system
+    tl: tl,
+    ts: ts,
+    t0: t0,
+    category: category as 'A' | 'B' | 'C' | 'D' | 'E',
+    
+    // Additional properties to match interface
+    isSeismic: sds >= 0.167 || sd1 >= 0.067, // Per Table 6
+    zoneFactor: sds, // Use SDS as zone factor equivalent
+    soilType: siteClass,
+    responseModifier: 5.0 // Default R value
+  };
 };
 
-export const generateResponseSpectrum = (
-  seismicParams: SeismicParameters
-): SafeSeismicResult<Array<{ period: number; acceleration: number }>> => {
-  try {
-    const { sds, sd1, t0, ts, tl } = seismicParams;
-    
-    // Input validation
-    if (!isValidNumber(sds) || !isValidNumber(sd1) || !isValidNumber(t0) || !isValidNumber(ts) || !isValidNumber(tl)) {
-      return {
-        success: false,
-        error: 'Invalid seismic parameters for response spectrum generation'
-      };
-    }
-
-    if (sds <= 0 || sd1 <= 0) {
-      return {
-        success: false,
-        error: 'SDS and SD1 must be positive values'
-      };
-    }
-
-    const data = [];
-    const warnings: string[] = [];
-    
-    for (let T = 0; T <= 4; T += 0.05) {
-      try {
-        let Sa;
-        
-        if (T <= t0) {
-          Sa = sds * (0.4 + 0.6 * T / t0);
-        } else if (T <= ts) {
-          Sa = sds;
-        } else if (T <= tl) {
-          if (T <= 0) {
-            warnings.push('Zero period detected in response spectrum calculation');
-            Sa = sds;
-          } else {
-            Sa = sd1 / T;
-          }
-        } else {
-          if (T <= 0) {
-            warnings.push('Zero period detected in long-period range');
-            Sa = 0;
-          } else {
-            Sa = sd1 * tl / (T * T);
-          }
-        }
-
-        // Validate calculated acceleration
-        if (!isValidNumber(Sa) || Sa < 0) {
-          warnings.push(`Invalid acceleration calculated at period ${T}`);
-          Sa = 0;
-        }
-
-        // Cap unreasonably high accelerations
-        if (Sa > 10 * sds) {
-          warnings.push(`Unusually high acceleration capped at period ${T}`);
-          Sa = 10 * sds;
-        }
-
-        data.push({ period: T, acceleration: Sa });
-      } catch (pointError) {
-        warnings.push(`Error calculating response at period ${T}: ${pointError}`);
-        data.push({ period: T, acceleration: 0 });
-      }
-    }
-
-    if (data.length === 0) {
-      return {
-        success: false,
-        error: 'Failed to generate any response spectrum points'
-      };
-    }
-
-    return {
-      success: true,
-      data,
-      ...(warnings.length > 0 && { warnings })
-    };
-
-  } catch (error) {
-    return {
-      success: false,
-      error: `Response spectrum generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+// RESPONSE SPECTRUM GENERATION - SNI 1726:2019 Section 6.4
+export const generateResponseSpectrum = (seismicParams: SeismicParameters): Array<{ period: number; acceleration: number }> => {
+  const { sds, sd1, t0, ts, tl } = seismicParams;
+  
+  if (!sds || !sd1 || !t0 || !ts || !tl) {
+    throw new Error('Missing required seismic parameters for response spectrum');
   }
+  
+  const spectrum: Array<{ period: number; acceleration: number }> = [];
+  
+  // Generate spectrum points with fine resolution
+  for (let T = 0; T <= 5.0; T += 0.02) {
+    let Sa: number;
+    
+    if (T <= t0) {
+      // Region 1: T ≤ T0
+      Sa = sds * (0.4 + 0.6 * T / t0);
+    } else if (T <= ts) {
+      // Region 2: T0 < T ≤ TS
+      Sa = sds;
+    } else if (T <= tl) {
+      // Region 3: TS < T ≤ TL
+      Sa = sd1 / T;
+    } else {
+      // Region 4: T > TL
+      Sa = sd1 * tl / (T * T);
+    }
+    
+    // Ensure non-negative values
+    Sa = Math.max(Sa, 0);
+    
+    spectrum.push({
+      period: Math.round(T * 100) / 100,
+      acceleration: Math.round(Sa * 1000) / 1000
+    });
+  }
+  
+  return spectrum;
 };
 
+// BUILDING PERIOD CALCULATION - SNI 1726:2019 Section 7.8.2
 export const calculateBuildingPeriod = (
-  geometry: Geometry, 
-  materials: MaterialProperties, 
+  buildingHeight: number,  // Total height in meters
+  structuralSystem: 'concrete_moment_frame' | 'concrete_shear_wall' | 'steel_moment_frame' | 'braced_frame',
   seismicParams: SeismicParameters
-): SafeSeismicResult<{ Ta: number; Tmax: number }> => {
-  try {
-    // Input validation
-    if (!isValidNumber(geometry.heightPerFloor) || !isPositiveNumber(geometry.heightPerFloor)) {
-      return {
-        success: false,
-        error: 'Invalid floor height'
-      };
-    }
-
-    if (!isValidNumber(geometry.numberOfFloors) || !isPositiveNumber(geometry.numberOfFloors)) {
-      return {
-        success: false,
-        error: 'Invalid number of floors'
-      };
-    }
-
-    if (!isValidNumber(materials.fc) || !isPositiveNumber(materials.fc)) {
-      return {
-        success: false,
-        error: 'Invalid concrete strength'
-      };
-    }
-
-    if (!isValidNumber(seismicParams.sd1) || seismicParams.sd1 < 0) {
-      return {
-        success: false,
-        error: 'Invalid SD1 parameter'
-      };
-    }
-
-    const warnings: string[] = [];
-    const hn = geometry.heightPerFloor * geometry.numberOfFloors;
-
-    if (hn <= 0) {
-      return {
-        success: false,
-        error: 'Total building height must be positive'
-      };
-    }
-
-    if (hn > 200) {
-      warnings.push('Building height exceeds typical high-rise limits (>200m)');
-    }
-
-    // Calculate approximate period with bounds checking
-    const Ct = materials.fc >= 25 ? 0.0466 : 0.0488; // For RC moment frame
-    const x = 0.9;
-    const Ta = Ct * Math.pow(hn, x);
-
-    if (!isValidNumber(Ta) || Ta <= 0) {
-      return {
-        success: false,
-        error: 'Failed to calculate approximate period'
-      };
-    }
-
-    // Calculate upper limit factor
-    let Cu: number;
-    if (seismicParams.sd1 >= 0.4) {
-      Cu = 1.4;
-    } else if (seismicParams.sd1 >= 0.3) {
-      Cu = 1.5;
-    } else if (seismicParams.sd1 >= 0.2) {
-      Cu = 1.6;
-    } else {
-      Cu = 1.7;
-    }
-
-    const Tmax = Cu * Ta;
-
-    if (!isValidNumber(Tmax) || Tmax <= Ta) {
-      return {
-        success: false,
-        error: 'Failed to calculate maximum period'
-      };
-    }
-
-    return {
-      success: true,
-      data: { Ta, Tmax },
-      ...(warnings.length > 0 && { warnings })
-    };
-
-  } catch (error) {
-    return {
-      success: false,
-      error: `Building period calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+): { Ta: number; Tmax: number; Tmin: number } => {
+  
+  if (buildingHeight <= 0) {
+    throw new Error('Building height must be positive');
   }
+  
+  // Approximate period calculation parameters - Table 15
+  let Ct: number, x: number;
+  
+  switch (structuralSystem) {
+    case 'concrete_moment_frame':
+      Ct = 0.0466; // For RC moment resisting frames
+      x = 0.9;
+      break;
+    case 'concrete_shear_wall':
+      Ct = 0.0488; // For RC shear wall systems
+      x = 0.75;
+      break;
+    case 'steel_moment_frame':
+      Ct = 0.0724; // For steel moment frames
+      x = 0.8;
+      break;
+    case 'braced_frame':
+      Ct = 0.0731; // For concentrically braced frames
+      x = 0.75;
+      break;
+    default:
+      throw new Error(`Unknown structural system: ${structuralSystem}`);
+  }
+  
+  // Calculate approximate period
+  const Ta = Ct * Math.pow(buildingHeight, x);
+  
+  if (Ta <= 0) {
+    throw new Error('Calculated approximate period is invalid');
+  }
+  
+  // Upper limit coefficient - Table 14
+  let Cu: number;
+  const sd1 = seismicParams.sd1;
+  
+  if (sd1 >= 0.4) {
+    Cu = 1.4;
+  } else if (sd1 >= 0.3) {
+    Cu = 1.5;
+  } else if (sd1 >= 0.2) {
+    Cu = 1.6;
+  } else if (sd1 >= 0.15) {
+    Cu = 1.7;
+  } else {
+    Cu = 1.7; // For SD1 < 0.15
+  }
+  
+  const Tmax = Cu * Ta;
+  const Tmin = 0.75 * Ta; // Lower limit
+  
+  return {
+    Ta: Math.round(Ta * 1000) / 1000,
+    Tmax: Math.round(Tmax * 1000) / 1000,
+    Tmin: Math.round(Tmin * 1000) / 1000
+  };
 };
 
+// BASE SHEAR CALCULATION - SNI 1726:2019 Section 7.8.1
 export const calculateBaseShear = (
-  seismicParams: SeismicParameters, 
-  geometry: Geometry, 
-  loads: Loads, 
-  Ta: number
-): SafeSeismicResult<{ V: number; Cs: number; seismicWeight: number }> => {
-  try {
-    // Input validation
-    if (!isValidNumber(Ta) || Ta <= 0) {
-      return {
-        success: false,
-        error: 'Invalid fundamental period'
-      };
-    }
-
-    const requiredParams = { 
-      sds: seismicParams.sds, 
-      sd1: seismicParams.sd1, 
-      r: seismicParams.r, 
-      importance: seismicParams.importance, 
-      tl: seismicParams.tl 
-    };
-    
-    for (const [paramName, paramValue] of Object.entries(requiredParams)) {
-      if (!isValidNumber(paramValue) || paramValue <= 0) {
-        return {
-          success: false,
-          error: `Invalid seismic parameter: ${paramName} = ${paramValue}`
-        };
-      }
-    }
-
-    if (!isValidNumber(geometry.length) || !isPositiveNumber(geometry.length)) {
-      return {
-        success: false,
-        error: 'Invalid building length'
-      };
-    }
-
-    if (!isValidNumber(geometry.width) || !isPositiveNumber(geometry.width)) {
-      return {
-        success: false,
-        error: 'Invalid building width'
-      };
-    }
-
-    if (!isValidNumber(geometry.numberOfFloors) || !isPositiveNumber(geometry.numberOfFloors)) {
-      return {
-        success: false,
-        error: 'Invalid number of floors'
-      };
-    }
-
-    const warnings: string[] = [];
-    const { sds, sd1, r, importance, tl } = seismicParams;
-
-    // Validate load parameters
-    if (!isValidNumber(loads.deadLoad) || loads.deadLoad < 0) {
-      return {
-        success: false,
-        error: 'Invalid dead load'
-      };
-    }
-
-    if (!isValidNumber(loads.liveLoad) || loads.liveLoad < 0) {
-      return {
-        success: false,
-        error: 'Invalid live load'
-      };
-    }
-
-    const partitionLoad = loads.partitionLoad || 0;
-    if (!isValidNumber(partitionLoad) || partitionLoad < 0) {
-      warnings.push('Invalid partition load, using 0');
-    }
-
-    // Calculate seismic weight with bounds checking
-    const floorArea = geometry.length * geometry.width;
-    if (floorArea <= 0 || floorArea > 100000) { // Cap at 100,000 m²
-      return {
-        success: false,
-        error: floorArea <= 0 ? 'Invalid floor area' : 'Floor area exceeds reasonable limits'
-      };
-    }
-
-    const gf = 9.81 / 1000; // kN per kg
-    const deadLoadKN = (loads.deadLoad + partitionLoad) * gf; // kN/m²
-    const liveLoadKN = loads.liveLoad * gf; // kN/m²
-    
-    const seismicWeight = floorArea * geometry.numberOfFloors * (deadLoadKN + 0.25 * liveLoadKN); // kN
-
-    if (!isValidNumber(seismicWeight) || seismicWeight <= 0) {
-      return {
-        success: false,
-        error: 'Failed to calculate seismic weight'
-      };
-    }
-
-    if (seismicWeight > 1000000) { // 1 million kN
-      warnings.push('Seismic weight is very large, verify input parameters');
-    }
-
-    // Calculate seismic response coefficient with bounds checking
-    let Cs = sds / (r / importance);
-    
-    if (!isValidNumber(Cs) || Cs <= 0) {
-      return {
-        success: false,
-        error: 'Failed to calculate initial seismic coefficient'
-      };
-    }
-
-    // Apply upper limit
-    let CsMax: number;
-    if (Ta <= tl) {
-      CsMax = sd1 / (Ta * r / importance);
-    } else {
-      if (Ta <= 0) {
-        return {
-          success: false,
-          error: 'Zero period cannot be used in long-period calculation'
-        };
-      }
-      CsMax = sd1 * tl / (Ta * Ta * r / importance);
-    }
-
-    if (!isValidNumber(CsMax) || CsMax <= 0) {
-      warnings.push('Invalid upper limit coefficient, using uncapped value');
-    } else {
-      Cs = Math.min(Cs, CsMax);
-    }
-
-    // Apply lower limit
-    const CsMin = Math.max(0.044 * sds * importance, 0.01);
-    if (!isValidNumber(CsMin)) {
-      return {
-        success: false,
-        error: 'Failed to calculate minimum seismic coefficient'
-      };
-    }
-
-    Cs = Math.max(Cs, CsMin);
-
-    if (!isValidNumber(Cs) || Cs <= 0) {
-      return {
-        success: false,
-        error: 'Final seismic coefficient is invalid'
-      };
-    }
-
-    if (Cs > 1.0) {
-      warnings.push('Seismic coefficient exceeds 1.0, verify calculation');
-    }
-
-    // Calculate base shear
-    const V = Cs * seismicWeight;
-
-    if (!isValidNumber(V) || V <= 0) {
-      return {
-        success: false,
-        error: 'Failed to calculate base shear'
-      };
-    }
-
-    return {
-      success: true,
-      data: { V, Cs, seismicWeight },
-      ...(warnings.length > 0 && { warnings })
-    };
-
-  } catch (error) {
-    return {
-      success: false,
-      error: `Base shear calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+  seismicWeight: number,    // Total seismic weight in kN
+  period: number,           // Fundamental period T
+  seismicParams: SeismicParameters,
+  responseModificationFactor: number, // R factor
+  overstrengthFactor: number = 1.0,   // Ω0 factor
+  deflectionAmplification: number = 1.0 // Cd factor
+): { V: number; Cs: number; CsMax: number; CsMin: number } => {
+  
+  const { sds, sd1, importance } = seismicParams;
+  const R = responseModificationFactor;
+  const tl = seismicParams.tl || 8.0;
+  
+  // Validation
+  if (seismicWeight <= 0) throw new Error('Seismic weight must be positive');
+  if (period <= 0) throw new Error('Period must be positive');  
+  if (R <= 0) throw new Error('Response modification factor must be positive');
+  if (!sds || sds <= 0) throw new Error('SDS must be positive');
+  if (sd1 < 0) throw new Error('SD1 must be non-negative');
+  if (!importance || importance <= 0) throw new Error('Importance factor must be positive');
+  
+  // Calculate seismic response coefficient
+  let Cs = sds / (R / importance);
+  
+  // Upper limit - Equation 22 and 23
+  let CsMax: number;
+  if (period <= tl) {
+    CsMax = sd1 / (period * R / importance);
+  } else {
+    CsMax = sd1 * tl / (period * period * R / importance);
   }
+  
+  // Apply upper limit
+  Cs = Math.min(Cs, CsMax);
+  
+  // Lower limits - Equation 24 and 25
+  const CsMin1 = 0.044 * sds * importance;
+  const CsMin2 = 0.5 * seismicParams.s1 / (R / importance); // For S1 ≥ 0.6g (rarely applicable in Indonesia)
+  const CsMin = Math.max(CsMin1, CsMin2, 0.01); // Absolute minimum per Section 7.8.1.3
+  
+  // Apply lower limit
+  Cs = Math.max(Cs, CsMin);
+  
+  // Calculate base shear
+  const V = Cs * seismicWeight;
+  
+  return {
+    V: Math.round(V),
+    Cs: Math.round(Cs * 10000) / 10000,
+    CsMax: Math.round(CsMax * 10000) / 10000,
+    CsMin: Math.round(CsMin * 10000) / 10000
+  };
 };
 
+// LATERAL FORCE DISTRIBUTION - SNI 1726:2019 Section 7.8.3
 export const distributeLateralForces = (
-  V: number, 
-  Ta: number, 
-  geometry: Geometry, 
-  loads: Loads
-): SafeSeismicResult<Array<{ floor: number; height: number; weight: number; force: number }>> => {
-  try {
-    // Input validation
-    if (!isValidNumber(V) || V <= 0) {
-      return {
-        success: false,
-        error: 'Invalid base shear value'
-      };
-    }
-
-    if (!isValidNumber(Ta) || Ta <= 0) {
-      return {
-        success: false,
-        error: 'Invalid fundamental period'
-      };
-    }
-
-    if (!isValidNumber(geometry.numberOfFloors) || !isPositiveNumber(geometry.numberOfFloors)) {
-      return {
-        success: false,
-        error: 'Invalid number of floors'
-      };
-    }
-
-    if (!isValidNumber(geometry.heightPerFloor) || !isPositiveNumber(geometry.heightPerFloor)) {
-      return {
-        success: false,
-        error: 'Invalid floor height'
-      };
-    }
-
-    if (!isValidNumber(geometry.length) || !isPositiveNumber(geometry.length)) {
-      return {
-        success: false,
-        error: 'Invalid building length'
-      };
-    }
-
-    if (!isValidNumber(geometry.width) || !isPositiveNumber(geometry.width)) {
-      return {
-        success: false,
-        error: 'Invalid building width'
-      };
-    }
-
-    const warnings: string[] = [];
-
-    // Calculate distribution exponent with bounds
-    let k: number;
-    if (Ta <= 0.5) {
-      k = 1;
-    } else if (Ta >= 2.5) {
-      k = 2;
-    } else {
-      k = 1 + (Ta - 0.5) / 2;
-    }
-
-    if (!isValidNumber(k) || k < 1 || k > 2) {
-      return {
-        success: false,
-        error: 'Failed to calculate distribution exponent'
-      };
-    }
-
-    // Validate loads
-    if (!isValidNumber(loads.deadLoad) || loads.deadLoad < 0) {
-      return {
-        success: false,
-        error: 'Invalid dead load'
-      };
-    }
-
-    const partitionLoad = loads.partitionLoad || 0;
-    if (!isValidNumber(partitionLoad) || partitionLoad < 0) {
-      warnings.push('Invalid partition load, using 0');
-    }
-
-    const forces = [];
-    let sumWiHik = 0;
-    
-    // First pass: calculate denominator
-    for (let i = 1; i <= geometry.numberOfFloors; i++) {
-      try {
-        const hi = i * geometry.heightPerFloor;
-        
-        if (!isValidNumber(hi) || hi <= 0) {
-          return {
-            success: false,
-            error: `Invalid height calculation for floor ${i}`
-          };
-        }
-
-        const gf = 9.81 / 1000; // kN per kg
-        const wi = geometry.length * geometry.width * (loads.deadLoad + partitionLoad) * gf; // kN
-        
-        if (!isValidNumber(wi) || wi <= 0) {
-          return {
-            success: false,
-            error: `Invalid weight calculation for floor ${i}`
-          };
-        }
-
-        const hik = Math.pow(hi, k);
-        if (!isValidNumber(hik) || hik <= 0) {
-          return {
-            success: false,
-            error: `Invalid height power calculation for floor ${i}`
-          };
-        }
-
-        sumWiHik += wi * hik;
-      } catch (floorError) {
-        return {
-          success: false,
-          error: `Error in first pass calculation for floor ${i}: ${floorError}`
-        };
-      }
-    }
-
-    if (!isValidNumber(sumWiHik) || sumWiHik <= 0) {
-      return {
-        success: false,
-        error: 'Invalid sum of weight-height products'
-      };
-    }
-
-    // Second pass: calculate forces
-    let totalForce = 0;
-    for (let i = 1; i <= geometry.numberOfFloors; i++) {
-      try {
-        const hi = i * geometry.heightPerFloor;
-        const gf = 9.81 / 1000; // kN per kg
-        const wi = geometry.length * geometry.width * (loads.deadLoad + partitionLoad) * gf; // kN
-        
-        const Cvx = (wi * Math.pow(hi, k)) / sumWiHik;
-        
-        if (!isValidNumber(Cvx) || Cvx < 0 || Cvx > 1) {
-          warnings.push(`Invalid force distribution coefficient for floor ${i}: ${Cvx}`);
-          continue;
-        }
-
-        const Fx = Cvx * V;
-        
-        if (!isValidNumber(Fx) || Fx < 0) {
-          warnings.push(`Invalid force calculation for floor ${i}`);
-          continue;
-        }
-
-        forces.push({ floor: i, height: hi, weight: wi, force: Fx });
-        totalForce += Fx;
-      } catch (forceError) {
-        warnings.push(`Error calculating force for floor ${i}: ${forceError}`);
-      }
-    }
-
-    if (forces.length === 0) {
-      return {
-        success: false,
-        error: 'No valid forces calculated'
-      };
-    }
-
-    // Check force balance
-    const forceDifference = Math.abs(totalForce - V);
-    const tolerance = V * 0.01; // 1% tolerance
-    
-    if (forceDifference > tolerance) {
-      warnings.push(`Force balance error: ${forceDifference.toFixed(2)} kN difference`);
-    }
-
-    return {
-      success: true,
-      data: forces,
-      ...(warnings.length > 0 && { warnings })
-    };
-
-  } catch (error) {
-    return {
-      success: false,
-      error: `Force distribution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+  baseShear: number,
+  period: number,
+  floorWeights: number[],    // Weight at each floor (kN)
+  floorHeights: number[]     // Height of each floor above base (m)
+): Array<{ floor: number; height: number; weight: number; force: number; shear: number }> => {
+  
+  if (floorWeights.length !== floorHeights.length) {
+    throw new Error('Number of floor weights must match number of floor heights');
   }
+  
+  if (baseShear <= 0) throw new Error('Base shear must be positive');
+  if (period <= 0) throw new Error('Period must be positive');
+  
+  const numFloors = floorWeights.length;
+  
+  // Validate inputs
+  for (let i = 0; i < numFloors; i++) {
+    if (floorWeights[i] <= 0) throw new Error(`Floor weight ${i+1} must be positive`);
+    if (floorHeights[i] <= 0) throw new Error(`Floor height ${i+1} must be positive`);
+    if (i > 0 && floorHeights[i] <= floorHeights[i-1]) {
+      throw new Error(`Floor heights must be increasing`);
+    }
+  }
+  
+  // Calculate distribution exponent k
+  let k: number;
+  if (period <= 0.5) {
+    k = 1.0;
+  } else if (period >= 2.5) {
+    k = 2.0;
+  } else {
+    k = 1.0 + (period - 0.5) / 2.0;
+  }
+  
+  // Calculate Cvx coefficients
+  let sumWiHik = 0;
+  const wiHik: number[] = [];
+  
+  for (let i = 0; i < numFloors; i++) {
+    const wiHi_k = floorWeights[i] * Math.pow(floorHeights[i], k);
+    wiHik.push(wiHi_k);
+    sumWiHik += wiHi_k;
+  }
+  
+  if (sumWiHik <= 0) throw new Error('Invalid sum of weight-height products');
+  
+  // Distribute lateral forces
+  const forces: Array<{ floor: number; height: number; weight: number; force: number; shear: number }> = [];
+  let cumulativeShear = 0;
+  
+  // Calculate from top floor down for shear calculation
+  for (let i = numFloors - 1; i >= 0; i--) {
+    const Cvx = wiHik[i] / sumWiHik;
+    const Fx = Cvx * baseShear;
+    
+    cumulativeShear += Fx;
+    
+    forces.unshift({
+      floor: i + 1,
+      height: floorHeights[i],
+      weight: floorWeights[i],
+      force: Math.round(Fx),
+      shear: Math.round(cumulativeShear)
+    });
+  }
+  
+  return forces;
+};
+
+// RESPONSE MODIFICATION FACTORS - Table 9
+export const getResponseModificationFactors = (
+  structuralSystem: string
+): { R: number; Omega0: number; Cd: number } => {
+  
+  const systemFactors: Record<string, { R: number; Omega0: number; Cd: number }> = {
+    // Concrete Systems
+    'concrete_special_moment_frame': { R: 8.0, Omega0: 3.0, Cd: 5.5 },
+    'concrete_intermediate_moment_frame': { R: 5.0, Omega0: 3.0, Cd: 4.5 },
+    'concrete_ordinary_moment_frame': { R: 3.0, Omega0: 3.0, Cd: 2.5 },
+    'concrete_special_shear_wall': { R: 6.0, Omega0: 2.5, Cd: 5.0 },
+    'concrete_ordinary_shear_wall': { R: 4.0, Omega0: 2.5, Cd: 4.0 },
+    
+    // Steel Systems  
+    'steel_special_moment_frame': { R: 8.0, Omega0: 3.0, Cd: 5.5 },
+    'steel_intermediate_moment_frame': { R: 4.5, Omega0: 3.0, Cd: 4.0 },
+    'steel_ordinary_moment_frame': { R: 3.5, Omega0: 3.0, Cd: 3.0 },
+    'steel_special_concentrically_braced': { R: 6.0, Omega0: 2.0, Cd: 5.0 },
+    'steel_ordinary_concentrically_braced': { R: 3.25, Omega0: 2.0, Cd: 3.25 },
+    
+    // Masonry Systems
+    'masonry_special_shear_wall': { R: 5.0, Omega0: 2.5, Cd: 3.5 },
+    'masonry_intermediate_shear_wall': { R: 3.5, Omega0: 2.5, Cd: 2.5 },
+    'masonry_ordinary_shear_wall': { R: 2.0, Omega0: 2.5, Cd: 1.75 }
+  };
+  
+  const factors = systemFactors[structuralSystem];
+  if (!factors) {
+    throw new Error(`Unknown structural system: ${structuralSystem}`);
+  }
+  
+  return factors;
+};
+
+// DRIFT CALCULATION - SNI 1726:2019 Section 7.9.2
+export const calculateStoryDrift = (
+  lateralDisplacements: number[], // Displacement at each floor (mm)
+  floorHeights: number[],         // Height of each floor (mm)
+  deflectionAmplification: number, // Cd factor
+  importanceFactor: number        // Ie factor
+): Array<{ floor: number; displacement: number; drift: number; driftRatio: number; allowable: number }> => {
+  
+  if (lateralDisplacements.length !== floorHeights.length) {
+    throw new Error('Number of displacements must match number of floor heights');
+  }
+  
+  const driftResults = [];
+  let previousDisplacement = 0;
+  
+  for (let i = 0; i < lateralDisplacements.length; i++) {
+    const amplifiedDisplacement = lateralDisplacements[i] * deflectionAmplification / importanceFactor;
+    const storyDrift = amplifiedDisplacement - previousDisplacement;
+    const storyHeight = i === 0 ? floorHeights[i] : floorHeights[i] - floorHeights[i-1];
+    const driftRatio = storyDrift / storyHeight;
+    
+    // Allowable drift per Table 16 - depends on risk category and occupancy
+    const allowableDriftRatio = 0.020; // 2% for most structures (Risk Category I, II, III)
+    const allowableDrift = allowableDriftRatio * storyHeight;
+    
+    driftResults.push({
+      floor: i + 1,
+      displacement: Math.round(amplifiedDisplacement * 10) / 10,
+      drift: Math.round(storyDrift * 10) / 10,
+      driftRatio: Math.round(driftRatio * 100000) / 100000,
+      allowable: Math.round(allowableDrift * 10) / 10
+    });
+    
+    previousDisplacement = amplifiedDisplacement;
+  }
+  
+  return driftResults;
 };

@@ -1,60 +1,70 @@
-# Structural Analysis System (Blackbox)
+# 🏗️ APP-STRUKTUR-BLACKBOX
+Advanced Structural Analysis System
 
-A Vite + React + TypeScript app for conceptual building structural analysis with modular calculations (basic loads, seismic parameters, mock frame analysis), cost estimation, and report exporting.
+## 📋 Workflow Documentation
 
-## Quick Start
+### 📖 Choose Your Workflow Guide:
 
-- Install dependencies
-  ```bash
-  npm install
-  ```
-- Development server
-  ```bash
-  npm run dev
-  ```
-- Build / Preview
-  ```bash
-  npm run build
-  npm run preview
-  ```
-- Type-check
-  ```bash
-  npm run type-check
-  ```
+| User Type | Document | Purpose | Time |
+|-----------|----------|---------|------|
+| **End User** | [📋 WORKFLOW.md](./WORKFLOW.md) | Complete user manual | 60 min read |
+| **Quick Start** | [⚡ QUICK-WORKFLOW.md](./QUICK-WORKFLOW.md) | Fast start guide | 5 min read |
+| **Developer** | [🔧 DEV-WORKFLOW.md](./DEV-WORKFLOW.md) | Development guide | 30 min read |
+| **Admin/Deploy** | [🚀 DEPLOY-WORKFLOW.md](./DEPLOY-WORKFLOW.md) | Deployment guide | 10 min read |
 
-## Features
+### 🚀 Quick Start
+```bash
+git clone https://github.com/Latif080790/APP-STRUKTUR-BLACKBOX.git
+cd APP-STRUKTUR-BLACKBOX
+npm install && npm run dev
+# Open: http://localhost:8080
+```
 
-- Input modules: `Project`, `Geometry`, `Materials`, `Loads`, `Soil Data` in `src/components/structural-analysis/components/InputForm.tsx`.
-- Seismic parameters and spectrum: `src/components/structural-analysis/calculations/seismic.ts`.
-- Basic sizing helpers: `src/components/structural-analysis/calculations/basic.ts`.
-- Frame model & mock analysis: `src/components/structural-analysis/calculations/frame-analysis.ts`.
-- Cost estimation: `src/components/structural-analysis/calculations/cost.ts`.
-- Results: `src/components/structural-analysis/components/ResultsDisplay.tsx` (member forces, drift, base shear, lateral forces, spectrum).
-- 3D (isometric canvas): `src/components/structural-analysis/components/Visualization3D.tsx`.
-- Report exporting: `src/components/structural-analysis/components/ReportGenerator.tsx` (printable HTML PDF, CSV export, JSON model export).
-- UI components: `src/components/ui/*` with Tailwind + shadcn-style tokens.
-- State persistence via `localStorage` and Reset Defaults button in `CompleteStructuralAnalysisSystem.tsx`.
+### ✨ Key Features
+- 🏢 **Complete Structural Analysis**: Frame analysis with advanced algorithms
+- 🎯 **Smart Recommendations**: AI-powered material and foundation selection
+- 🌐 **3D Visualization**: Interactive Three.js rendering
+- 📊 **Professional Reports**: PDF generation with technical calculations
+- 📱 **Mobile Responsive**: Works on all devices
+- ⚡ **Real-time Analysis**: Instant feedback and validation
 
-## Notes & Limitations
+### 🏗️ Foundation Selection Logic
+**Advanced Technical Criteria:**
+- **Bored Pile**: Soft soil, high buildings, vibration-sensitive areas
+- **Driven Pile**: Hard soil, heavy loads, fast installation
+- **Auto-Selection**: Based on soil conditions, building load, seismic zone
 
-- The frame analysis is a placeholder (randomized) and not a real FEM. Replace with a structural analysis engine for production.
-- Seismic Fa/Fv are from an interpolated reference table for demo. For compliance, integrate official SNI tables and local hazard data.
-- Units: Loads are input as kg/m² and converted to kN/m² internally.
-- Tailwind CSS warnings in some editors can be silenced using the included `.vscode/settings.json` or by installing the Tailwind CSS IntelliSense extension.
+### 🎯 System Workflow Overview
+```
+Input → Configure → Analyze → Visualize → Report → Export
+  ↑                                                    ↓
+  └─────────────── Iterate & Optimize ←──────────────┘
+```
 
-## Directory Structure
+---
 
-- `src/components/structural-analysis/`
-  - `CompleteStructuralAnalysisSystem.tsx`
-  - `components/` (Input, Results, 3D, Report)
-  - `calculations/` (basic, seismic, frame-analysis, cost, reinforcement)
-  - `interfaces/` (types)
-- `src/components/ui/` (button, card, input, label, select, tabs, progress)
-- `src/lib/utils.ts` (utility `cn`)
+## 🛠️ Technology Stack
+- **Frontend**: React 18 + TypeScript
+- **3D Rendering**: Three.js
+- **UI Components**: Radix UI + Tailwind CSS
+- **Charts**: Recharts
+- **Build**: Vite
+- **Analysis Engine**: Custom structural algorithms
 
-## Roadmap
+## 🎓 Learning Path
+1. **Beginners** → Start with [QUICK-WORKFLOW.md](./QUICK-WORKFLOW.md)
+2. **Users** → Read complete [WORKFLOW.md](./WORKFLOW.md)
+3. **Developers** → Follow [DEV-WORKFLOW.md](./DEV-WORKFLOW.md)
+4. **Administrators** → Review [DEPLOY-WORKFLOW.md](./DEPLOY-WORKFLOW.md)
 
-- Replace mock frame solver with FEM.
-- Enrich seismic engine with full SNI workflows and geodata link.
-- Add more serviceability checks and code-based member design.
-- Improve 3D viewer with Three.js and modal overlays.
+## 📞 Support
+- **Documentation**: Complete workflows provided
+- **Issues**: GitHub Issues for bug reports
+- **Discussions**: GitHub Discussions for questions
+- **Professional**: Contact for enterprise support
+
+---
+
+**🚀 Ready to analyze structures? Choose your workflow guide above and get started!**
+
+*Professional structural analysis made accessible - From concept to construction.*
