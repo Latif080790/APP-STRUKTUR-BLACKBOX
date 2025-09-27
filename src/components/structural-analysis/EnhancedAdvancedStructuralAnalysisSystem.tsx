@@ -26,7 +26,8 @@ import {
   Target,
   BarChart3,
   Home,
-  MapPin
+  MapPin,
+  Wrench
 } from 'lucide-react';
 
 // Import 3D Viewer
@@ -37,6 +38,9 @@ import StaticAnalysisEngine, { StaticAnalysisInput } from './analysis/StaticAnal
 import DynamicAnalysisEngine, { DynamicAnalysisInput } from './analysis/DynamicAnalysisEngine';
 import AnalysisResultsManager, { CombinedAnalysisResults, AnalysisMetadata } from './analysis/AnalysisResultsManager';
 import AnalysisVisualization from './analysis/AnalysisVisualization';
+
+// Import Design Module
+import DesignModule from './design/DesignModule';
 
 // Type definitions
 interface ProjectInfo {
@@ -486,7 +490,7 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
 
       {/* Main content with tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="project" className="flex items-center space-x-1">
             <Home className="h-4 w-4" />
             <span>Project</span>
@@ -510,6 +514,10 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
           <TabsTrigger value="results" className="flex items-center space-x-1">
             <BarChart3 className="h-4 w-4" />
             <span>Results</span>
+          </TabsTrigger>
+          <TabsTrigger value="design" className="flex items-center space-x-1">
+            <Wrench className="h-4 w-4" />
+            <span>Design</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1273,6 +1281,19 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* Design Module Tab */}
+        <TabsContent value="design" className="space-y-6">
+          <DesignModule 
+            analysisResults={combinedResults}
+            projectInfo={{
+              name: projectInfo.name,
+              date: new Date().toLocaleDateString('id-ID'),
+              engineer: projectInfo.engineer,
+              checker: 'Design Checker'
+            }}
+          />
         </TabsContent>
       </Tabs>
 
