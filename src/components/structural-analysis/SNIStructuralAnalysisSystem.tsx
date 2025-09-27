@@ -177,7 +177,7 @@ const SNIStructuralAnalysisSystem: React.FC = () => {
   const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
   const [migrationResult, setMigrationResult] = useState<any | null>(null);
 
-  // Update handlers
+  // Update handlers with real-time validation
   const handleUpdate = useCallback((section: string, data: any) => {
     switch (section) {
       case 'project':
@@ -201,7 +201,56 @@ const SNIStructuralAnalysisSystem: React.FC = () => {
       default:
         console.warn(`Unknown section: ${section}`);
     }
+
+    // Run real-time validation with debounce
+    const timeoutId = setTimeout(() => {
+      runRealTimeValidation(section, data);
+    }, 300); // Increased debounce to 300ms
+    
+    return () => clearTimeout(timeoutId);
   }, []);
+
+  // Real-time validation function - simplified dependencies
+  const runRealTimeValidation = useCallback((
+    changedSection: string, 
+    newData: any
+  ) => {
+    try {
+      // Get latest data (considering the change)
+      const currentProject = changedSection === 'project' ? newData : projectInfo;
+      const currentGeometry = changedSection === 'geometry' ? newData : geometry;
+      const currentMaterials = changedSection === 'materials' ? newData : materials;
+      const currentLoads = changedSection === 'loads' ? newData : loads;
+      const currentSeismic = changedSection === 'seismic' ? newData : seismicParams;
+      const currentSoil = changedSection === 'soil' ? newData : soilData;
+
+      // Run comprehensive validation
+      const validationResult = validateCompleteSystem(
+        currentGeometry,
+        currentLoads,
+        currentMaterials,
+        currentSoil,
+        currentSeismic,
+        currentProject
+      );
+
+      setValidation(validationResult);
+    } catch (error) {
+      console.error('Real-time validation error:', error);
+      // Set basic validation with error
+      setValidation({
+        isValid: false,
+        errors: [{
+          field: changedSection,
+          message: 'Validation error occurred',
+          severity: 'error'
+        }],
+        warnings: [],
+        codeViolations: [],
+        professionalReviewRequired: false
+      });
+    }
+  }, []); // Removed dependencies to prevent re-creation
 
   // Validation change handler
   const handleValidationChange = useCallback((newValidation: ValidationResult) => {
@@ -425,9 +474,10 @@ const SNIStructuralAnalysisSystem: React.FC = () => {
                   loads={loads}
                   seismicParams={seismicParams}
                   soilData={soilData}
+                  validation={validation}
+                  validationLoading={isAnalyzing}
                   onUpdate={handleUpdate}
-                  onValidationChange={handleValidationChange}
-                  isAnalyzing={isAnalyzing}
+                  onValidate={() => runAnalysis()}
                 />
                 
                 {/* Analysis Button */}
