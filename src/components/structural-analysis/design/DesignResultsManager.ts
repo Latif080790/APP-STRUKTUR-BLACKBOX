@@ -1,54 +1,9 @@
 /**
- * Design Results Manager - Enhanced with SNI Compliance Integration
- * Manages and processes design results with professional code compliance
+ * Design Results Manager - Manages and processes design results
  * Provides unified interface for design output management
  */
 
-import SNIComplianceEngine, { 
-  SNI2847Compliance, 
-  SNI1729Compliance, 
-  ComplianceReport 
-} from './SNIComplianceEngine';
-
 import { DesignResults } from './StructuralDesignEngine';
-import FoundationDesignIntegrator, { 
-  FoundationDesignResults, 
-  GeotechnicalProperties 
-} from '../foundation/FoundationDesignIntegrator';
-
-// Enha// Enhanced Design Results Interface for SNI Compliance
-export interface EnhancedDesignResults extends DesignResults {
-  forces?: {
-    axial: number;
-    shear: number;
-    moment: number;
-  };
-  capacity?: {
-    axial: number;
-    shear: number;
-    moment: number;
-  };
-  deflection?: {
-    calculated: number;
-    allowable: number;
-    ratio: number;
-  };
-  buckling?: {
-    kFactor: number;
-    effectiveLength: number;
-    capacity: number;
-  };
-  connection?: {
-    force: number;
-    capacity: number;
-    type: string;
-  };
-  fatigue?: {
-    cycles: number;
-    allowableCycles: number;
-    stress: number;
-  };
-}
 
 export interface DesignSummary {
   projectInfo: {
@@ -59,14 +14,9 @@ export interface DesignSummary {
   };
   elements: Array<{
     id: string;
-    type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation';
-    results: DesignResults | FoundationDesignResults;
+    type: 'beam' | 'column' | 'slab' | 'wall';
+    results: DesignResults;
     status: 'pass' | 'fail' | 'warning';
-    compliance?: {
-      sni2847?: SNI2847Compliance;
-      sni1729?: SNI1729Compliance;
-      overallCompliance: 'compliant' | 'non-compliant' | 'requires-review';
-    };
   }>;
   overallStatus: {
     totalElements: number;
@@ -74,18 +24,12 @@ export interface DesignSummary {
     failedElements: number;
     warningElements: number;
     overallRating: number; // 0-100
-    complianceRating: number; // 0-100 for SNI compliance
   };
   costs: {
     totalConcrete: number;
     totalSteel: number;
     totalLabor: number;
     grandTotal: number;
-    lifecycle?: {
-      maintenance: number;
-      replacement: number;
-      totalNPV: number;
-    };
     breakdown: Array<{
       element: string;
       cost: number;
@@ -93,13 +37,6 @@ export interface DesignSummary {
     }>;
   };
   recommendations: string[];
-  complianceReport?: ComplianceReport;
-  foundationSummary?: {
-    totalFoundations: number;
-    foundationTypes: string[];
-    totalFoundationCost: number;
-    geotechnicalRisks: string[];
-  };
 }
 
 export interface DesignOptimization {
@@ -118,7 +55,6 @@ export interface DesignOptimization {
 export class DesignResultsManager {
   private designResults: Map<string, DesignResults> = new Map();
   private projectInfo: any = {};
-  private sniComplianceEngine: SNIComplianceEngine;
 
   constructor(projectInfo?: any) {
     this.projectInfo = projectInfo || {
@@ -127,9 +63,6 @@ export class DesignResultsManager {
       engineer: 'Design Engineer',
       checker: 'Checking Engineer'
     };
-    
-    // Initialize SNI Compliance Engine
-    this.sniComplianceEngine = new SNIComplianceEngine(this.projectInfo);
   }
 
   /**
@@ -154,169 +87,27 @@ export class DesignResultsManager {
   }
 
   /**
-   * Generate comprehensive design summary with SNI compliance
+   * Generate comprehensive design summary
    */
   public generateSummary(): DesignSummary {
-    const elements = Array.from(this.designResults.entries()).map(([id, result]) => {
-      const elementData = {
-        id,
-        type: result.element.type,
-        results: result,
-        status: this.determineElementStatus(result),
-        compliance: this.checkElementCompliance(id, result)
-      };
-      return elementData;
-    });
+    const elements = Array.from(this.designResults.entries()).map(([id, result]) => ({
+      id,
+      type: result.element.type,
+      results: result,
+      status: this.determineElementStatus(result)
+    }));
 
     const overallStatus = this.calculateOverallStatus(elements);
     const costs = this.calculateCosts(elements);
     const recommendations = this.generateRecommendations(elements);
-    const complianceReport = this.generateComplianceReport(elements);
 
     return {
       projectInfo: this.projectInfo,
       elements,
       overallStatus,
       costs,
-      recommendations,
-      complianceReport
+      recommendations
     };
-  }
-
-  /**
-   * Check SNI compliance for an element
-   */
-  private checkElementCompliance(elementId: string, result: DesignResults): any {
-    const element = result.element;
-    
-    let compliance: any = {
-      overallCompliance: 'compliant' as const
-    };
-
-    // Determine material type from grades  
-    const isConcrete = element.concreteGrade && element.concreteGrade !== '';
-    const isSteel = element.steelGrade && element.steelGrade !== '' && !isConcrete;
-
-    // Check concrete compliance (SNI 2847) for concrete/reinforced concrete elements
-    if (isConcrete) {
-      const sni2847Compliance = this.sniComplianceEngine.checkSNI2847Compliance(
-        elementId,
-        element.type,
-        {
-          geometry: {
-            width: element.dimensions.width,
-            height: element.dimensions.height,
-            length: element.dimensions.length || 0,
-            area: element.dimensions.width * element.dimensions.height,
-            span: element.dimensions.length || 0
-          },
-          material: {
-            fc: parseFloat(element.concreteGrade.replace(/\D/g, '')) || 25,
-            fy: parseFloat(element.steelGrade.replace(/\D/g, '')) || 400
-          },
-          reinforcement: result.reinforcement,
-          forces: {
-            shear: result.checks.shearStrength.required,
-            moment: result.checks.flexuralStrength.required
-          },
-          capacity: {
-            shear: result.checks.shearStrength.provided,
-            moment: result.checks.flexuralStrength.provided
-          },
-          deflection: {
-            calculated: result.checks.deflection.calculated,
-            allowable: result.checks.deflection.allowable
-          }
-        }
-      );
-      
-      compliance.sni2847 = sni2847Compliance;
-      
-      // Determine overall compliance
-      const hasFailures = Object.values(sni2847Compliance).some((check: any) => 
-        check.status === 'fail'
-      );
-      const hasWarnings = Object.values(sni2847Compliance).some((check: any) => 
-        check.status === 'warning'
-      );
-      
-      if (hasFailures) {
-        compliance.overallCompliance = 'non-compliant';
-      } else if (hasWarnings) {
-        compliance.overallCompliance = 'requires-review';
-      }
-    }
-
-    // Check steel compliance (SNI 1729) for steel elements
-    if (isSteel && (element.type === 'beam' || element.type === 'column')) {
-      const sni1729Compliance = this.sniComplianceEngine.checkSNI1729Compliance(
-        elementId,
-        element.type,
-        {
-          geometry: {
-            width: element.dimensions.width,
-            height: element.dimensions.height,
-            length: element.dimensions.length || 0,
-            thickness: Math.min(element.dimensions.width, element.dimensions.height) / 10,
-            radiusOfGyration: Math.min(element.dimensions.width, element.dimensions.height) / 4
-          },
-          material: {
-            fy: parseFloat(element.steelGrade.replace(/\D/g, '')) || 250,
-            fu: parseFloat(element.steelGrade.replace(/\D/g, '')) * 1.5 || 370
-          },
-          forces: {
-            axial: result.checks.flexuralStrength.required,
-            shear: result.checks.shearStrength.required,
-            moment: result.checks.flexuralStrength.required
-          },
-          capacity: {
-            axial: result.checks.flexuralStrength.provided,
-            shear: result.checks.shearStrength.provided,
-            moment: result.checks.flexuralStrength.provided
-          },
-          buckling: {
-            kFactor: 1.0,
-            effectiveLength: element.dimensions.length || 0,
-            capacity: result.checks.flexuralStrength.provided
-          },
-          connection: {
-            force: result.checks.shearStrength.required,
-            capacity: result.checks.shearStrength.provided,
-            type: 'welded'
-          },
-          fatigue: {
-            cycles: 2000000,
-            allowableCycles: 2000000,
-            stress: result.checks.flexuralStrength.required / 1000
-          }
-        }
-      );
-      
-      compliance.sni1729 = sni1729Compliance;
-      
-      // Determine overall compliance
-      const hasFailures = Object.values(sni1729Compliance).some((check: any) => 
-        check.status === 'fail'
-      );
-      const hasWarnings = Object.values(sni1729Compliance).some((check: any) => 
-        check.status === 'warning'
-      );
-      
-      if (hasFailures) {
-        compliance.overallCompliance = 'non-compliant';
-      } else if (hasWarnings && compliance.overallCompliance === 'compliant') {
-        compliance.overallCompliance = 'requires-review';
-      }
-    }
-
-    return compliance;
-  }
-
-  /**
-   * Generate compliance report
-   */
-  private generateComplianceReport(elements: any[]): ComplianceReport {
-    return this.sniComplianceEngine.generateComplianceReport(elements);
   }
 
   /**
@@ -354,27 +145,12 @@ export class DesignResultsManager {
       );
     }
 
-    // Calculate compliance rating
-    const compliantElements = elements.filter(e => 
-      e.compliance?.overallCompliance === 'compliant'
-    ).length;
-    const reviewElements = elements.filter(e => 
-      e.compliance?.overallCompliance === 'requires-review'
-    ).length;
-    const nonCompliantElements = elements.filter(e => 
-      e.compliance?.overallCompliance === 'non-compliant'
-    ).length;
-    
-    const complianceRating = totalElements > 0 ? 
-      Math.round(((compliantElements + reviewElements * 0.5) / totalElements) * 100) : 100;
-
     return {
       totalElements,
       passedElements,
       failedElements,
       warningElements,
-      overallRating,
-      complianceRating
+      overallRating
     };
   }
 
@@ -538,9 +314,9 @@ export class DesignResultsManager {
         ${summary.elements.map(element => `
           <div class="element ${element.status}">
             <h3>${element.id} (${element.type})</h3>
-            <p>${this.getElementSummary(element.results)}</p>
+            <p>${element.results.summary}</p>
             <p><strong>Status:</strong> ${element.status.toUpperCase()}</p>
-            <p><strong>Biaya:</strong> Rp ${this.getElementCost(element.results).toLocaleString('id-ID')}</p>
+            <p><strong>Biaya:</strong> Rp ${element.results.cost.total.toLocaleString('id-ID')}</p>
           </div>
         `).join('')}
       </div>
@@ -626,35 +402,6 @@ export class DesignResultsManager {
     });
 
     return Math.round((efficientElements.length / results.length) * 100);
-  }
-
-  /**
-   * Get element summary text
-   */
-  private getElementSummary(results: DesignResults | FoundationDesignResults): string {
-    if (this.isFoundationResult(results)) {
-      return `Foundation Type: ${results.type}, Bearing Capacity: ${results.analysis.bearingCapacity.allowable.toFixed(0)} kPa`;
-    } else {
-      return `Design Status: ${results.isValid ? 'Valid' : 'Invalid'}, Flexural Ratio: ${results.checks.flexuralStrength.ratio.toFixed(2)}`;
-    }
-  }
-
-  /**
-   * Get element cost
-   */
-  private getElementCost(results: DesignResults | FoundationDesignResults): number {
-    if (this.isFoundationResult(results)) {
-      return results.cost.total;
-    } else {
-      return results.cost.total;
-    }
-  }
-
-  /**
-   * Check if result is foundation result
-   */
-  private isFoundationResult(results: DesignResults | FoundationDesignResults): results is FoundationDesignResults {
-    return 'analysis' in results && 'bearingCapacity' in (results as any).analysis;
   }
 }
 

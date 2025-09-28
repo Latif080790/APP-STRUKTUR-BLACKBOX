@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import SimpleComprehensiveSystem from './components/structural-analysis/SimpleComprehensiveSystem'
+import EnhancedAdvancedStructuralAnalysisSystem from './components/structural-analysis/EnhancedAdvancedStructuralAnalysisSystem'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <SimpleComprehensiveSystem />
+    <EnhancedAdvancedStructuralAnalysisSystem />
   </StrictMode>,
 )

@@ -4,13 +4,13 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Badge } from '../ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { SimpleSelect } from '../ui/simple-select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { Label } from '../../ui/label';
+import { Badge } from '../../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
+import { SimpleSelect } from '../../ui/simple-select';
 import { 
   Calculator, 
   AlertTriangle, 
@@ -1084,12 +1084,8 @@ const AdvancedDesignModule: React.FC = () => {
               {/* Capacity Checks */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {Object.entries(results.capacity).map(([key, capacity]) => {
-                  const isDeflection = key === 'deflection';
-                  const utilization = isDeflection && 'ratio' in capacity 
-                    ? (capacity as { ratio: number }).ratio 
-                    : 'utilization' in capacity 
-                      ? (capacity as { utilization: number }).utilization 
-                      : 0;
+                  const isRatio = key === 'deflection';
+                  const utilization = isRatio ? capacity.ratio : capacity.utilization;
                   const status = utilization <= 1.0 ? 'OK' : 'FAIL';
                   const colorClass = status === 'OK' ? 'text-green-600' : 'text-red-600';
                   
@@ -1101,13 +1097,9 @@ const AdvancedDesignModule: React.FC = () => {
                           {(utilization * 100).toFixed(0)}%
                         </div>
                         <p className="text-sm text-gray-500">
-                          {isDeflection && 'calculated' in capacity && 'limit' in capacity
+                          {isRatio 
                             ? `${capacity.calculated.toFixed(1)} / ${capacity.limit.toFixed(1)} mm`
-                            : 'demand' in capacity && 'capacity' in capacity
-                              ? `${capacity.demand.toFixed(1)} / ${capacity.capacity.toFixed(1)}`
-                              : 'width' in capacity && 'limit' in capacity
-                                ? `${capacity.width.toFixed(2)} / ${capacity.limit.toFixed(2)} mm`
-                                : 'N/A'
+                            : `${capacity.demand.toFixed(1)} / ${capacity.capacity.toFixed(1)}`
                           }
                         </p>
                         <Badge variant={status === 'OK' ? 'default' : 'destructive'}>

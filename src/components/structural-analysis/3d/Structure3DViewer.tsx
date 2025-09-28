@@ -21,32 +21,20 @@ interface Structure3DViewerProps {
   showBeams?: boolean;
   showSlabs?: boolean;
   showFoundation?: boolean;
-  analysisResults?: any;
 }
 
 const Structure3DViewer: React.FC<Structure3DViewerProps> = ({
   geometry,
-  showColumns: initialShowColumns = true,
-  showBeams: initialShowBeams = true,
-  showSlabs: initialShowSlabs = true,
-  showFoundation: initialShowFoundation = true,
-  analysisResults
+  showColumns = true,
+  showBeams = true,
+  showSlabs = true,
+  showFoundation = true
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewAngle, setViewAngle] = useState({ x: 20, y: 45, z: 0 });
   const [zoom, setZoom] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
-  
-  // Local state for element visibility
-  const [showColumns, setShowColumns] = useState(initialShowColumns);
-  const [showBeams, setShowBeams] = useState(initialShowBeams);
-  const [showSlabs, setShowSlabs] = useState(initialShowSlabs);
-  const [showFoundation, setShowFoundation] = useState(initialShowFoundation);
-  
-  // State for deformation visualization
-  const [showDeformation, setShowDeformation] = useState(false);
-  const [deformationScale, setDeformationScale] = useState(10);
   
   // Mock 3D rendering function - In real application, use Three.js or similar
   const render3DStructure = () => {
@@ -231,80 +219,7 @@ const Structure3DViewer: React.FC<Structure3DViewerProps> = ({
       }
     }
     
-    // Draw deformation if analysis results and deformation are available
-    if (analysisResults && showDeformation && analysisResults.deformation) {
-      ctx.strokeStyle = '#e74c3c';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]); // Dashed line for deformation
-      
-      const columnsX = Math.floor(geometry.length / geometry.baySpacingX) + 1;
-      const columnsY = Math.floor(geometry.width / geometry.baySpacingY) + 1;
-      
-      // Draw deformed shape
-      for (let floor = 1; floor <= geometry.numberOfFloors; floor++) {
-        for (let i = 0; i < columnsX; i++) {
-          for (let j = 0; j < columnsY; j++) {
-            const x = (i * geometry.baySpacingX) - geometry.length/2;
-            const y = (j * geometry.baySpacingY) - geometry.width/2;
-            const z1 = floor * geometry.heightPerFloor;
-            
-            // Mock deformation calculation
-            const lateralDisp = Math.sin(floor / geometry.numberOfFloors * Math.PI / 2) * deformationScale * 0.1;
-            
-            const originalPos = project(x, z1, y);
-            const deformedPos = project(x + lateralDisp, z1, y);
-            
-            // Draw deformed position
-            ctx.beginPath();
-            ctx.arc(deformedPos.x, deformedPos.y, 4, 0, 2 * Math.PI);
-            ctx.stroke();
-            
-            // Connect original to deformed position
-            ctx.beginPath();
-            ctx.moveTo(originalPos.x, originalPos.y);
-            ctx.lineTo(deformedPos.x, deformedPos.y);
-            ctx.stroke();
-          }
-        }
-      }
-      
-      ctx.setLineDash([]); // Reset line dash
-    }
-    
-    // Draw force arrows if analysis results are available
-    if (analysisResults && analysisResults.forces) {
-      ctx.strokeStyle = '#f39c12';
-      ctx.lineWidth = 3;
-      ctx.fillStyle = '#f39c12';
-      
-      // Draw force arrows at nodes
-      const columnsX = Math.floor(geometry.length / geometry.baySpacingX) + 1;
-      const columnsY = Math.floor(geometry.width / geometry.baySpacingY) + 1;
-      
-      for (let floor = 1; floor <= geometry.numberOfFloors; floor++) {
-        for (let i = 0; i < columnsX; i++) {
-          for (let j = 0; j < columnsY; j++) {
-            const x = (i * geometry.baySpacingX) - geometry.length/2;
-            const y = (j * geometry.baySpacingY) - geometry.width/2;
-            const z = floor * geometry.heightPerFloor;
-            
-            const nodePos = project(x, z, y);
-            
-            // Mock force magnitude
-            const forceMagnitude = 20;
-            
-            // Draw horizontal force arrow
-            ctx.beginPath();
-            ctx.moveTo(nodePos.x - forceMagnitude, nodePos.y);
-            ctx.lineTo(nodePos.x + forceMagnitude, nodePos.y);
-            ctx.moveTo(nodePos.x + forceMagnitude - 5, nodePos.y - 3);
-            ctx.lineTo(nodePos.x + forceMagnitude, nodePos.y);
-            ctx.lineTo(nodePos.x + forceMagnitude - 5, nodePos.y + 3);
-            ctx.stroke();
-          }
-        }
-      }
-    }
+    // Add labels and dimensions
     ctx.fillStyle = '#1f2937';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
@@ -319,7 +234,7 @@ const Structure3DViewer: React.FC<Structure3DViewerProps> = ({
   // Re-render when geometry or view parameters change
   useEffect(() => {
     render3DStructure();
-  }, [geometry, viewAngle, zoom, showGrid, showColumns, showBeams, showSlabs, showFoundation, showDeformation, deformationScale, analysisResults]);
+  }, [geometry, viewAngle, zoom, showGrid, showColumns, showBeams, showSlabs, showFoundation]);
   
   // Handle canvas resize
   useEffect(() => {
@@ -426,7 +341,7 @@ const Structure3DViewer: React.FC<Structure3DViewerProps> = ({
               <input
                 type="checkbox"
                 checked={showColumns}
-                onChange={(e) => setShowColumns(e.target.checked)}
+                onChange={(e) => {}}
                 className="form-checkbox"
               />
               <span>Columns</span>
@@ -436,7 +351,7 @@ const Structure3DViewer: React.FC<Structure3DViewerProps> = ({
               <input
                 type="checkbox"
                 checked={showBeams}
-                onChange={(e) => setShowBeams(e.target.checked)}
+                onChange={(e) => {}}
                 className="form-checkbox"
               />
               <span>Beams</span>
@@ -446,7 +361,7 @@ const Structure3DViewer: React.FC<Structure3DViewerProps> = ({
               <input
                 type="checkbox"
                 checked={showSlabs}
-                onChange={(e) => setShowSlabs(e.target.checked)}
+                onChange={(e) => {}}
                 className="form-checkbox"
               />
               <span>Slabs</span>
@@ -456,42 +371,12 @@ const Structure3DViewer: React.FC<Structure3DViewerProps> = ({
               <input
                 type="checkbox"
                 checked={showFoundation}
-                onChange={(e) => setShowFoundation(e.target.checked)}
+                onChange={(e) => {}}
                 className="form-checkbox"
               />
               <span>Foundation</span>
             </label>
           </div>
-          
-          {/* Analysis results controls */}
-          {analysisResults && (
-            <div className="flex items-center justify-center space-x-6 text-sm">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={showDeformation}
-                  onChange={(e) => setShowDeformation(e.target.checked)}
-                  className="form-checkbox"
-                />
-                <span>Show Deformation</span>
-              </label>
-              
-              {showDeformation && (
-                <div className="flex items-center space-x-2">
-                  <span>Scale:</span>
-                  <input
-                    type="range"
-                    min="1"
-                    max="50"
-                    value={deformationScale}
-                    onChange={(e) => setDeformationScale(parseInt(e.target.value))}
-                    className="w-16"
-                  />
-                  <span className="w-8 text-center">{deformationScale}x</span>
-                </div>
-              )}
-            </div>
-          )}
           
           {/* 3D Canvas */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">

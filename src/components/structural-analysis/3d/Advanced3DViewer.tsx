@@ -1,2213 +1,770 @@
-/**/**
+import React, { useEffect, useRef, useState } from 'react';import React, { useEffect, useRef, useState } from 'react';/**
 
- * Advanced 3D Structure Viewer with Deformation Analysis * Advanced 3D Structure Viewer with Deformation Analysis
+import * as THREE from 'three';
 
- * Professional Three.js implementation with post-analysis visualization * Professional Three.js implementation with post-analysis visualization
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';import * as THREE from 'three'; * Enhanced 3D Structure Viewer with Advanced Features
 
- */ */
+import { Button } from '../../ui/button';
 
+import { RotateCcw, Eye, Settings, Move3D } from 'lucide-react';import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'; * Professional-grade 3D visualization for structural analysis
 
 
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 
-import * as THREE from 'three';import * as THREE from 'three';
+interface Advanced3DViewerProps {import { Button } from '../../ui/button'; */
 
-import { Canvas, useThree, useFrame } from '@react-three/fiber';import { Canvas, useThree, useFrame } from '@react-three/fiber';
+  structure: {
 
-import { import { 
+    nodes: Array<{import { RotateCcw, ZoomIn, ZoomOut, Move3D, Eye, Settings } from 'lucide-react';
 
-  OrbitControls,   OrbitControls, 
+      id: number;
 
-  Grid,   Grid, 
+      x: number;import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 
-  Environment,   Environment, 
+      y: number;
 
-  Html,   Html, 
+      z: number;interface Advanced3DViewerProps {import { Canvas, useThree, useFrame } from '@react-three/fiber';
 
-  Text,  Text,
+      type: 'fixed' | 'pinned' | 'free';
 
-  ContactShadows,  ContactShadows,
+    }>;  structure: {import { 
 
-  PerspectiveCamera,  PerspectiveCamera,
+    elements: Array<{
 
-  Box,  Box,
+      id: number;    nodes: Array<{  OrbitControls, 
 
-  Sphere,  Sphere,
+      type: 'column' | 'beam' | 'slab';
 
-  Line  Line
+      startNode: number;      id: number;  Text, 
 
-} from '@react-three/drei';} from '@react-three/drei';
+      endNode: number;
 
-import { import { 
+      section: string;      x: number;  Html, 
 
-  ZoomIn,   ZoomIn, 
+      material: string;
 
-  ZoomOut,   ZoomOut, 
-
-  RotateCcw,  RotateCcw,
-
-  Grid3x3,  Grid3x3,
-
-  Activity,  Activity,
-
-  BarChart3,  BarChart3,
-
-  Download,  Download,
-
-  Settings  Settings
-
-} from 'lucide-react';} from 'lucide-react';
-
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-
-import { Button } from '../../ui/button';import { Button } from '../../ui/button';
-
-import { Checkbox } from '../../ui/checkbox';import { Checkbox } from '../../ui/checkbox';
-
-import { Badge } from '../../ui/badge';import { Badge } from '../../ui/badge';
-
-} from '@react-three/drei';
-
-interface Enhanced3DNode {
-
-  id: number;import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-
-  x: number;import { Button } from '../../ui/button';
-
-  y: number;import { Badge } from '../../ui/badge';
-
-  z: number;import { Slider } from '../../ui/slider';
-
-  restraint?: {import { 
-
-    x: boolean;  RotateCcw, 
-
-    y: boolean;  ZoomIn, 
-
-    z: boolean;  ZoomOut, 
-
-    rx: boolean;  Eye, 
-
-    ry: boolean;  EyeOff,
-
-    rz: boolean;  Grid3X3,
-
-  };  Lightbulb,
-
-  displacement?: [number, number, number];  Camera,
-
-  reaction?: [number, number, number];  BarChart3,
-
-  isSelected?: boolean;  Activity,
-
-}  Maximize2,
-
-  Download,
-
-interface Enhanced3DElement {  Settings,
-
-  id: number;  Move3D
-
-  type: 'column' | 'beam' | 'slab';} from 'lucide-react';
-
-  startNode: number;
-
-  endNode: number;// Types for enhanced 3D visualization
-
-  dimensions: {interface Enhanced3DNode {
-
-    width: number;  id: string;
-
-    height: number;  position: [number, number, number];
-
-    thickness?: number;  displacement?: [number, number, number];
-
-    diameter?: number;  rotation?: [number, number, number];
-
-  };  forces?: [number, number, number];
-
-  material: 'concrete' | 'steel' | 'composite' | 'concrete-steel';  moments?: [number, number, number];
-
-  forces?: {  support: {
-
-    axial: number;    x: boolean;
-
-    shearY: number;    y: boolean;
-
-    shearZ: number;    z: boolean;
-
-    momentY: number;    rx: boolean;
-
-    momentZ: number;    ry: boolean;
-
-  };    rz: boolean;
-
-  stress?: number;  };
-
-  utilization?: number;  isSelected?: boolean;
-
-  isSelected?: boolean;}
-
-}
-
-interface Enhanced3DElement {
-
-interface Enhanced3DStructure {  id: string;
-
-  nodes: Enhanced3DNode[];  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation';
-
-  elements: Enhanced3DElement[];  startNode: string;
-
-  analysisResults?: {  endNode: string;
-
-    summary: {  section: {
-
-      maxStress: number;    width: number;
-
-      maxDrift: number;    height: number;
-
-      baseShear: number;    thickness?: number;
-
-    };  };
-
-  };  material: 'concrete' | 'steel' | 'composite';
-
-}  forces?: {
-
-    axial: number[];
-
-interface Advanced3DViewerProps {    shear: number[];
-
-  structure: Enhanced3DStructure;    moment: number[];
-
-  onElementClick?: (element: any) => void;    positions: number[];
-
-  showStress?: boolean;  };
-
-  showDeformation?: boolean;  stresses?: {
-
-}    max: number;
-
-    min: number;
-
-// Enhanced 3D Node Component    vonMises: number[];
-
-const Enhanced3DNodeComponent: React.FC<{   };
-
-  node: Enhanced3DNode;   utilization?: number;
-
-  scale: number;  isSelected?: boolean;
-
-  showLabels: boolean;}
-
-  onClick?: () => void;
-
-}> = ({ node, scale, showLabels, onClick }) => {interface Enhanced3DStructure {
-
-  const meshRef = useRef<THREE.Mesh>(null);  nodes: Enhanced3DNode[];
-
-    elements: Enhanced3DElement[];
-
-  const restraintColor = useMemo(() => {  loads: {
-
-    if (!node.restraint) return '#4A90E2';    nodeId: string;
-
-    const restraintCount = Object.values(node.restraint).filter(Boolean).length;    forces: [number, number, number];
-
-    if (restraintCount === 6) return '#E74C3C'; // Fixed - Red    moments: [number, number, number];
-
-    if (restraintCount > 0) return '#F39C12'; // Partial - Orange  }[];
-
-    return '#4A90E2'; // Free - Blue  boundingBox: {
-
-  }, [node.restraint]);    min: [number, number, number];
-
-    max: [number, number, number];
-
-  const deformedPosition = useMemo(() => {  };
-
-    if (!node.displacement) return [node.x, node.y, node.z];  scale: number;
-
-    const deformationScale = 100; // Amplification factor}
-
-    return [
-
-      node.x + (node.displacement[0] * deformationScale),interface Enhanced3DViewerProps {
-
-      node.y + (node.displacement[1] * deformationScale),  structure: Enhanced3DStructure | null;
-
-      node.z + (node.displacement[2] * deformationScale)  analysisResults?: any;
-
-    ] as [number, number, number];  showDeformation?: boolean;
-
-  }, [node.x, node.y, node.z, node.displacement]);  deformationScale?: number;
-
-  showStress?: boolean;
-
-  return (  showForces?: boolean;
-
-    <group position={deformedPosition}>  showLabels?: boolean;
-
-      <Sphere   viewMode?: 'solid' | 'wireframe' | 'both';
-
-        ref={meshRef}  colorMode?: 'material' | 'stress' | 'utilization' | 'forces';
-
-        args={[0.1 * scale, 16, 16]}  onElementSelect?: (elementId: string) => void;
-
-        onClick={onClick}  onNodeSelect?: (nodeId: string) => void;
-
-      >  className?: string;
-
-        <meshPhongMaterial }
-
-          color={node.isSelected ? '#FF6B6B' : restraintColor}
-
-          transparent={true}interface Advanced3DViewerProps {
-
-          opacity={0.8}  structure: {
-
-        />    nodes: Array<{
-
-      </Sphere>      id: number;
-
-            x: number;
-
-      {/* Restraint Indicators */}      y: number;
-
-      {node.restraint && (      z: number;
-
-        <>      type: 'fixed' | 'pinned' | 'free';
-
-          {node.restraint.x && (    }>;
-
-            <Box args={[0.2 * scale, 0.05 * scale, 0.05 * scale]} position={[0.15 * scale, 0, 0]}>    elements: Array<{
-
-              <meshBasicMaterial color="#E74C3C" />      id: number;
-
-            </Box>      type: 'column' | 'beam' | 'slab';
-
-          )}      startNode: number;
-
-          {node.restraint.y && (      endNode: number;
-
-            <Box args={[0.05 * scale, 0.2 * scale, 0.05 * scale]} position={[0, 0.15 * scale, 0]}>      section: string;
-
-              <meshBasicMaterial color="#E74C3C" />      material: string;
-
-            </Box>    }>;
-
-          )}  };
-
-          {node.restraint.z && (  analysisResults?: {
-
-            <Box args={[0.05 * scale, 0.05 * scale, 0.2 * scale]} position={[0, 0, 0.15 * scale]}>    summary: {
-
-              <meshBasicMaterial color="#E74C3C" />      maxStress: number;
-
-            </Box>      maxDrift: number;
-
-          )}      baseShear: number;
-
-        </>    };
-
-      )}  };
-
-        onElementClick?: (element: any) => void;
-
-      {/* Node Labels */}  showStress?: boolean;
-
-      {showLabels && (  showDeformation?: boolean;
-
-        <Html distanceFactor={10}>}
-
-          <div className="bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
-
-            Node {node.id}  ZoomOut, 
-
-            {node.displacement && (
-
-              <div className="text-xs text-yellow-300">  Grid3x3,      id: number;
-
-                Δ: {node.displacement.map(d => d.toFixed(3)).join(', ')}
-
-              </div>  Activity,
-
-            )}
-
-          </div>  BarChart3,      x: number;import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-
-        </Html>
-
-      )}  Download,
-
-    </group>
-
-  );  Settings      y: number;
-
-};
-
-} from 'lucide-react';
-
-// Enhanced 3D Element Component
-
-const Enhanced3DElementComponent: React.FC<{      z: number;interface Advanced3DViewerProps {import { Canvas, useThree, useFrame } from '@react-three/fiber';
-
-  element: Enhanced3DElement;
-
-  nodes: Enhanced3DNode[];interface Enhanced3DNode {
-
-  scale: number;
-
-  showStress: boolean;  id: string;      type: 'fixed' | 'pinned' | 'free';
-
-  showDeformation: boolean;
-
-  onClick?: () => void;  position: [number, number, number];
-
-}> = ({ element, nodes, scale, showStress, showDeformation, onClick }) => {
-
-  const startNode = nodes.find(n => n.id === element.startNode);  displacement?: [number, number, number];    }>;  structure: {import { 
-
-  const endNode = nodes.find(n => n.id === element.endNode);
-
-    reaction?: [number, number, number];
-
-  if (!startNode || !endNode) return null;
-
-  support: {    elements: Array<{
-
-  const getDeformedPosition = (node: Enhanced3DNode): [number, number, number] => {
-
-    if (!showDeformation || !node.displacement) return [node.x, node.y, node.z];    x: boolean;
-
-    const deformationScale = 100;
-
-    return [    y: boolean;      id: number;    nodes: Array<{  OrbitControls, 
-
-      node.x + (node.displacement[0] * deformationScale),
-
-      node.y + (node.displacement[1] * deformationScale),    z: boolean;
-
-      node.z + (node.displacement[2] * deformationScale)
-
-    ];    rx: boolean;      type: 'column' | 'beam' | 'slab';
+    }>;      y: number;  Environment,
 
   };
 
-    ry: boolean;
+  analysisResults?: {      z: number;  Grid,
 
-  const start = getDeformedPosition(startNode);
+    summary: {
 
-  const end = getDeformedPosition(endNode);    rz: boolean;      startNode: number;      id: number;  Text, 
+      maxStress: number;      type: 'fixed' | 'pinned' | 'free';  ContactShadows,
 
-  
+      maxDrift: number;
 
-  const midpoint: [number, number, number] = [  };
+      baseShear: number;    }>;  PerspectiveCamera,
 
-    (start[0] + end[0]) / 2,
+    };
 
-    (start[1] + end[1]) / 2,  isSelected?: boolean;      endNode: number;
+  };    elements: Array<{  Box,
 
-    (start[2] + end[2]) / 2
+  onElementClick?: (element: any) => void;
 
-  ];}
+  showStress?: boolean;      id: number;  Sphere,
 
+  showDeformation?: boolean;
 
+}      type: 'column' | 'beam' | 'slab';  Line
 
-  const length = Math.sqrt(      section: string;      x: number;  Html, 
 
-    Math.pow(end[0] - start[0], 2) +
 
-    Math.pow(end[1] - start[1], 2) +interface Enhanced3DElement {
+export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({       startNode: number;} from '@react-three/drei';
 
-    Math.pow(end[2] - start[2], 2)
+  structure, 
 
-  );  id: string;      material: string;
+  analysisResults,      endNode: number;import * as THREE from 'three';
 
+  onElementClick,
 
+  showStress = false,      section: string;import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-  const direction = new THREE.Vector3(  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation' | 'pile-cap' | 'pile' | 'pedestal';
+  showDeformation = false
 
-    end[0] - start[0],
+}) => {      material: string;import { Button } from '@/components/ui/button';
 
-    end[1] - start[1],  startNode: string;    }>;      y: number;  Environment,
+  const mountRef = useRef<HTMLDivElement>(null);
 
-    end[2] - start[2]
+  const sceneRef = useRef<THREE.Scene>();    }>;import { Badge } from '@/components/ui/badge';
 
-  ).normalize();  endNode: string;
+  const rendererRef = useRef<THREE.WebGLRenderer>();
 
+  const cameraRef = useRef<THREE.PerspectiveCamera>();  };import { Slider } from '@/components/ui/slider';
 
+  const frameRef = useRef<number>();
 
-  // Material color based on type and stress  section: {  };
+    analysisResults?: {import { 
 
-  const getElementColor = () => {
+  const [isWireframe, setIsWireframe] = useState(false);
 
-    if (element.isSelected) return '#FF6B6B';    width: number;
+  const [showGrid, setShowGrid] = useState(true);    summary: {  RotateCcw, 
 
-    
 
-    if (showStress && element.stress !== undefined) {    height: number;  analysisResults?: {      z: number;  Grid,
 
-      const stressRatio = Math.min(element.stress / 250, 1); // Assuming 250 MPa max
+  useEffect(() => {      maxStress: number;  ZoomIn, 
 
-      if (stressRatio > 0.8) return '#E74C3C'; // High stress - Red    thickness?: number;
+    if (!mountRef.current) return;
 
-      if (stressRatio > 0.6) return '#F39C12'; // Medium stress - Orange
+      maxDrift: number;  ZoomOut, 
 
-      if (stressRatio > 0.4) return '#F1C40F'; // Low-medium stress - Yellow    diameter?: number;    summary: {
+    // Scene setup
 
-      return '#2ECC71'; // Low stress - Green
+    const scene = new THREE.Scene();      baseShear: number;  Eye, 
 
-    }  };
+    scene.background = new THREE.Color(0xf8fafc);
 
-    
+    sceneRef.current = scene;    };  EyeOff,
 
-    switch (element.material) {  material: 'concrete' | 'steel' | 'composite' | 'concrete-steel';      maxStress: number;      type: 'fixed' | 'pinned' | 'free';  ContactShadows,
 
-      case 'steel': return '#95A5A6';
 
-      case 'concrete': return '#BDC3C7';  forces?: {
+    // Camera setup  };  Grid3X3,
 
-      case 'composite': return '#9B59B6';
+    const camera = new THREE.PerspectiveCamera(
 
-      case 'concrete-steel': return '#34495E';    axial: number;      maxDrift: number;
+      75,  onElementClick?: (element: any) => void;  Lightbulb,
 
-      default: return '#7F8C8D';
+      mountRef.current.clientWidth / mountRef.current.clientHeight,
 
-    }    shearY: number;
+      0.1,  showStress?: boolean;  Camera,
 
-  };
+      1000
 
-    shearZ: number;      baseShear: number;    }>;  PerspectiveCamera,
+    );  showDeformation?: boolean;  BarChart3,
 
-  const elementColor = getElementColor();
+    camera.position.set(50, 40, 50);
 
-  const elementSize = element.type === 'column' ? 0.15 * scale : 0.1 * scale;    momentY: number;
+    cameraRef.current = camera;}  Activity,
 
 
 
-  return (    momentZ: number;    };
+    // Renderer setup  Maximize2,
 
-    <group>
+    const renderer = new THREE.WebGLRenderer({ 
 
-      {/* Main Element */}    torsion: number;
+      antialias: true,export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({   Download
 
-      <Line
+      alpha: true
 
-        points={[start, end]}  };  };    elements: Array<{  Box,
+    });  structure, } from 'lucide-react';
 
-        color={elementColor}
+    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
 
-        lineWidth={element.type === 'column' ? 4 : 2}  utilization?: number;
+    renderer.shadowMap.enabled = true;  analysisResults,
 
-        onClick={onClick}
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-      />  isSelected?: boolean;  onElementClick?: (element: any) => void;
+    rendererRef.current = renderer;  onElementClick,// Types for enhanced 3D visualization
 
-      
 
-      {/* Element representation based on type */}}
 
-      <group position={midpoint}>
+    // Lighting setup  showStress = false,interface Enhanced3DNode {
 
-        {element.type === 'column' && (  showStress?: boolean;      id: number;  Sphere,
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
 
-          <Box args={[elementSize, length, elementSize]} onClick={onClick}>
+    scene.add(ambientLight);  showDeformation = false  id: string;
 
-            <meshPhongMaterial interface Enhanced3DStructure {
 
-              color={elementColor}
 
-              transparent={true}  nodes: Enhanced3DNode[];  showDeformation?: boolean;
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);}) => {  position: [number, number, number];
 
-              opacity={0.7}
+    directionalLight.position.set(100, 100, 50);
 
-            />  elements: Enhanced3DElement[];
+    directionalLight.castShadow = true;  const mountRef = useRef<HTMLDivElement>(null);  displacement?: [number, number, number];
 
-          </Box>
+    directionalLight.shadow.mapSize.width = 2048;
 
-        )}  boundingBox: {}      type: 'column' | 'beam' | 'slab';  Line
+    directionalLight.shadow.mapSize.height = 2048;  const sceneRef = useRef<THREE.Scene>();  rotation?: [number, number, number];
 
-        
+    scene.add(directionalLight);
 
-        {element.type === 'beam' && (    min: [number, number, number];
+  const rendererRef = useRef<THREE.WebGLRenderer>();  forces?: [number, number, number];
 
-          <Box args={[length, elementSize * 0.7, elementSize * 1.2]} onClick={onClick}>
+    // Grid helper
 
-            <meshPhongMaterial     max: [number, number, number];
+    const gridHelper = new THREE.GridHelper(100, 50);  const cameraRef = useRef<THREE.PerspectiveCamera>();  moments?: [number, number, number];
 
-              color={elementColor}
+    gridHelper.material.opacity = 0.3;
 
-              transparent={true}  };
+    gridHelper.material.transparent = true;  const controlsRef = useRef<any>();  support: {
 
-              opacity={0.7}
-
-            />  scale: number;export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({       startNode: number;} from '@react-three/drei';
-
-          </Box>
-
-        )}}
-
-        
-
-        {element.type === 'slab' && (  structure, 
-
-          <Box args={[length, elementSize * 0.3, elementSize * 1.5]} onClick={onClick}>
-
-            <meshPhongMaterial interface Advanced3DViewerProps {
-
-              color={elementColor}
-
-              transparent={true}  structure: Enhanced3DStructure | null;  analysisResults,      endNode: number;import * as THREE from 'three';
-
-              opacity={0.5}
-
-            />  analysisResults?: any;
-
-          </Box>
-
-        )}  showDeformation?: boolean;  onElementClick,
-
-      </group>
-
-  deformationScale?: number;
-
-      {/* Stress/Force Indicators */}
-
-      {showStress && element.forces && (  showStress?: boolean;  showStress = false,      section: string;import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-        <Html position={midpoint} distanceFactor={15}>
-
-          <div className="bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">  showForces?: boolean;
-
-            <div>Axial: {element.forces.axial.toFixed(1)} kN</div>
-
-            <div>Moment: {element.forces.momentY.toFixed(1)} kNm</div>  showLabels?: boolean;  showDeformation = false
-
-            {element.utilization && (
-
-              <div className="text-yellow-300">  showSupports?: boolean;
-
-                Util: {(element.utilization * 100).toFixed(1)}%
-
-              </div>  viewMode?: 'solid' | 'wireframe' | 'both';}) => {      material: string;import { Button } from '@/components/ui/button';
-
-            )}
-
-          </div>  colorMode?: 'material' | 'stress' | 'utilization' | 'forces';
-
-        </Html>
-
-      )}  onElementSelect?: (elementId: string) => void;  const mountRef = useRef<HTMLDivElement>(null);
-
-    </group>
-
-  );  onNodeSelect?: (nodeId: string) => void;
-
-};
-
-  className?: string;  const sceneRef = useRef<THREE.Scene>();    }>;import { Badge } from '@/components/ui/badge';
-
-// Main Advanced 3D Viewer Component
-
-const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({}
-
-  structure,
-
-  onElementClick,  const rendererRef = useRef<THREE.WebGLRenderer>();
-
-  showStress = false,
-
-  showDeformation = false// Advanced Node Component with Deformation
-
-}) => {
-
-  const [viewOptions, setViewOptions] = useState({const Advanced3DNode: React.FC<{  const cameraRef = useRef<THREE.PerspectiveCamera>();  };import { Slider } from '@/components/ui/slider';
-
-    showGrid: true,
-
-    showLabels: false,  node: Enhanced3DNode;
-
-    showStress: showStress,
-
-    showDeformation: showDeformation,  scale: number;  const frameRef = useRef<number>();
-
-    wireframe: false,
-
-    showEnvironment: true  showDeformation: boolean;
-
-  });
-
-  deformationScale: number;    analysisResults?: {import { 
-
-  const [selectedElement, setSelectedElement] = useState<number | null>(null);
-
-  const controlsRef = useRef<any>();  showSupports: boolean;
-
-
-
-  // Calculate scale based on structure size  showLabels: boolean;  const [isWireframe, setIsWireframe] = useState(false);
-
-  const scale = useMemo(() => {
-
-    const allNodes = structure.nodes;  onClick: (nodeId: string) => void;
-
-    if (allNodes.length === 0) return 1;
-
-    }> = ({ node, scale, showDeformation, deformationScale, showSupports, showLabels, onClick }) => {  const [showGrid, setShowGrid] = useState(true);    summary: {  RotateCcw, 
-
-    const bounds = allNodes.reduce((acc, node) => ({
-
-      minX: Math.min(acc.minX, node.x),  const [hovered, setHovered] = useState(false);
-
-      maxX: Math.max(acc.maxX, node.x),
-
-      minY: Math.min(acc.minY, node.y),
-
-      maxY: Math.max(acc.maxY, node.y),
-
-      minZ: Math.min(acc.minZ, node.z),  // Calculate deformed position
-
-      maxZ: Math.max(acc.maxZ, node.z)
-
-    }), {  const deformedPosition = useMemo(() => {  useEffect(() => {      maxStress: number;  ZoomIn, 
-
-      minX: Infinity, maxX: -Infinity,
-
-      minY: Infinity, maxY: -Infinity,    if (!showDeformation || !node.displacement) return node.position;
-
-      minZ: Infinity, maxZ: -Infinity
-
-    });    return [    if (!mountRef.current) return;
-
-
-
-    const maxDimension = Math.max(      node.position[0] + node.displacement[0] * deformationScale,
-
-      bounds.maxX - bounds.minX,
-
-      bounds.maxY - bounds.minY,      node.position[1] + node.displacement[1] * deformationScale,      maxDrift: number;  ZoomOut, 
-
-      bounds.maxZ - bounds.minZ
-
-    );      node.position[2] + node.displacement[2] * deformationScale
-
-
-
-    return Math.max(0.5, Math.min(2.0, 20 / maxDimension));    ] as [number, number, number];    // Scene setup
-
-  }, [structure.nodes]);
-
-  }, [node.position, node.displacement, showDeformation, deformationScale]);
-
-  const handleNodeClick = useCallback((node: Enhanced3DNode) => {
-
-    setSelectedElement(node.id);    const scene = new THREE.Scene();      baseShear: number;  Eye, 
-
-    if (onElementClick) {
-
-      onElementClick(node);  const handleClick = useCallback((e: any) => {
-
-    }
-
-  }, [onElementClick]);    e.stopPropagation();    scene.background = new THREE.Color(0xf8fafc);
-
-
-
-  const handleElementClick = useCallback((element: Enhanced3DElement) => {    onClick(node.id);
-
-    setSelectedElement(element.id);
-
-    if (onElementClick) {  }, [node.id, onClick]);    sceneRef.current = scene;    };  EyeOff,
-
-      onElementClick(element);
-
-    }
-
-  }, [onElementClick]);
-
-  const nodeColor = useMemo(() => {
-
-  const resetView = () => {
-
-    if (controlsRef.current) {    if (node.isSelected) return '#e74c3c';
-
-      controlsRef.current.reset();
-
-    }    if (hovered) return '#f39c12';    // Camera setup  };  Grid3X3,
-
-  };
-
-    
-
-  return (
-
-    <div className="w-full h-full bg-gray-50">    // Color by support conditions    const camera = new THREE.PerspectiveCamera(
-
-      {/* Control Panel */}
-
-      <Card className="absolute top-4 left-4 z-10 w-80">    const hasSupport = Object.values(node.support).some(Boolean);
-
-        <CardHeader className="pb-3">
-
-          <CardTitle className="text-lg flex items-center gap-2">    if (hasSupport) return '#2ecc71';      75,  onElementClick?: (element: any) => void;  Lightbulb,
-
-            <Activity className="h-5 w-5" />
-
-            3D Structure Viewer    
-
-          </CardTitle>
-
-        </CardHeader>    return '#3498db';      mountRef.current.clientWidth / mountRef.current.clientHeight,
-
-        <CardContent className="space-y-4">
-
-          {/* View Options */}  }, [node.isSelected, hovered, node.support]);
-
-          <div className="grid grid-cols-2 gap-2">
-
-            <label className="flex items-center space-x-2 text-sm">      0.1,  showStress?: boolean;  Camera,
-
-              <Checkbox 
-
-                checked={viewOptions.showGrid}  // Support visualization
-
-                onCheckedChange={(checked) => 
-
-                  setViewOptions(prev => ({ ...prev, showGrid: !!checked }))  const renderSupport = () => {      1000
-
-                }
-
-              />    if (!showSupports) return null;
-
-              <span>Grid</span>
-
-            </label>        );  showDeformation?: boolean;  BarChart3,
-
-            
-
-            <label className="flex items-center space-x-2 text-sm">    const hasSupport = Object.values(node.support).some(Boolean);
-
-              <Checkbox 
-
-                checked={viewOptions.showLabels}    if (!hasSupport) return null;    camera.position.set(50, 40, 50);
-
-                onCheckedChange={(checked) => 
-
-                  setViewOptions(prev => ({ ...prev, showLabels: !!checked }))
-
-                }
-
-              />    return (    cameraRef.current = camera;}  Activity,
-
-              <span>Labels</span>
-
-            </label>      <group position={[0, -0.3, 0]}>
-
-            
-
-            <label className="flex items-center space-x-2 text-sm">        {/* Support base */}
-
-              <Checkbox 
-
-                checked={viewOptions.showStress}        <mesh>
-
-                onCheckedChange={(checked) => 
-
-                  setViewOptions(prev => ({ ...prev, showStress: !!checked }))          <coneGeometry args={[0.2 * scale, 0.3 * scale, 8]} />    // Renderer setup  Maximize2,
-
-                }
-
-              />          <meshStandardMaterial color="#34495e" />
-
-              <span>Stress</span>
-
-            </label>        </mesh>    const renderer = new THREE.WebGLRenderer({ 
-
-            
-
-            <label className="flex items-center space-x-2 text-sm">        
-
-              <Checkbox 
-
-                checked={viewOptions.showDeformation}        {/* Support symbols */}      antialias: true,export const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({   Download
-
-                onCheckedChange={(checked) => 
-
-                  setViewOptions(prev => ({ ...prev, showDeformation: !!checked }))        {node.support.x && (
-
-                }
-
-              />          <mesh position={[0.3 * scale, 0, 0]}>      alpha: true
-
-              <span>Deformation</span>
-
-            </label>            <boxGeometry args={[0.1 * scale, 0.1 * scale, 0.02 * scale]} />
-
-          </div>
-
-            <meshStandardMaterial color="#e74c3c" />    });  structure, } from 'lucide-react';
-
-          {/* Analysis Results Summary */}
-
-          {structure.analysisResults && (          </mesh>
-
-            <div className="space-y-2">
-
-              <h4 className="font-semibold text-sm">Analysis Results</h4>        )}    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
-
-              <div className="grid grid-cols-1 gap-1 text-xs">
-
-                <div className="flex justify-between">        {node.support.y && (
-
-                  <span>Max Stress:</span>
-
-                  <Badge variant="outline">          <mesh position={[0, 0.3 * scale, 0]}>    renderer.shadowMap.enabled = true;  analysisResults,
-
-                    {structure.analysisResults.summary.maxStress.toFixed(1)} MPa
-
-                  </Badge>            <boxGeometry args={[0.02 * scale, 0.1 * scale, 0.1 * scale]} />
-
-                </div>
-
-                <div className="flex justify-between">            <meshStandardMaterial color="#e74c3c" />    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-                  <span>Max Drift:</span>
-
-                  <Badge variant="outline">          </mesh>
-
-                    {(structure.analysisResults.summary.maxDrift * 100).toFixed(2)}%
-
-                  </Badge>        )}    rendererRef.current = renderer;  onElementClick,// Types for enhanced 3D visualization
-
-                </div>
-
-                <div className="flex justify-between">        {node.support.z && (
-
-                  <span>Base Shear:</span>
-
-                  <Badge variant="outline">          <mesh position={[0, 0, 0.3 * scale]}>
-
-                    {structure.analysisResults.summary.baseShear.toFixed(0)} kN
-
-                  </Badge>            <boxGeometry args={[0.1 * scale, 0.02 * scale, 0.1 * scale]} />
-
-                </div>
-
-              </div>            <meshStandardMaterial color="#e74c3c" />    // Lighting setup  showStress = false,interface Enhanced3DNode {
-
-            </div>
-
-          )}          </mesh>
-
-
-
-          {/* Controls */}        )}    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-
-          <div className="flex gap-2">
-
-            <Button variant="outline" size="sm" onClick={resetView}>      </group>
-
-              <RotateCcw className="h-4 w-4 mr-1" />
-
-              Reset View    );    scene.add(ambientLight);  showDeformation = false  id: string;
-
-            </Button>
-
-            <Button variant="outline" size="sm">  };
-
-              <Download className="h-4 w-4 mr-1" />
-
-              Export
-
-            </Button>
-
-          </div>  return (
-
-        </CardContent>
-
-      </Card>    <group position={deformedPosition}>    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);}) => {  position: [number, number, number];
-
-
-
-      {/* 3D Canvas */}      {/* Original position indicator (if deformed) */}
-
-      <Canvas
-
-        camera={{ position: [10, 10, 10], fov: 50 }}      {showDeformation && node.displacement && (    directionalLight.position.set(100, 100, 50);
-
-        style={{ width: '100%', height: '100%' }}
-
-      >        <group position={node.position}>
-
-        <PerspectiveCamera makeDefault position={[10, 10, 10]} />
-
-                  <mesh>    directionalLight.castShadow = true;  const mountRef = useRef<HTMLDivElement>(null);  displacement?: [number, number, number];
-
-        {/* Lighting */}
-
-        <ambientLight intensity={0.4} />            <sphereGeometry args={[0.08 * scale, 12, 12]} />
-
-        <directionalLight 
-
-          position={[10, 10, 5]}             <meshBasicMaterial color="#bdc3c7" opacity={0.5} transparent />    directionalLight.shadow.mapSize.width = 2048;
-
-          intensity={0.8} 
-
-          castShadow           </mesh>
-
-          shadow-mapSize-width={2048}
-
-          shadow-mapSize-height={2048}        </group>    directionalLight.shadow.mapSize.height = 2048;  const sceneRef = useRef<THREE.Scene>();  rotation?: [number, number, number];
-
-        />
-
-        <pointLight position={[-10, -10, -5]} intensity={0.3} />      )}
-
-
-
-        {/* Environment */}          scene.add(directionalLight);
-
-        {viewOptions.showEnvironment && (
-
-          <Environment preset="city" background={false} />      {/* Main node */}
-
-        )}
-
-      <mesh  const rendererRef = useRef<THREE.WebGLRenderer>();  forces?: [number, number, number];
-
-        {/* Grid */}
-
-        {viewOptions.showGrid && (        onClick={handleClick}
-
-          <Grid 
-
-            args={[20, 20]}         onPointerEnter={() => setHovered(true)}    // Grid helper
-
-            cellSize={1} 
-
-            cellThickness={0.5}        onPointerLeave={() => setHovered(false)}
-
-            cellColor="#888"
-
-            sectionSize={5}      >    const gridHelper = new THREE.GridHelper(100, 50);  const cameraRef = useRef<THREE.PerspectiveCamera>();  moments?: [number, number, number];
-
-            sectionThickness={1}
-
-            sectionColor="#444"        <sphereGeometry args={[0.12 * scale, 16, 16]} />
-
-          />
-
-        )}        <meshStandardMaterial     gridHelper.material.opacity = 0.3;
-
-
-
-        {/* Structure Nodes */}          color={nodeColor}
-
-        {structure.nodes.map((node) => (
-
-          <Enhanced3DNodeComponent          metalness={0.3}    gridHelper.material.transparent = true;  const controlsRef = useRef<any>();  support: {
-
-            key={node.id}
-
-            node={node}          roughness={0.4}
-
-            scale={scale}
-
-            showLabels={viewOptions.showLabels}        />    scene.add(gridHelper);
-
-            onClick={() => handleNodeClick(node)}
-
-          />      </mesh>
-
-        ))}
+    scene.add(gridHelper);
 
   const frameRef = useRef<number>();    x: boolean;
 
-        {/* Structure Elements */}
+    // Simple mouse controls
 
-        {structure.elements.map((element) => (      {/* Support visualization */}
+    let mouseDown = false;      y: boolean;
 
-          <Enhanced3DElementComponent
+    let mouseX = 0;
 
-            key={element.id}      {renderSupport()}    // Simple mouse controls
-
-            element={element}
-
-            nodes={structure.nodes}
-
-            scale={scale}
-
-            showStress={viewOptions.showStress}      {/* Node label */}    let mouseDown = false;      y: boolean;
-
-            showDeformation={viewOptions.showDeformation}
-
-            onClick={() => handleElementClick(element)}      {showLabels && (
-
-          />
-
-        ))}        <Html distanceFactor={10}>    let mouseX = 0;
+    let mouseY = 0;  const [isWireframe, setIsWireframe] = useState(false);    z: boolean;
 
 
 
-        {/* Ground Plane */}          <div className="bg-white px-2 py-1 rounded shadow text-xs">
+    const onMouseDown = (event: MouseEvent) => {  const [showGrid, setShowGrid] = useState(true);    rx: boolean;
 
-        <ContactShadows 
+      mouseDown = true;
 
-          position={[0, -0.5, 0]}             Node: {node.id}    let mouseY = 0;  const [isWireframe, setIsWireframe] = useState(false);    z: boolean;
+      mouseX = event.clientX;  const [cameraMode, setCameraMode] = useState<'perspective' | 'orthographic'>('perspective');    ry: boolean;
 
-          opacity={0.3} 
+      mouseY = event.clientY;
 
-          scale={20}             {node.displacement && showDeformation && (
-
-          blur={1.5} 
-
-          far={10}               <div className="text-orange-600">
-
-        />
-
-                Δ: {(Math.sqrt(
-
-        {/* Camera Controls */}
-
-        <OrbitControls                   Math.pow(node.displacement[0], 2) +    const onMouseDown = (event: MouseEvent) => {  const [showGrid, setShowGrid] = useState(true);    rx: boolean;
-
-          ref={controlsRef}
-
-          enablePan={true}                  Math.pow(node.displacement[1], 2) +
-
-          enableZoom={true}
-
-          enableRotate={true}                  Math.pow(node.displacement[2], 2)      mouseDown = true;
-
-          minDistance={5}
-
-          maxDistance={50}                ) * 1000).toFixed(1)}mm
-
-        />
-
-      </Canvas>              </div>      mouseX = event.clientX;  const [cameraMode, setCameraMode] = useState<'perspective' | 'orthographic'>('perspective');    ry: boolean;
-
-    </div>
-
-  );            )}
-
-};
-
-          </div>      mouseY = event.clientY;
-
-export default Advanced3DViewer;
-        </Html>
-
-      )}    };    rz: boolean;
+    };    rz: boolean;
 
 
 
-      {/* Deformation vector */}
+    const onMouseUp = () => {  useEffect(() => {  };
 
-      {showDeformation && node.displacement && (
+      mouseDown = false;
 
-        <group>    const onMouseUp = () => {  useEffect(() => {  };
+    };    if (!mountRef.current) return;  isSelected?: boolean;
 
-          <mesh position={[
 
-            node.displacement[0] * deformationScale / 2,      mouseDown = false;
 
-            node.displacement[1] * deformationScale / 2,
+    const onMouseMove = (event: MouseEvent) => {}
 
-            node.displacement[2] * deformationScale / 2    };    if (!mountRef.current) return;  isSelected?: boolean;
+      if (!mouseDown) return;
 
-          ]}>
+          // Scene setup
 
-            <cylinderGeometry args={[0.02 * scale, 0.02 * scale, 
+      const deltaX = event.clientX - mouseX;
 
-              Math.sqrt(
+      const deltaY = event.clientY - mouseY;    const scene = new THREE.Scene();interface Enhanced3DElement {
 
-                Math.pow(node.displacement[0] * deformationScale, 2) +    const onMouseMove = (event: MouseEvent) => {}
-
-                Math.pow(node.displacement[1] * deformationScale, 2) +
-
-                Math.pow(node.displacement[2] * deformationScale, 2)      if (!mouseDown) return;
-
-              )
-
-            ]} />          // Scene setup
-
-            <meshStandardMaterial color="#e74c3c" />
-
-          </mesh>      const deltaX = event.clientX - mouseX;
-
-        </group>
-
-      )}      const deltaY = event.clientY - mouseY;    const scene = new THREE.Scene();interface Enhanced3DElement {
-
-    </group>
-
-  );      
-
-};
+      
 
       // Simple orbit controls    scene.background = new THREE.Color(0xf8fafc);  id: string;
 
-// Advanced Element Component with Stress Visualization
+      const spherical = new THREE.Spherical();
 
-const Advanced3DElement: React.FC<{      const spherical = new THREE.Spherical();
+      spherical.setFromVector3(camera.position);    sceneRef.current = scene;  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation';
 
-  element: Enhanced3DElement;
+      spherical.theta -= deltaX * 0.01;
 
-  nodes: Enhanced3DNode[];      spherical.setFromVector3(camera.position);    sceneRef.current = scene;  type: 'beam' | 'column' | 'slab' | 'wall' | 'foundation';
+      spherical.phi += deltaY * 0.01;  startNode: string;
 
-  scale: number;
+      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
 
-  showDeformation: boolean;      spherical.theta -= deltaX * 0.01;
+          // Camera setup  endNode: string;
 
-  deformationScale: number;
-
-  colorMode: string;      spherical.phi += deltaY * 0.01;  startNode: string;
-
-  showLabels: boolean;
-
-  onClick: (elementId: string) => void;      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-
-}> = ({ element, nodes, scale, showDeformation, deformationScale, colorMode, showLabels, onClick }) => {
-
-  const [hovered, setHovered] = useState(false);          // Camera setup  endNode: string;
-
-
-
-  const startNode = nodes.find(n => n.id === element.startNode);      camera.position.setFromSpherical(spherical);
-
-  const endNode = nodes.find(n => n.id === element.endNode);
+      camera.position.setFromSpherical(spherical);
 
       camera.lookAt(0, 0, 0);    const camera = new THREE.PerspectiveCamera(  section: {
 
-  if (!startNode || !endNode) return null;
-
       
 
-  // Get positions (deformed or original)
+      mouseX = event.clientX;      75,    width: number;
 
-  const getNodePosition = (node: Enhanced3DNode) => {      mouseX = event.clientX;      75,    width: number;
+      mouseY = event.clientY;
 
-    if (!showDeformation || !node.displacement) return node.position;
+    };      mountRef.current.clientWidth / mountRef.current.clientHeight,    height: number;
 
-    return [      mouseY = event.clientY;
 
-      node.position[0] + node.displacement[0] * deformationScale,
-
-      node.position[1] + node.displacement[1] * deformationScale,    };      mountRef.current.clientWidth / mountRef.current.clientHeight,    height: number;
-
-      node.position[2] + node.displacement[2] * deformationScale
-
-    ] as [number, number, number];
-
-  };
 
     const onWheel = (event: WheelEvent) => {      0.1,    thickness?: number;
 
-  const startPos = getNodePosition(startNode);
+      const scale = event.deltaY > 0 ? 1.1 : 0.9;
 
-  const endPos = getNodePosition(endNode);      const scale = event.deltaY > 0 ? 1.1 : 0.9;
+      camera.position.multiplyScalar(scale);      1000  };
 
+    };
 
+    );  material: 'concrete' | 'steel' | 'composite';
 
-  // Calculate element geometry      camera.position.multiplyScalar(scale);      1000  };
+    mountRef.current.addEventListener('mousedown', onMouseDown);
 
-  const direction = [
+    mountRef.current.addEventListener('mouseup', onMouseUp);    camera.position.set(50, 40, 50);  forces?: {
 
-    endPos[0] - startPos[0],    };
+    mountRef.current.addEventListener('mousemove', onMouseMove);
 
-    endPos[1] - startPos[1], 
-
-    endPos[2] - startPos[2]    );  material: 'concrete' | 'steel' | 'composite';
-
-  ];
-
-      mountRef.current.addEventListener('mousedown', onMouseDown);
-
-  const length = Math.sqrt(
-
-    Math.pow(direction[0], 2) +    mountRef.current.addEventListener('mouseup', onMouseUp);    camera.position.set(50, 40, 50);  forces?: {
-
-    Math.pow(direction[1], 2) +
-
-    Math.pow(direction[2], 2)    mountRef.current.addEventListener('mousemove', onMouseMove);
-
-  );
-
-      mountRef.current.addEventListener('wheel', onWheel);    cameraRef.current = camera;    axial: number[];
-
-  const center: [number, number, number] = [
-
-    (startPos[0] + endPos[0]) / 2,    
-
-    (startPos[1] + endPos[1]) / 2,
-
-    (startPos[2] + endPos[2]) / 2    mountRef.current.appendChild(renderer.domElement);    shear: number[];
-
-  ];
-
-
-
-  const handleClick = useCallback((e: any) => {
-
-    e.stopPropagation();    // Create structure geometry    // Renderer setup    moment: number[];
-
-    onClick(element.id);
-
-  }, [element.id, onClick]);    createStructureGeometry(scene, structure, showStress, analysisResults);
-
-
-
-  // Color based on mode    const renderer = new THREE.WebGLRenderer({     positions: number[];
-
-  const getElementColor = () => {
-
-    if (element.isSelected) return '#ff6b6b';    // Animation loop
-
-    if (hovered) return '#ffa726';
-
-        const animate = () => {      antialias: true,  };
-
-    switch (colorMode) {
-
-      case 'stress':      frameRef.current = requestAnimationFrame(animate);
-
-        if (element.forces) {
-
-          const maxStress = Math.abs(element.forces.axial) / (element.section.width * element.section.height);      renderer.render(scene, camera);      alpha: true  stresses?: {
-
-          const stressRatio = Math.min(maxStress / 25, 1); // Normalize to 25 MPa
-
-          return new THREE.Color().setHSL(0.3 - stressRatio * 0.3, 0.8, 0.5);    };
-
-        }
-
-        return '#95a5a6';    animate();    });    max: number;
-
-        
-
-      case 'utilization':
-
-        if (element.utilization !== undefined) {
-
-          const ratio = Math.min(element.utilization, 1);    // Cleanup    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);    min: number;
-
-          return new THREE.Color().setHSL(0.3 - ratio * 0.3, 0.8, 0.5);
-
-        }    return () => {
-
-        return '#95a5a6';
-
-              if (frameRef.current) {    renderer.shadowMap.enabled = true;    vonMises: number[];
-
-      case 'forces':
-
-        if (element.forces) {        cancelAnimationFrame(frameRef.current);
-
-          const forceRatio = Math.min(Math.abs(element.forces.axial) / 1000, 1); // Normalize to 1000 kN
-
-          return new THREE.Color().setHSL(0.6 - forceRatio * 0.3, 0.8, 0.5);      }    renderer.shadowMap.type = THREE.PCFSoftShadowMap;  };
-
-        }
-
-        return '#95a5a6';      if (mountRef.current && renderer.domElement) {
-
-        
-
-      default: // material        mountRef.current.removeChild(renderer.domElement);    rendererRef.current = renderer;  utilization?: number;
-
-        switch (element.type) {
-
-          case 'column': return '#e74c3c';      }
-
-          case 'beam': return '#3498db';
-
-          case 'slab': return '#2ecc71';      renderer.dispose();  isSelected?: boolean;
-
-          case 'foundation': return '#8b4513';
-
-          case 'pile-cap': return '#a0522d';    };
-
-          case 'pile': return '#654321';
-
-          case 'pedestal': return '#5f4e37';  }, [structure, showStress, analysisResults, isWireframe]);    // Lighting setup}
-
-          case 'wall': return '#9b59b6';
-
-          default: return '#95a5a6';
-
-        }
-
-    }  const createStructureGeometry = (    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-
-  };
-
-    scene: THREE.Scene, 
-
-  // Calculate proper rotation
-
-  const getRotation = (): [number, number, number] => {    structure: Advanced3DViewerProps['structure'],    scene.add(ambientLight);interface Enhanced3DStructure {
-
-    const normalizedDir = [
-
-      direction[0] / length,    showStress: boolean,
-
-      direction[1] / length,
-
-      direction[2] / length    analysisResults?: Advanced3DViewerProps['analysisResults']  nodes: Enhanced3DNode[];
-
-    ];
-
-      ) => {
-
-    // Calculate rotation angles
-
-    const yaw = Math.atan2(normalizedDir[0], normalizedDir[2]);    // Clear existing geometry    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);  elements: Enhanced3DElement[];
-
-    const pitch = Math.asin(-normalizedDir[1]);
-
-        const existingStructure = scene.getObjectByName('structure');
-
-    return [pitch, yaw, 0];
-
-  };    if (existingStructure) {    directionalLight.position.set(100, 100, 50);  loads: {
-
-
-
-  // Get dimensions based on element type      scene.remove(existingStructure);
-
-  const getDimensions = (): [number, number, number] => {
-
-    const baseScale = scale * 0.5;    }    directionalLight.castShadow = true;    nodeId: string;
+    mountRef.current.addEventListener('wheel', onWheel);    cameraRef.current = camera;    axial: number[];
 
     
 
-    switch (element.type) {
+    mountRef.current.appendChild(renderer.domElement);    shear: number[];
 
-      case 'column':
 
-      case 'pedestal':    const structureGroup = new THREE.Group();    directionalLight.shadow.mapSize.width = 2048;    forces: [number, number, number];
 
-        return [
+    // Create structure geometry    // Renderer setup    moment: number[];
 
-          element.section.width * baseScale,    structureGroup.name = 'structure';
+    createStructureGeometry(scene, structure, showStress, analysisResults);
 
-          length,
+    const renderer = new THREE.WebGLRenderer({     positions: number[];
 
-          element.section.width * baseScale    directionalLight.shadow.mapSize.height = 2048;    moments: [number, number, number];
+    // Animation loop
 
-        ];
+    const animate = () => {      antialias: true,  };
 
-            // Materials with stress coloring
+      frameRef.current = requestAnimationFrame(animate);
 
-      case 'pile':
+      renderer.render(scene, camera);      alpha: true  stresses?: {
 
-        const diameter = element.section.diameter || element.section.width;    const getStressColor = (stress: number) => {    scene.add(directionalLight);  }[];
+    };
 
-        return [
+    animate();    });    max: number;
 
-          diameter * baseScale,      if (stress < 0.5) return 0x4CAF50; // Green - Safe
 
-          length,
 
-          diameter * baseScale      if (stress < 0.8) return 0xFF9800; // Orange - Caution    boundingBox: {
+    // Cleanup    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);    min: number;
 
-        ];
+    return () => {
 
-              return 0xF44336; // Red - Critical
+      if (frameRef.current) {    renderer.shadowMap.enabled = true;    vonMises: number[];
 
-      case 'slab':
+        cancelAnimationFrame(frameRef.current);
 
-        return [    };    // Grid helper    min: [number, number, number];
+      }    renderer.shadowMap.type = THREE.PCFSoftShadowMap;  };
 
-          length,
+      if (mountRef.current && renderer.domElement) {
 
-          element.section.thickness! * baseScale,
+        mountRef.current.removeChild(renderer.domElement);    rendererRef.current = renderer;  utilization?: number;
 
-          element.section.width * baseScale
+      }
 
-        ];    // Create nodes    const gridHelper = new THREE.GridHelper(100, 50);    max: [number, number, number];
+      renderer.dispose();  isSelected?: boolean;
 
-        
+    };
 
-      case 'foundation':    structure.nodes.forEach(node => {
+  }, [structure, showStress, analysisResults, isWireframe]);    // Lighting setup}
 
-      case 'pile-cap':
 
-        return [      const nodeGeometry = new THREE.SphereGeometry(0.5, 12, 8);    gridHelper.material.opacity = 0.3;  };
 
-          element.section.width * baseScale,
+  const createStructureGeometry = (    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
 
-          element.section.thickness! * baseScale,      const nodeMaterial = new THREE.MeshLambertMaterial({ 
+    scene: THREE.Scene, 
 
-          element.section.height * baseScale
+    structure: Advanced3DViewerProps['structure'],    scene.add(ambientLight);interface Enhanced3DStructure {
 
-        ];        color: node.type === 'fixed' ? 0xff0000 : 0x333333,    gridHelper.material.transparent = true;  scale: number;
+    showStress: boolean,
 
-        
+    analysisResults?: Advanced3DViewerProps['analysisResults']  nodes: Enhanced3DNode[];
 
-      default: // beam        wireframe: isWireframe
+  ) => {
 
-        return [
+    // Clear existing geometry    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);  elements: Enhanced3DElement[];
 
-          length,      });    scene.add(gridHelper);}
+    const existingStructure = scene.getObjectByName('structure');
 
-          element.section.height * baseScale,
+    if (existingStructure) {    directionalLight.position.set(100, 100, 50);  loads: {
 
-          element.section.width * baseScale      const nodeMesh = new THREE.Mesh(nodeGeometry, nodeMaterial);
+      scene.remove(existingStructure);
 
-        ];
+    }    directionalLight.castShadow = true;    nodeId: string;
 
-    }      nodeMesh.position.set(node.x, node.y, node.z);
 
-  };
+
+    const structureGroup = new THREE.Group();    directionalLight.shadow.mapSize.width = 2048;    forces: [number, number, number];
+
+    structureGroup.name = 'structure';
+
+    directionalLight.shadow.mapSize.height = 2048;    moments: [number, number, number];
+
+    // Materials with stress coloring
+
+    const getStressColor = (stress: number) => {    scene.add(directionalLight);  }[];
+
+      if (stress < 0.5) return 0x4CAF50; // Green - Safe
+
+      if (stress < 0.8) return 0xFF9800; // Orange - Caution    boundingBox: {
+
+      return 0xF44336; // Red - Critical
+
+    };    // Grid helper    min: [number, number, number];
+
+
+
+    // Create nodes    const gridHelper = new THREE.GridHelper(100, 50);    max: [number, number, number];
+
+    structure.nodes.forEach(node => {
+
+      const nodeGeometry = new THREE.SphereGeometry(0.5, 12, 8);    gridHelper.material.opacity = 0.3;  };
+
+      const nodeMaterial = new THREE.MeshLambertMaterial({ 
+
+        color: node.type === 'fixed' ? 0xff0000 : 0x333333,    gridHelper.material.transparent = true;  scale: number;
+
+        wireframe: isWireframe
+
+      });    scene.add(gridHelper);}
+
+      const nodeMesh = new THREE.Mesh(nodeGeometry, nodeMaterial);
+
+      nodeMesh.position.set(node.x, node.y, node.z);
 
       nodeMesh.userData = { type: 'node', id: node.id };
 
-  const rotation = getRotation();
-
-  const dimensions = getDimensions();      structureGroup.add(nodeMesh);    // Controls (simplified mouse controls)interface Enhanced3DViewerProps {
-
-  const color = getElementColor();
+      structureGroup.add(nodeMesh);    // Controls (simplified mouse controls)interface Enhanced3DViewerProps {
 
     });
 
-  return (
+    let mouseDown = false;  structure: Enhanced3DStructure | null;
 
-    <group position={center}>    let mouseDown = false;  structure: Enhanced3DStructure | null;
+    // Create elements
 
-      {/* Original position (if deformed) */}
+    structure.elements.forEach((element, index) => {    let mouseX = 0;  analysisResults?: any;
 
-      {showDeformation && (    // Create elements
+      const startNode = structure.nodes.find(n => n.id === element.startNode);
 
-        <group position={[
-
-          (startNode.position[0] + endNode.position[0]) / 2 - center[0],    structure.elements.forEach((element, index) => {    let mouseX = 0;  analysisResults?: any;
-
-          (startNode.position[1] + endNode.position[1]) / 2 - center[1],
-
-          (startNode.position[2] + endNode.position[2]) / 2 - center[2]      const startNode = structure.nodes.find(n => n.id === element.startNode);
-
-        ]}>
-
-          <mesh rotation={rotation}>      const endNode = structure.nodes.find(n => n.id === element.endNode);    let mouseY = 0;  showDeformation?: boolean;
-
-            <boxGeometry args={dimensions} />
-
-            <meshBasicMaterial       
-
-              color="#bdc3c7" 
-
-              opacity={0.3}       if (!startNode || !endNode) return;  deformationScale?: number;
-
-              transparent 
-
-              wireframe 
-
-            />
-
-          </mesh>      const start = new THREE.Vector3(startNode.x, startNode.y, startNode.z);    const onMouseDown = (event: MouseEvent) => {  showStress?: boolean;
-
-        </group>
-
-      )}      const end = new THREE.Vector3(endNode.x, endNode.y, endNode.z);
+      const endNode = structure.nodes.find(n => n.id === element.endNode);    let mouseY = 0;  showDeformation?: boolean;
 
       
 
-      {/* Main element */}      const direction = new THREE.Vector3().subVectors(end, start);      mouseDown = true;  showForces?: boolean;
+      if (!startNode || !endNode) return;  deformationScale?: number;
 
-      <mesh 
 
-        rotation={rotation}      const length = direction.length();
 
-        onClick={handleClick}
+      const start = new THREE.Vector3(startNode.x, startNode.y, startNode.z);    const onMouseDown = (event: MouseEvent) => {  showStress?: boolean;
 
-        onPointerEnter={() => setHovered(true)}      mouseX = event.clientX;  showLabels?: boolean;
+      const end = new THREE.Vector3(endNode.x, endNode.y, endNode.z);
 
-        onPointerLeave={() => setHovered(false)}
+      const direction = new THREE.Vector3().subVectors(end, start);      mouseDown = true;  showForces?: boolean;
 
-      >      let geometry: THREE.BufferGeometry;
+      const length = direction.length();
 
-        <boxGeometry args={dimensions} />
+      mouseX = event.clientX;  showLabels?: boolean;
 
-        <meshStandardMaterial       let material: THREE.Material;      mouseY = event.clientY;  viewMode?: 'solid' | 'wireframe' | 'both';
+      let geometry: THREE.BufferGeometry;
 
-          color={color}
+      let material: THREE.Material;      mouseY = event.clientY;  viewMode?: 'solid' | 'wireframe' | 'both';
 
-          transparent={element.type === 'slab'}
 
-          opacity={element.type === 'slab' ? 0.6 : 1.0}
 
-          metalness={element.material === 'steel' ? 0.8 : 0.1}      // Stress-based coloring    };  colorMode?: 'material' | 'stress' | 'utilization' | 'forces';
+      // Stress-based coloring    };  colorMode?: 'material' | 'stress' | 'utilization' | 'forces';
 
-          roughness={element.material === 'steel' ? 0.2 : 0.8}
-
-        />      const stressLevel = showStress && analysisResults ? 
-
-      </mesh>
+      const stressLevel = showStress && analysisResults ? 
 
         Math.random() * analysisResults.summary.maxStress : 0.3;  onElementSelect?: (elementId: string) => void;
 
-      {/* Element label */}
+      
 
-      {showLabels && (      
+      const color = showStress ? getStressColor(stressLevel) :     const onMouseUp = () => {  onNodeSelect?: (nodeId: string) => void;
 
-        <Html distanceFactor={15}>
+        (element.type === 'column' ? 0x2196F3 : 0x4CAF50);
 
-          <div className="bg-white px-2 py-1 rounded shadow text-xs">      const color = showStress ? getStressColor(stressLevel) :     const onMouseUp = () => {  onNodeSelect?: (nodeId: string) => void;
+      mouseDown = false;  className?: string;
 
-            {element.type.toUpperCase()}: {element.id}
+      if (element.type === 'column') {
 
-            {element.forces && (        (element.type === 'column' ? 0x2196F3 : 0x4CAF50);
+        geometry = new THREE.BoxGeometry(0.8, length, 0.8);    };}
 
-              <div className="text-blue-600">
+        material = new THREE.MeshLambertMaterial({ 
 
-                N: {(element.forces.axial / 1000).toFixed(1)}kN      mouseDown = false;  className?: string;
+          color,
 
-              </div>
+          transparent: !isWireframe,
 
-            )}      if (element.type === 'column') {
-
-            {element.utilization !== undefined && (
-
-              <div className={`${element.utilization > 0.8 ? 'text-red-600' : 'text-green-600'}`}>        geometry = new THREE.BoxGeometry(0.8, length, 0.8);    };}
-
-                η: {(element.utilization * 100).toFixed(0)}%
-
-              </div>        material = new THREE.MeshLambertMaterial({ 
-
-            )}
-
-          </div>          color,
-
-        </Html>
-
-      )}          transparent: !isWireframe,
-
-    </group>
-
-  );          opacity: isWireframe ? 1 : 0.8,    const onMouseMove = (event: MouseEvent) => {// Enhanced Node Component with support visualization
-
-};
+          opacity: isWireframe ? 1 : 0.8,    const onMouseMove = (event: MouseEvent) => {// Enhanced Node Component with support visualization
 
           wireframe: isWireframe
 
-// Main 3D Scene
+        });      if (!mouseDown) return;const Enhanced3DNode: React.FC<{
 
-const Advanced3DScene: React.FC<{        });      if (!mouseDown) return;const Enhanced3DNode: React.FC<{
+      } else {
 
-  structure: Enhanced3DStructure;
+        geometry = new THREE.BoxGeometry(0.6, 1.2, length);        node: Enhanced3DNode;
 
-  showDeformation: boolean;      } else {
+        material = new THREE.MeshLambertMaterial({ 
 
-  deformationScale: number;
+          color,      const deltaX = event.clientX - mouseX;  scale: number;
 
-  showStress: boolean;        geometry = new THREE.BoxGeometry(0.6, 1.2, length);        node: Enhanced3DNode;
+          transparent: !isWireframe,
 
-  showForces: boolean;
+          opacity: isWireframe ? 1 : 0.8,      const deltaY = event.clientY - mouseY;  showDeformation: boolean;
 
-  showLabels: boolean;        material = new THREE.MeshLambertMaterial({ 
+          wireframe: isWireframe
 
-  showSupports: boolean;
+        });        deformationScale: number;
 
-  colorMode: string;          color,      const deltaX = event.clientX - mouseX;  scale: number;
+      }
 
-  onElementSelect: (elementId: string) => void;
+      // Simple orbit controls  showLabels: boolean;
 
-  onNodeSelect: (nodeId: string) => void;          transparent: !isWireframe,
+      const mesh = new THREE.Mesh(geometry, material);
 
-}> = ({ 
-
-  structure,           opacity: isWireframe ? 1 : 0.8,      const deltaY = event.clientY - mouseY;  showDeformation: boolean;
-
-  showDeformation, 
-
-  deformationScale,           wireframe: isWireframe
-
-  showStress, 
-
-  showForces,         });        deformationScale: number;
-
-  showLabels, 
-
-  showSupports,      }
-
-  colorMode,
-
-  onElementSelect,      // Simple orbit controls  showLabels: boolean;
-
-  onNodeSelect 
-
-}) => {      const mesh = new THREE.Mesh(geometry, material);
-
-  return (
-
-    <group>      mesh.position.copy(start).add(direction.multiplyScalar(0.5));      const spherical = new THREE.Spherical();  onClick: (nodeId: string) => void;
-
-      {/* Lighting */}
-
-      <ambientLight intensity={0.4} />      
-
-      <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-
-      <pointLight position={[-10, -10, -5]} intensity={0.3} />      // Orient element      spherical.setFromVector3(camera.position);}> = ({ node, scale, showDeformation, deformationScale, showLabels, onClick }) => {
+      mesh.position.copy(start).add(direction.multiplyScalar(0.5));      const spherical = new THREE.Spherical();  onClick: (nodeId: string) => void;
 
       
 
-      {/* Environment and Grid */}      if (element.type === 'column') {
+      // Orient element      spherical.setFromVector3(camera.position);}> = ({ node, scale, showDeformation, deformationScale, showLabels, onClick }) => {
 
-      <Environment preset="studio" />
+      if (element.type === 'column') {
 
-      <Grid args={[100, 100]} />        // Columns are vertical      spherical.theta -= deltaX * 0.01;  const nodeRef = useRef<THREE.Mesh>(null);
+        // Columns are vertical      spherical.theta -= deltaX * 0.01;  const nodeRef = useRef<THREE.Mesh>(null);
 
-      
+        const quaternion = new THREE.Quaternion();
 
-      {/* Structure elements */}        const quaternion = new THREE.Quaternion();
+        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());      spherical.phi += deltaY * 0.01;  
 
-      {structure.nodes.map(node => (
+        mesh.applyQuaternion(quaternion);
 
-        <Advanced3DNode        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());      spherical.phi += deltaY * 0.01;  
+      } else {      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));  // Calculate deformed position
 
-          key={node.id}
+        // Beams are horizontal
 
-          node={node}        mesh.applyQuaternion(quaternion);
+        const quaternion = new THREE.Quaternion();        const deformedPosition = useMemo(() => {
 
-          scale={structure.scale}
+        quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction.normalize());
 
-          showDeformation={showDeformation}      } else {      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));  // Calculate deformed position
+        mesh.applyQuaternion(quaternion);      camera.position.setFromSpherical(spherical);    if (!showDeformation || !node.displacement) return node.position;
 
-          deformationScale={deformationScale}
+      }
 
-          showSupports={showSupports}        // Beams are horizontal
+      camera.lookAt(0, 0, 0);    return [
 
-          showLabels={showLabels}
+      mesh.userData = { 
 
-          onClick={onNodeSelect}        const quaternion = new THREE.Quaternion();        const deformedPosition = useMemo(() => {
+        type: 'element',             node.position[0] + node.displacement[0] * deformationScale,
 
-        />
+        id: element.id, 
 
-      ))}        quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction.normalize());
+        elementType: element.type,      mouseX = event.clientX;      node.position[1] + node.displacement[1] * deformationScale,
 
-
-
-      {structure.elements.map(element => (        mesh.applyQuaternion(quaternion);      camera.position.setFromSpherical(spherical);    if (!showDeformation || !node.displacement) return node.position;
-
-        <Advanced3DElement
-
-          key={element.id}      }
-
-          element={element}
-
-          nodes={structure.nodes}      camera.lookAt(0, 0, 0);    return [
-
-          scale={structure.scale}
-
-          showDeformation={showDeformation}      mesh.userData = { 
-
-          deformationScale={deformationScale}
-
-          colorMode={colorMode}        type: 'element',             node.position[0] + node.displacement[0] * deformationScale,
-
-          showLabels={showLabels}
-
-          onClick={onElementSelect}        id: element.id, 
-
-        />
-
-      ))}        elementType: element.type,      mouseX = event.clientX;      node.position[1] + node.displacement[1] * deformationScale,
-
-    </group>
-
-  );        section: element.section,
-
-};
+        section: element.section,
 
         stress: stressLevel      mouseY = event.clientY;      node.position[2] + node.displacement[2] * deformationScale
 
-// Main Advanced 3D Viewer Component
+      };
 
-const Advanced3DViewer: React.FC<Advanced3DViewerProps> = ({      };
+    };    ] as [number, number, number];
 
-  structure,
+      mesh.castShadow = true;
 
-  analysisResults,    };    ] as [number, number, number];
+      mesh.receiveShadow = true;  }, [node.position, node.displacement, showDeformation, deformationScale]);
 
-  showDeformation: initialShowDeformation = false,
+      structureGroup.add(mesh);
 
-  deformationScale: initialDeformationScale = 10,      mesh.castShadow = true;
+    });    mountRef.current.addEventListener('mousedown', onMouseDown);
 
-  showStress = false,
 
-  showForces = false,      mesh.receiveShadow = true;  }, [node.position, node.displacement, showDeformation, deformationScale]);
 
-  showLabels = true,
+    scene.add(structureGroup);    mountRef.current.addEventListener('mouseup', onMouseUp);  // Support visualization
 
-  showSupports = true,      structureGroup.add(mesh);
+  };
 
-  viewMode = 'solid',
+    mountRef.current.addEventListener('mousemove', onMouseMove);  const supportGeometry = useMemo(() => {
 
-  colorMode: initialColorMode = 'material',    });    mountRef.current.addEventListener('mousedown', onMouseDown);
-
-  onElementSelect,
-
-  onNodeSelect,
-
-  className = ''
-
-}) => {    scene.add(structureGroup);    mountRef.current.addEventListener('mouseup', onMouseUp);  // Support visualization
-
-  const [controlsEnabled, setControlsEnabled] = useState(true);
-
-  const [showDeformation, setShowDeformation] = useState(initialShowDeformation);  };
-
-  const [deformationScale, setDeformationScale] = useState(initialDeformationScale);
-
-  const [colorMode, setColorMode] = useState(initialColorMode);    mountRef.current.addEventListener('mousemove', onMouseMove);  const supportGeometry = useMemo(() => {
-
-  const [showGrid, setShowGrid] = useState(true);
-
-  const [autoRotate, setAutoRotate] = useState(false);  const resetCamera = () => {
-
-  const [cameraKey, setCameraKey] = useState(0);
+  const resetCamera = () => {
 
     if (cameraRef.current) {        const supports = [];
 
-  const handleElementSelect = useCallback((elementId: string) => {
-
-    if (onElementSelect) onElementSelect(elementId);      cameraRef.current.position.set(50, 40, 50);
-
-  }, [onElementSelect]);
+      cameraRef.current.position.set(50, 40, 50);
 
       cameraRef.current.lookAt(0, 0, 0);    mountRef.current.appendChild(renderer.domElement);    const { support } = node;
 
-  const handleNodeSelect = useCallback((nodeId: string) => {
-
-    if (onNodeSelect) onNodeSelect(nodeId);    }
-
-  }, [onNodeSelect]);
+    }
 
   };    
 
-  const resetView = useCallback(() => {
 
-    setCameraKey(prev => prev + 1);
 
-    setShowDeformation(false);
+  const toggleWireframe = () => {    // Create structure geometry    if (support.x || support.y || support.z) {
 
-    setDeformationScale(10);  const toggleWireframe = () => {    // Create structure geometry    if (support.x || support.y || support.z) {
-
-    setColorMode('material');
-
-    setAutoRotate(false);    setIsWireframe(!isWireframe);
-
-  }, []);
+    setIsWireframe(!isWireframe);
 
   };    createStructureGeometry(scene, structure, showStress, analysisResults);      // Fixed support
 
-  if (!structure) {
 
-    return (
 
-      <Card className={`h-full ${className}`}>
+  const toggleGrid = () => {      if (support.x && support.y && support.z) {
 
-        <CardContent className="flex items-center justify-center h-full">  const toggleGrid = () => {      if (support.x && support.y && support.z) {
+    setShowGrid(!showGrid);
 
-          <div className="text-center">
+    if (sceneRef.current) {    // Animation loop        supports.push({ type: 'fixed', size: 0.3 });
 
-            <div className="text-gray-500 mb-2">    setShowGrid(!showGrid);
+      const grid = sceneRef.current.children.find(child => child instanceof THREE.GridHelper);
 
-              <BarChart3 className="w-16 h-16 mx-auto" />
+      if (grid) {    const animate = () => {      }
 
-            </div>    if (sceneRef.current) {    // Animation loop        supports.push({ type: 'fixed', size: 0.3 });
-
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">No Structure Data</h3>
-
-            <p className="text-gray-500">Load and analyze a structural model to view in 3D</p>      const grid = sceneRef.current.children.find(child => child instanceof THREE.GridHelper);
-
-          </div>
-
-        </CardContent>      if (grid) {    const animate = () => {      }
-
-      </Card>
-
-    );        grid.visible = !showGrid;
-
-  }
+        grid.visible = !showGrid;
 
       }      frameRef.current = requestAnimationFrame(animate);      // Pinned support
 
-  return (
+    }
 
-    <div className={`relative w-full h-full ${className}`}>    }
+  };      renderer.render(scene, camera);      else if ((support.x && support.y) || (support.y && support.z) || (support.x && support.z)) {
 
-      {/* 3D Canvas */}
 
-      <Canvas  };      renderer.render(scene, camera);      else if ((support.x && support.y) || (support.y && support.z) || (support.x && support.z)) {
 
-        key={cameraKey}
+  return (    };        supports.push({ type: 'pinned', size: 0.25 });
 
-        camera={{ position: [15, 15, 15], fov: 60 }}
+    <Card className="w-full">
 
-        shadows
+      <CardHeader>    animate();      }
 
-        className="w-full h-full bg-gradient-to-b from-blue-100 to-blue-50"  return (    };        supports.push({ type: 'pinned', size: 0.25 });
+        <div className="flex justify-between items-center">
 
-      >
+          <CardTitle className="flex items-center gap-2">      // Roller support
 
-        <Advanced3DScene    <Card className="w-full">
+            <Move3D className="w-5 h-5 text-blue-600" />
 
-          structure={structure}
+            Advanced 3D Structure Viewer    // Cleanup      else {
 
-          showDeformation={showDeformation}      <CardHeader>    animate();      }
+          </CardTitle>
 
-          deformationScale={deformationScale}
+          <div className="flex gap-2">    return () => {        supports.push({ type: 'roller', size: 0.2 });
 
-          showStress={showStress}        <div className="flex justify-between items-center">
+            <Button
 
-          showForces={showForces}
-
-          showLabels={showLabels}          <CardTitle className="flex items-center gap-2">      // Roller support
-
-          showSupports={showSupports}
-
-          colorMode={colorMode}            <Move3D className="w-5 h-5 text-blue-600" />
-
-          onElementSelect={handleElementSelect}
-
-          onNodeSelect={handleNodeSelect}            Advanced 3D Structure Viewer    // Cleanup      else {
-
-        />
-
-        <OrbitControls           </CardTitle>
-
-          enabled={controlsEnabled}
-
-          autoRotate={autoRotate}          <div className="flex gap-2">    return () => {        supports.push({ type: 'roller', size: 0.2 });
-
-          autoRotateSpeed={0.5}
-
-          dampingFactor={0.1}            <Button
-
-          enableDamping
-
-        />              variant="outline"      if (frameRef.current) {      }
-
-      </Canvas>
+              variant="outline"      if (frameRef.current) {      }
 
               size="sm"
 
-      {/* Control Panel */}
+              onClick={resetCamera}        cancelAnimationFrame(frameRef.current);    }
 
-      <div className="absolute top-4 left-4 space-y-2">              onClick={resetCamera}        cancelAnimationFrame(frameRef.current);    }
+              title="Reset Kamera"
 
-        <Card className="p-3 bg-white/90 backdrop-blur-sm">
+            >      }    
 
-          <div className="space-y-3">              title="Reset Kamera"
+              <RotateCcw className="w-4 h-4" />
 
-            <div className="flex items-center justify-between">
+            </Button>      if (mountRef.current && renderer.domElement) {    return supports;
 
-              <h4 className="font-semibold text-sm">Advanced 3D View</h4>            >      }    
+            <Button
 
-              <Button variant="outline" size="sm" onClick={resetView}>
+              variant={isWireframe ? "default" : "outline"}        mountRef.current.removeChild(renderer.domElement);  }, [node.support]);
 
-                <RotateCcw className="h-4 w-4" />              <RotateCcw className="w-4 h-4" />
+              size="sm"
 
-              </Button>
+              onClick={toggleWireframe}      }
 
-            </div>            </Button>      if (mountRef.current && renderer.domElement) {    return supports;
+              title="Toggle Wireframe"
 
-            
+            >      renderer.dispose();  const handleClick = useCallback((e: any) => {
 
-            {/* View controls */}            <Button
+              <Eye className="w-4 h-4" />
 
-            <div className="space-y-2">
+            </Button>    };    e.stopPropagation();
 
-              <div className="flex items-center space-x-2">              variant={isWireframe ? "default" : "outline"}        mountRef.current.removeChild(renderer.domElement);  }, [node.support]);
+            <Button
 
-                <Button
+              variant={showGrid ? "default" : "outline"}  }, [structure, showStress, analysisResults]);    onClick(node.id);
 
-                  variant={showGrid ? "default" : "outline"}              size="sm"
+              size="sm"
 
-                  size="sm"
+              onClick={toggleGrid}  }, [node.id, onClick]);
 
-                  onClick={() => setShowGrid(!showGrid)}              onClick={toggleWireframe}      }
+              title="Toggle Grid"
 
-                >
+            >  const createStructureGeometry = (
 
-                  <Grid3x3 className="h-4 w-4" />              title="Toggle Wireframe"
+              <Settings className="w-4 h-4" />
 
-                </Button>
-
-                            >      renderer.dispose();  const handleClick = useCallback((e: any) => {
-
-                <Button
-
-                  variant={autoRotate ? "default" : "outline"}              <Eye className="w-4 h-4" />
-
-                  size="sm"
-
-                  onClick={() => setAutoRotate(!autoRotate)}            </Button>    };    e.stopPropagation();
-
-                >
-
-                  <Activity className="h-4 w-4" />            <Button
-
-                </Button>
-
-              </div>              variant={showGrid ? "default" : "outline"}  }, [structure, showStress, analysisResults]);    onClick(node.id);
-
-              
-
-              {/* Deformation controls */}              size="sm"
-
-              {analysisResults && (
-
-                <div className="space-y-2">              onClick={toggleGrid}  }, [node.id, onClick]);
-
-                  <div className="flex items-center justify-between">
-
-                    <label className="text-xs">Deformation</label>              title="Toggle Grid"
-
-                    <input
-
-                      type="checkbox"            >  const createStructureGeometry = (
-
-                      checked={showDeformation}
-
-                      onChange={(e) => setShowDeformation(e.target.checked)}              <Settings className="w-4 h-4" />
-
-                    />
-
-                  </div>            </Button>    scene: THREE.Scene,   return (
-
-                  
-
-                  {showDeformation && (          </div>
-
-                    <div>
-
-                      <label className="text-xs">Scale: {deformationScale}x</label>        </div>    structure: Advanced3DViewerProps['structure'],    <group position={deformedPosition}>
-
-                      <input
-
-                        type="range"      </CardHeader>
-
-                        min="1"
-
-                        max="100"      <CardContent>    showStress: boolean,      {/* Main node sphere */}
-
-                        value={deformationScale}
-
-                        onChange={(e) => setDeformationScale(parseInt(e.target.value))}        <div className="space-y-4">
-
-                        className="w-full"
-
-                      />          {/* Analysis Info */}    analysisResults?: Advanced3DViewerProps['analysisResults']      <mesh ref={nodeRef} onClick={handleClick} castShadow receiveShadow>
-
-                    </div>
-
-                  )}          <div className="grid grid-cols-4 gap-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
-
-                </div>
-
-              )}            <div className="text-center">  ) => {        <sphereGeometry args={[0.1 * scale, 16, 16]} />
-
-              
-
-              {/* Color mode */}              <div className="text-sm font-medium text-gray-600">Nodes</div>
-
-              <div>
-
-                <label className="text-xs">Color Mode</label>              <div className="text-xl font-bold text-blue-600">{structure.nodes.length}</div>    // Clear existing geometry        <meshStandardMaterial 
-
-                <select 
-
-                  value={colorMode}             </div>
-
-                  onChange={(e) => setColorMode(e.target.value)}
-
-                  className="w-full text-xs p-1 rounded border"            <div className="text-center">    const existingStructure = scene.getObjectByName('structure');          color={node.isSelected ? '#e74c3c' : '#3498db'}
-
-                >
-
-                  <option value="material">Material</option>              <div className="text-sm font-medium text-gray-600">Elements</div>
-
-                  <option value="stress">Stress</option>
-
-                  <option value="utilization">Utilization</option>              <div className="text-xl font-bold text-green-600">{structure.elements.length}</div>    if (existingStructure) {          metalness={0.2}
-
-                  <option value="forces">Forces</option>
-
-                </select>            </div>
-
-              </div>
-
-            </div>            <div className="text-center">      scene.remove(existingStructure);          roughness={0.3}
+            </Button>    scene: THREE.Scene,   return (
 
           </div>
 
-        </Card>              <div className="text-sm font-medium text-gray-600">Max Stress</div>
+        </div>    structure: Advanced3DViewerProps['structure'],    <group position={deformedPosition}>
 
-      </div>
+      </CardHeader>
 
-              <div className="text-xl font-bold text-orange-600">    }        />
+      <CardContent>    showStress: boolean,      {/* Main node sphere */}
 
-      {/* Info Panel */}
+        <div className="space-y-4">
 
-      <div className="absolute top-4 right-4">                {analysisResults ? `${(analysisResults.summary.maxStress * 100).toFixed(1)}%` : 'N/A'}
+          {/* Analysis Info */}    analysisResults?: Advanced3DViewerProps['analysisResults']      <mesh ref={nodeRef} onClick={handleClick} castShadow receiveShadow>
 
-        <Card className="p-3 bg-white/90 backdrop-blur-sm">
+          <div className="grid grid-cols-4 gap-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
 
-          <div className="space-y-1">              </div>      </mesh>
+            <div className="text-center">  ) => {        <sphereGeometry args={[0.1 * scale, 16, 16]} />
 
-            <h4 className="font-semibold text-sm">Structure Info</h4>
+              <div className="text-sm font-medium text-gray-600">Nodes</div>
 
-            <div className="text-xs space-y-0.5">            </div>
-
-              <div>Nodes: <span className="font-medium">{structure.nodes.length}</span></div>
-
-              <div>Elements: <span className="font-medium">{structure.elements.length}</span></div>            <div className="text-center">    const structureGroup = new THREE.Group();
-
-              {analysisResults && (
-
-                <>              <div className="text-sm font-medium text-gray-600">Base Shear</div>
-
-                  <div>Status: <Badge variant="default" className="text-xs">Analyzed</Badge></div>
-
-                  {showDeformation && (              <div className="text-xl font-bold text-purple-600">    structureGroup.name = 'structure';      {/* Support visualization */}
-
-                    <div>Max Disp.: <span className="font-medium text-orange-600">
-
-                      {(Math.max(...structure.nodes                {analysisResults ? `${analysisResults.summary.baseShear.toFixed(0)} kN` : 'N/A'}
-
-                        .filter(n => n.displacement)
-
-                        .map(n => Math.sqrt(              </div>      {supportGeometry.map((support, index) => (
-
-                          Math.pow(n.displacement![0], 2) +
-
-                          Math.pow(n.displacement![1], 2) +            </div>
-
-                          Math.pow(n.displacement![2], 2)
-
-                        ))) * 1000).toFixed(1)}mm          </div>    // Materials        <group key={index}>
-
-                    </span></div>
-
-                  )}
-
-                </>
-
-              )}          {/* Legend */}    const columnMaterial = new THREE.MeshLambertMaterial({           {support.type === 'fixed' && (
+              <div className="text-xl font-bold text-blue-600">{structure.nodes.length}</div>    // Clear existing geometry        <meshStandardMaterial 
 
             </div>
 
-          </div>          {showStress && (
+            <div className="text-center">    const existingStructure = scene.getObjectByName('structure');          color={node.isSelected ? '#e74c3c' : '#3498db'}
 
-        </Card>
+              <div className="text-sm font-medium text-gray-600">Elements</div>
 
-      </div>            <div className="flex items-center justify-center gap-6 p-3 bg-gray-50 rounded">      color: showStress ? 0xff6b6b : 0x4a90e2,            <mesh position={[0, -support.size, 0]}>
+              <div className="text-xl font-bold text-green-600">{structure.elements.length}</div>    if (existingStructure) {          metalness={0.2}
 
+            </div>
 
+            <div className="text-center">      scene.remove(existingStructure);          roughness={0.3}
 
-      {/* Legend */}              <div className="flex items-center gap-2">
+              <div className="text-sm font-medium text-gray-600">Max Stress</div>
 
-      {colorMode !== 'material' && (
+              <div className="text-xl font-bold text-orange-600">    }        />
 
-        <div className="absolute bottom-4 left-4">                <div className="w-4 h-4 bg-green-500 rounded"></div>      transparent: !isWireframe,              <boxGeometry args={[support.size, support.size * 0.2, support.size]} />
+                {analysisResults ? `${(analysisResults.summary.maxStress * 100).toFixed(1)}%` : 'N/A'}
 
-          <Card className="p-3 bg-white/90 backdrop-blur-sm">
+              </div>      </mesh>
 
-            <div className="space-y-1">                <span className="text-sm">Safe (&lt;50%)</span>
+            </div>
 
-              <h5 className="font-semibold text-xs">Legend</h5>
+            <div className="text-center">    const structureGroup = new THREE.Group();
 
-              <div className="text-xs space-y-0.5">              </div>      opacity: isWireframe ? 1 : 0.8              <meshStandardMaterial color="#2c3e50" />
+              <div className="text-sm font-medium text-gray-600">Base Shear</div>
 
-                {colorMode === 'stress' && (
+              <div className="text-xl font-bold text-purple-600">    structureGroup.name = 'structure';      {/* Support visualization */}
 
-                  <>              <div className="flex items-center gap-2">
+                {analysisResults ? `${analysisResults.summary.baseShear.toFixed(0)} kN` : 'N/A'}
 
-                    <div className="flex items-center space-x-2">
+              </div>      {supportGeometry.map((support, index) => (
 
-                      <div className="w-3 h-3 bg-green-500"></div>                <div className="w-4 h-4 bg-orange-500 rounded"></div>    });            </mesh>
+            </div>
 
-                      <span>Low Stress</span>
-
-                    </div>                <span className="text-sm">Caution (50-80%)</span>
-
-                    <div className="flex items-center space-x-2">
-
-                      <div className="w-3 h-3 bg-yellow-500"></div>              </div>    const beamMaterial = new THREE.MeshLambertMaterial({           )}
-
-                      <span>Medium Stress</span>
-
-                    </div>              <div className="flex items-center gap-2">
-
-                    <div className="flex items-center space-x-2">
-
-                      <div className="w-3 h-3 bg-red-500"></div>                <div className="w-4 h-4 bg-red-500 rounded"></div>      color: showStress ? 0xffa726 : 0x66bb6a,          {support.type === 'pinned' && (
-
-                      <span>High Stress</span>
-
-                    </div>                <span className="text-sm">Critical (&gt;80%)</span>
-
-                  </>
-
-                )}              </div>      transparent: !isWireframe,            <mesh position={[0, -support.size * 0.7, 0]}>
-
-                {colorMode === 'utilization' && (
-
-                  <>            </div>
-
-                    <div className="flex items-center space-x-2">
-
-                      <div className="w-3 h-3 bg-green-500"></div>          )}      opacity: isWireframe ? 1 : 0.8              <coneGeometry args={[support.size * 0.7, support.size * 0.5, 8]} />
-
-                      <span>&lt; 50%</span>
-
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-
-                      <div className="w-3 h-3 bg-yellow-500"></div>          {/* 3D Viewer */}    });              <meshStandardMaterial color="#e67e22" />
-
-                      <span>50-80%</span>
-
-                    </div>          <div 
-
-                    <div className="flex items-center space-x-2">
-
-                      <div className="w-3 h-3 bg-red-500"></div>            ref={mountRef}             </mesh>
-
-                      <span>&gt; 80%</span>
-
-                    </div>            className="w-full h-96 border-2 border-gray-200 rounded-lg bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden shadow-inner"
-
-                  </>
-
-                )}            style={{ cursor: 'grab' }}    if (isWireframe) {          )}
-
-              </div>
-
-            </div>          />
-
-          </Card>
-
-        </div>      columnMaterial.wireframe = true;          {support.type === 'roller' && (
-
-      )}
-
-    </div>          {/* Controls */}
-
-  );
-
-};          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded border-l-4 border-blue-400">      beamMaterial.wireframe = true;            <>
+          </div>    // Materials        <group key={index}>
 
 
 
-export default Advanced3DViewer;            <strong>🎮 Kontrol Interaktif:</strong><br/>
+          {/* Legend */}    const columnMaterial = new THREE.MeshLambertMaterial({           {support.type === 'fixed' && (
+
+          {showStress && (
+
+            <div className="flex items-center justify-center gap-6 p-3 bg-gray-50 rounded">      color: showStress ? 0xff6b6b : 0x4a90e2,            <mesh position={[0, -support.size, 0]}>
+
+              <div className="flex items-center gap-2">
+
+                <div className="w-4 h-4 bg-green-500 rounded"></div>      transparent: !isWireframe,              <boxGeometry args={[support.size, support.size * 0.2, support.size]} />
+
+                <span className="text-sm">Safe (&lt;50%)</span>
+
+              </div>      opacity: isWireframe ? 1 : 0.8              <meshStandardMaterial color="#2c3e50" />
+
+              <div className="flex items-center gap-2">
+
+                <div className="w-4 h-4 bg-orange-500 rounded"></div>    });            </mesh>
+
+                <span className="text-sm">Caution (50-80%)</span>
+
+              </div>    const beamMaterial = new THREE.MeshLambertMaterial({           )}
+
+              <div className="flex items-center gap-2">
+
+                <div className="w-4 h-4 bg-red-500 rounded"></div>      color: showStress ? 0xffa726 : 0x66bb6a,          {support.type === 'pinned' && (
+
+                <span className="text-sm">Critical (&gt;80%)</span>
+
+              </div>      transparent: !isWireframe,            <mesh position={[0, -support.size * 0.7, 0]}>
+
+            </div>
+
+          )}      opacity: isWireframe ? 1 : 0.8              <coneGeometry args={[support.size * 0.7, support.size * 0.5, 8]} />
+
+
+
+          {/* 3D Viewer */}    });              <meshStandardMaterial color="#e67e22" />
+
+          <div 
+
+            ref={mountRef}             </mesh>
+
+            className="w-full h-96 border-2 border-gray-200 rounded-lg bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden shadow-inner"
+
+            style={{ cursor: 'grab' }}    if (isWireframe) {          )}
+
+          />
+
+      columnMaterial.wireframe = true;          {support.type === 'roller' && (
+
+          {/* Controls */}
+
+          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded border-l-4 border-blue-400">      beamMaterial.wireframe = true;            <>
+
+            <strong>🎮 Kontrol Interaktif:</strong><br/>
 
             • <strong>Rotasi:</strong> Klik kiri + drag untuk memutar struktur<br/>    }              <mesh position={[0, -support.size * 0.5, 0]}>
 

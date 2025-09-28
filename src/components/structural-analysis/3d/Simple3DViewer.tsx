@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +7,6 @@ import { Maximize2 } from 'lucide-react';
 interface Enhanced3DNode {
   id: string;
   position: [number, number, number];
-  displacement?: [number, number, number]; // Add displacement for deformation
   support: {
     x: boolean;
     y: boolean;
@@ -32,13 +31,6 @@ interface Enhanced3DElement {
   };
   material: 'concrete' | 'steel' | 'composite' | 'concrete-steel';
   direction?: 'X' | 'Y' | 'Z'; // Element direction
-  forces?: { // Add forces for stress visualization
-    axial: number;
-    shearY: number;
-    shearZ: number;
-    momentY: number;
-    momentZ: number;
-  };
   utilization?: number;
   isSelected?: boolean;
 }
@@ -72,96 +64,20 @@ interface Enhanced3DViewerProps {
 const Simple3DNode: React.FC<{
   node: Enhanced3DNode;
   scale: number;
-  showDeformation: boolean;
-  deformationScale: number;
   onClick: (nodeId: string) => void;
-}> = ({ node, scale, showDeformation, deformationScale, onClick }) => {
-  const [hovered, setHovered] = useState(false);
-
-  // Calculate deformed position
-  const deformedPosition = useMemo(() => {
-    if (!showDeformation || !node.displacement) return node.position;
-    return [
-      node.position[0] + node.displacement[0] * deformationScale,
-      node.position[1] + node.displacement[1] * deformationScale,
-      node.position[2] + node.displacement[2] * deformationScale
-    ] as [number, number, number];
-  }, [node.position, node.displacement, showDeformation, deformationScale]);
-
+}> = ({ node, scale, onClick }) => {
   const handleClick = useCallback((e: any) => {
     e.stopPropagation();
     onClick(node.id);
   }, [node.id, onClick]);
 
-  const nodeColor = useMemo(() => {
-    if (node.isSelected) return '#e74c3c';
-    if (hovered) return '#f39c12';
-    
-    // Color by support conditions
-    const hasSupport = Object.values(node.support).some(Boolean);
-    if (hasSupport) return '#2ecc71';
-    
-    return '#3498db';
-  }, [node.isSelected, hovered, node.support]);
-
   return (
-    <group>
-      {/* Original position indicator (if deformed) */}
-      {showDeformation && node.displacement && (
-        <mesh position={node.position}>
-          <sphereGeometry args={[0.08 * scale, 12, 12]} />
-          <meshBasicMaterial color="#bdc3c7" opacity={0.3} transparent />
-        </mesh>
-      )}
-      
-      {/* Main node at deformed position */}
-      <mesh 
-        position={deformedPosition} 
-        onClick={handleClick}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
-      >
-        <sphereGeometry args={[0.1 * scale, 16, 16]} />
-        <meshStandardMaterial 
-          color={nodeColor}
-          metalness={0.3}
-          roughness={0.4}
-        />
-      </mesh>
-      
-      {/* Deformation vector line */}
-      {showDeformation && node.displacement && (
-        <group>
-          {/* Line from original to deformed position */}
-          <mesh position={[
-            (node.position[0] + deformedPosition[0]) / 2,
-            (node.position[1] + deformedPosition[1]) / 2,
-            (node.position[2] + deformedPosition[2]) / 2
-          ]}>
-            <cylinderGeometry 
-              args={[0.02 * scale, 0.02 * scale, 
-                Math.sqrt(
-                  Math.pow(deformedPosition[0] - node.position[0], 2) +
-                  Math.pow(deformedPosition[1] - node.position[1], 2) +
-                  Math.pow(deformedPosition[2] - node.position[2], 2)
-                )
-              ]} 
-            />
-            <meshStandardMaterial color="#e74c3c" />
-          </mesh>
-        </group>
-      )}
-      
-      {/* Support visualization */}
-      {Object.values(node.support).some(Boolean) && (
-        <group position={deformedPosition}>
-          <mesh position={[0, -0.2 * scale, 0]}>
-            <coneGeometry args={[0.15 * scale, 0.25 * scale, 8]} />
-            <meshStandardMaterial color="#34495e" />
-          </mesh>
-        </group>
-      )}
-    </group>
+    <mesh position={node.position} onClick={handleClick}>
+      <sphereGeometry args={[0.1 * scale, 16, 16]} />
+      <meshStandardMaterial 
+        color={node.isSelected ? '#e74c3c' : '#3498db'}
+      />
+    </mesh>
   );
 };
 
@@ -169,30 +85,15 @@ const Simple3DElement: React.FC<{
   element: Enhanced3DElement;
   nodes: Enhanced3DNode[];
   scale: number;
-  showDeformation: boolean;
-  deformationScale: number;
-  colorMode: string;
   onClick: (elementId: string) => void;
-}> = ({ element, nodes, scale, showDeformation, deformationScale, colorMode, onClick }) => {
-  const [hovered, setHovered] = useState(false);
-
+}> = ({ element, nodes, scale, onClick }) => {
   const startNode = nodes.find(n => n.id === element.startNode);
   const endNode = nodes.find(n => n.id === element.endNode);
 
   if (!startNode || !endNode) return null;
 
-  // Get positions (deformed or original)
-  const getNodePosition = (node: Enhanced3DNode) => {
-    if (!showDeformation || !node.displacement) return node.position;
-    return [
-      node.position[0] + node.displacement[0] * deformationScale,
-      node.position[1] + node.displacement[1] * deformationScale,
-      node.position[2] + node.displacement[2] * deformationScale
-    ] as [number, number, number];
-  };
-
-  const startPos = getNodePosition(startNode);
-  const endPos = getNodePosition(endNode);
+  const startPos = startNode.position;
+  const endPos = endNode.position;
   
   // Calculate direction vector and length
   const direction = [
@@ -220,43 +121,23 @@ const Simple3DElement: React.FC<{
 
   const getElementColor = () => {
     if (element.isSelected) return '#ff6b6b';
-    if (hovered) return '#ffa726';
     
-    // Color based on mode
-    switch (colorMode) {
-      case 'stress':
-        if (element.forces) {
-          const maxStress = Math.abs(element.forces.axial) / (element.section.width * element.section.height);
-          const stressRatio = Math.min(maxStress / 25, 1); // Normalize to 25 MPa
-          return `hsl(${120 - stressRatio * 60}, 70%, 50%)`; // Green to red
-        }
-        return '#95a5a6';
-        
-      case 'utilization':
-        if (element.utilization !== undefined) {
-          const ratio = Math.min(element.utilization, 1);
-          return `hsl(${120 - ratio * 60}, 70%, 50%)`; // Green to red
-        }
-        return '#95a5a6';
-        
-      case 'forces':
-        if (element.forces) {
-          const forceRatio = Math.min(Math.abs(element.forces.axial) / 1000, 1); // Normalize to 1000 kN
-          return `hsl(${210 - forceRatio * 60}, 70%, 50%)`; // Blue to red
-        }
-        return '#95a5a6';
-        
-      default: // material
-        switch (element.type) {
-          case 'column': return '#e74c3c';
-          case 'beam': return '#3498db';
-          case 'slab': return '#2ecc71';
-          case 'foundation': return '#8b4513';
-          case 'pile-cap': return '#a0522d';
-          case 'pile': return '#654321';
-          case 'pedestal': return '#5f4e37';
-          case 'wall': return '#9b59b6';
-          default: return '#95a5a6';
+    switch (element.type) {
+      case 'column': return '#4ecdc4';
+      case 'beam': return '#45b7d1';
+      case 'slab': return '#96ceb4';
+      case 'foundation': return '#8b4513';
+      case 'pile-cap': return '#a0522d';
+      case 'pile': return '#654321';
+      case 'pedestal': return '#5f4e37';
+      case 'wall': return '#dda0dd';
+      default:
+        switch (element.material) {
+          case 'concrete': return '#95a5a6';
+          case 'steel': return '#34495e';
+          case 'composite': return '#9b59b6';
+          case 'concrete-steel': return '#7f8c8d';
+          default: return '#3498db';
         }
     }
   };
@@ -377,51 +258,24 @@ const Simple3DElement: React.FC<{
   const position = getPosition();
 
   return (
-    <group>
-      {/* Original position (if deformed) */}
-      {showDeformation && (startNode.displacement || endNode.displacement) && (
-        <group position={[
-          (startNode.position[0] + endNode.position[0]) / 2,
-          (startNode.position[1] + endNode.position[1]) / 2,
-          (startNode.position[2] + endNode.position[2]) / 2
-        ]}>
-          <mesh rotation={rotation}>
-            <boxGeometry args={dimensions} />
-            <meshBasicMaterial 
-              color="#bdc3c7" 
-              opacity={0.2} 
-              transparent 
-              wireframe 
-            />
-          </mesh>
-        </group>
-      )}
-      
-      {/* Main element at deformed position */}
-      <mesh position={position} rotation={rotation} onClick={handleClick}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}>
-        <boxGeometry args={dimensions} />
-        <meshStandardMaterial 
-          color={getElementColor()}
-          transparent={element.type === 'slab' || element.isSelected}
-          opacity={element.type === 'slab' ? 0.4 : (element.isSelected ? 0.8 : 1.0)}
-          metalness={element.material === 'steel' ? 0.8 : 0.1}
-          roughness={element.material === 'steel' ? 0.2 : 0.8}
-        />
-      </mesh>
-    </group>
+    <mesh position={position} rotation={rotation} onClick={handleClick}>
+      <boxGeometry args={dimensions} />
+      <meshStandardMaterial 
+        color={getElementColor()}
+        transparent={element.type === 'slab' || element.isSelected}
+        opacity={element.type === 'slab' ? 0.4 : (element.isSelected ? 0.8 : 1.0)}
+        metalness={element.material === 'steel' ? 0.8 : 0.1}
+        roughness={element.material === 'steel' ? 0.2 : 0.8}
+      />
+    </mesh>
   );
 };
 
 const Simple3DScene: React.FC<{
   structure: Enhanced3DStructure;
-  showDeformation: boolean;
-  deformationScale: number;
-  colorMode: string;
   onElementSelect: (elementId: string) => void;
   onNodeSelect: (nodeId: string) => void;
-}> = ({ structure, showDeformation, deformationScale, colorMode, onElementSelect, onNodeSelect }) => {
+}> = ({ structure, onElementSelect, onNodeSelect }) => {
   return (
     <group>
       <ambientLight intensity={0.6} />
@@ -433,8 +287,6 @@ const Simple3DScene: React.FC<{
           key={node.id}
           node={node}
           scale={structure.scale}
-          showDeformation={showDeformation}
-          deformationScale={deformationScale}
           onClick={onNodeSelect}
         />
       ))}
@@ -445,9 +297,6 @@ const Simple3DScene: React.FC<{
           element={element}
           nodes={structure.nodes}
           scale={structure.scale}
-          showDeformation={showDeformation}
-          deformationScale={deformationScale}
-          colorMode={colorMode}
           onClick={onElementSelect}
         />
       ))}
@@ -458,22 +307,17 @@ const Simple3DScene: React.FC<{
 const Simple3DViewer: React.FC<Enhanced3DViewerProps> = ({
   structure,
   analysisResults,
-  showDeformation: initialShowDeformation = false,
-  deformationScale: initialDeformationScale = 1,
+  showDeformation = false,
+  deformationScale = 1,
   showStress = false,
   showForces = false,
   showLabels = true,
   viewMode = 'solid',
-  colorMode: initialColorMode = 'material',
+  colorMode = 'material',
   onElementSelect,
   onNodeSelect,
   className = ''
 }) => {
-  // Local state for controls
-  const [showDeformation, setShowDeformation] = useState(initialShowDeformation);
-  const [deformationScale, setDeformationScale] = useState(initialDeformationScale);
-  const [colorMode, setColorMode] = useState<'material' | 'stress' | 'utilization' | 'forces'>(initialColorMode);
-
   const handleElementSelect = useCallback((elementId: string) => {
     if (onElementSelect) {
       onElementSelect(elementId);
@@ -510,9 +354,6 @@ const Simple3DViewer: React.FC<Enhanced3DViewerProps> = ({
       >
         <Simple3DScene
           structure={structure}
-          showDeformation={showDeformation}
-          deformationScale={deformationScale}
-          colorMode={colorMode}
           onElementSelect={handleElementSelect}
           onNodeSelect={handleNodeSelect}
         />
@@ -522,59 +363,6 @@ const Simple3DViewer: React.FC<Enhanced3DViewerProps> = ({
         />
       </Canvas>
 
-      {/* Control Panel */}
-      <div className="absolute top-4 left-4">
-        <Card className="p-3 bg-white/90 backdrop-blur-sm">
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">3D Controls</h4>
-            
-            {/* Deformation controls */}
-            {analysisResults && (
-              <>
-                <div className="flex items-center justify-between">
-                  <label className="text-xs">Deformation</label>
-                  <input
-                    type="checkbox"
-                    checked={showDeformation}
-                    onChange={(e) => setShowDeformation(e.target.checked)}
-                    className="ml-2"
-                  />
-                </div>
-                
-                {showDeformation && (
-                  <div className="space-y-1">
-                    <label className="text-xs">Scale: {deformationScale}x</label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="50"
-                      value={deformationScale}
-                      onChange={(e) => setDeformationScale(parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                  </div>
-                )}
-              </>
-            )}
-            
-            {/* Color mode */}
-            <div className="space-y-1">
-              <label className="text-xs">Color Mode</label>
-              <select 
-                value={colorMode} 
-                onChange={(e) => setColorMode(e.target.value as 'material' | 'stress' | 'utilization' | 'forces')}
-                className="w-full text-xs p-1 rounded border"
-              >
-                <option value="material">Material</option>
-                <option value="stress">Stress</option>
-                <option value="utilization">Utilization</option>
-                <option value="forces">Forces</option>
-              </select>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       <div className="absolute top-4 right-4">
         <Card className="p-3 bg-white/90 backdrop-blur-sm">
           <div className="space-y-1">
@@ -583,23 +371,7 @@ const Simple3DViewer: React.FC<Enhanced3DViewerProps> = ({
               <div>Nodes: <span className="font-medium">{structure.nodes.length}</span></div>
               <div>Elements: <span className="font-medium">{structure.elements.length}</span></div>
               {analysisResults && (
-                <>
-                  <div>Status: <span className="font-medium text-green-600">Analyzed</span></div>
-                  {showDeformation && structure.nodes.some(n => n.displacement) && (
-                    <div>Max Disp.: <span className="font-medium text-orange-600">
-                      {(Math.max(...structure.nodes
-                        .filter(n => n.displacement)
-                        .map(n => Math.sqrt(
-                          Math.pow(n.displacement![0], 2) +
-                          Math.pow(n.displacement![1], 2) +
-                          Math.pow(n.displacement![2], 2)
-                        ))) * 1000).toFixed(1)}mm
-                    </span></div>
-                  )}
-                  <div className="text-xs text-gray-500 mt-2">
-                    Color: {colorMode.charAt(0).toUpperCase() + colorMode.slice(1)}
-                  </div>
-                </>
+                <div>Status: <span className="font-medium text-green-600">Analyzed</span></div>
               )}
             </div>
           </div>
