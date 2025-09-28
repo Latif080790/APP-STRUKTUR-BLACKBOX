@@ -1,11 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Html } from '@react-three/drei';
+import { OrbitControls, Text, Html, Grid, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { Node, Element, Structure3D } from '@/types/structural';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { Enhanced3DErrorBoundary } from './Enhanced3DErrorBoundary';
-import { validateStructure3D } from './advanced-validation';
 
 interface StructureViewerProps {
   structure: Structure3D | null;
@@ -18,19 +16,111 @@ interface StructureViewerProps {
   style?: React.CSSProperties;
 }
 
-// Komponen untuk node
+interface ForceVisualizationProps {
+  position: THREE.Vector3;
+  force: THREE.Vector3;
+  type: 'load' | 'reaction';
+  scale?: number;
+}
+
+interface DeformationData {
+  originalPosition: THREE.Vector3;
+  deformedPosition: THREE.Vector3;
+  displacement: THREE.Vector3;
+}
+
+// Enhanced Grid Component with interactive controls
+const InteractiveGrid = memo(({ visible, size = 50, divisions = 50 }: {
+  visible: boolean;
+  size?: number;
+  divisions?: number;
+}) => {
+  if (!visible) return null;
+  
+  return (
+    <group>
+      <gridHelper 
+        args={[size, divisions, '#666666', '#444444']} 
+        position={[0, 0, 0]}
+      />
+      <gridHelper 
+        args={[size, divisions, '#666666', '#444444']} 
+        position={[0, 0, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+      />
+      <gridHelper 
+        args={[size, divisions, '#666666', '#444444']} 
+        position={[0, 0, 0]}
+        rotation={[0, 0, Math.PI / 2]}
+      />
+    </group>
+  );
+});
+
+// Force Visualization Component
+const ForceArrow = memo(({ position, force, type, scale = 1 }: ForceVisualizationProps) => {
+  const forceDirection = force.clone().normalize();
+  const forceMagnitude = force.length() * scale;
+  
+  const color = type === 'load' ? '#ff4444' : '#44ff44';
+  
+  return (
+    <group position={position}>
+      {/* Arrow shaft */}
+      <mesh>
+        <cylinderGeometry args={[0.05, 0.05, forceMagnitude, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      
+      {/* Arrow head */}
+      <mesh position={[0, forceMagnitude / 2, 0]}>
+        <coneGeometry args={[0.15, 0.3, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      
+      {/* Force label */}
+      <Html position={[0.5, forceMagnitude / 2, 0]}>
+        <div className="bg-white px-2 py-1 rounded shadow text-xs">
+          {type}: {forceMagnitude.toFixed(2)} kN
+        </div>
+      </Html>
+    </group>
+  );
+});
+
+// Deformation Visualization
+const DeformationLine = memo(({ original, deformed }: {
+  original: THREE.Vector3;
+  deformed: THREE.Vector3;
+}) => {
+  const points = [original, deformed];
+  
+  return (
+    <Line
+      points={points}
+      color="#ff9900"
+      lineWidth={2}
+      dashed={true}
+    />
+  );
+});
+
+// Enhanced Node Component with forces and deformation
 const NodeComp = memo(({
   node,
   isSelected,
   showLabel,
   onClick,
+  deformation,
+  forces,
 }: {
   node: Node;
   isSelected: boolean;
   showLabel: boolean;
   onClick: (node: Node) => void;
+  deformation?: DeformationData;
+  forces?: { load?: THREE.Vector3; reaction?: THREE.Vector3 };
 }) => {
-  // Menggunakan Three.js event type untuk event handler
   const handleClick = useCallback((e: any) => {
     if (e && typeof e.stopPropagation === 'function') {
       e.stopPropagation();
@@ -38,35 +128,72 @@ const NodeComp = memo(({
     onClick(node);
   }, [node, onClick]);
 
+  const currentPosition = deformation?.deformedPosition || new THREE.Vector3(node.x, node.y, node.z);
+  const originalPosition = new THREE.Vector3(node.x, node.y, node.z);
+
   return (
-    <mesh 
-      position={[node.x, node.y, node.z]}
-      onClick={handleClick}
-      castShadow
-      receiveShadow
-    >
-      <sphereGeometry args={[0.2, 16, 16]} />
-      <meshStandardMaterial 
-        color={isSelected ? '#e74c3c' : '#f1c40f'}
-        metalness={0.1}
-        roughness={0.5}
-      />
-      {showLabel && node.label && (
-        <Text
-          position={[0, 0.3, 0]}
-          fontSize={0.2}
-          color="black"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {node.label}
-        </Text>
+    <group>
+      {/* Original position (if deformed) */}
+      {deformation && (
+        <mesh position={originalPosition} onClick={handleClick}>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshStandardMaterial 
+            color="#cccccc" 
+            transparent
+            opacity={0.3}
+            wireframe
+          />
+        </mesh>
       )}
-    </mesh>
+      
+      {/* Current/Deformed position */}
+      <mesh position={currentPosition} onClick={handleClick} castShadow receiveShadow>
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshStandardMaterial 
+          color={isSelected ? '#e74c3c' : (deformation ? '#ff6b35' : '#f1c40f')}
+          metalness={0.1}
+          roughness={0.5}
+        />
+        {showLabel && node.label && (
+          <Text
+            position={[0, 0.4, 0]}
+            fontSize={0.2}
+            color="black"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {node.label}
+          </Text>
+        )}
+      </mesh>
+
+      {/* Deformation line */}
+      {deformation && (
+        <DeformationLine original={originalPosition} deformed={currentPosition} />
+      )}
+
+      {/* Force arrows */}
+      {forces?.load && (
+        <ForceArrow 
+          position={currentPosition} 
+          force={forces.load} 
+          type="load" 
+          scale={1} 
+        />
+      )}
+      {forces?.reaction && (
+        <ForceArrow 
+          position={currentPosition} 
+          force={forces.reaction} 
+          type="reaction" 
+          scale={1} 
+        />
+      )}
+    </group>
   );
 });
 
-// Komponen untuk elemen struktur
+// Enhanced Element Component with stress colors and deformation
 interface ElementCompProps {
   element: Element;
   nodes: Node[];
@@ -75,6 +202,7 @@ interface ElementCompProps {
   onClick: (element: Element) => void;
   onHover?: (hovered: boolean) => void;
   showStress?: boolean;
+  deformationData?: Map<number, DeformationData>;
 }
 
 const ElementComp = memo(({
@@ -85,6 +213,7 @@ const ElementComp = memo(({
   onClick,
   onHover,
   showStress = false,
+  deformationData,
 }: ElementCompProps) => {
   const startNode = nodes.find(n => n.id === element.nodes[0]);
   const endNode = nodes.find(n => n.id === element.nodes[1]);
@@ -95,47 +224,38 @@ const ElementComp = memo(({
     return null;
   }
 
-  const start = new THREE.Vector3(startNode.x, startNode.y, startNode.z);
-  const end = new THREE.Vector3(endNode.x, endNode.y, endNode.z);
+  // Get deformed positions if available
+  const startDeformation = deformationData?.get(startNode.id);
+  const endDeformation = deformationData?.get(endNode.id);
+  
+  const start = startDeformation?.deformedPosition || new THREE.Vector3(startNode.x, startNode.y, startNode.z);
+  const end = endDeformation?.deformedPosition || new THREE.Vector3(endNode.x, endNode.y, endNode.z);
+  
+  const originalStart = new THREE.Vector3(startNode.x, startNode.y, startNode.z);
+  const originalEnd = new THREE.Vector3(endNode.x, endNode.y, endNode.z);
+  
   const length = start.distanceTo(end);
-  const direction = new THREE.Vector3().subVectors(end, start).normalize();
   const center = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
 
-  // Gunakan material default jika tidak ada material yang didefinisikan
-  const defaultMaterial = useMemo(() => ({
-    color: isSelected ? '#3b82f6' : (element.type === 'column' ? '#64748b' : '#94a3b8'),
-    opacity: 1,
-    transparent: true,
-    wireframe: viewMode === 'wireframe' || viewMode === 'both',
-  }), [isSelected, viewMode, element.type]);
-
-  // Gabungkan dengan material dari elemen jika ada
-  const materialProps = useMemo(() => {
-    const merged = { ...defaultMaterial };
-    
-    if (element.material) {
-      if (element.material.color !== undefined) {
-        merged.color = element.material.color;
-      }
-      if (element.material.opacity !== undefined) {
-        merged.opacity = element.material.opacity;
-      }
+  // Calculate stress-based color
+  const getStressColor = useCallback(() => {
+    if (!showStress || element.stress === undefined) {
+      return isSelected ? '#3b82f6' : (element.type === 'column' ? '#64748b' : '#94a3b8');
     }
     
-    return merged;
-  }, [defaultMaterial, element.material]);
-  
-  // Handle stress visualization
-  const stressColor = useMemo(() => {
-    if (!showStress || element.stress === undefined) return null;
+    const stress = Math.abs(element.stress);
+    const maxStress = 1.0; // Normalized max stress
+    const intensity = Math.min(stress / maxStress, 1);
     
-    // Convert stress to color (red for tension, blue for compression)
-    const intensity = Math.min(Math.abs(element.stress) * 10, 1);
-    return element.stress > 0 
-      ? `rgb(${Math.floor(255 * intensity)}, 0, 0)` // Red for tension
-      : `rgb(0, 0, ${Math.floor(255 * intensity)})`; // Blue for compression
-  }, [element.stress, showStress]);
-  
+    if (element.stress > 0) {
+      // Tension - Red gradient
+      return `hsl(0, ${intensity * 100}%, ${100 - intensity * 30}%)`;
+    } else {
+      // Compression - Blue gradient  
+      return `hsl(240, ${intensity * 100}%, ${100 - intensity * 30}%)`;
+    }
+  }, [element.stress, element.type, showStress, isSelected]);
+
   const handleHover = useCallback((hovered: boolean) => {
     setHovered(hovered);
     onHover?.(hovered);
@@ -147,6 +267,24 @@ const ElementComp = memo(({
 
   return (
     <group>
+      {/* Original element (if deformed) */}
+      {(startDeformation || endDeformation) && (
+        <mesh
+          position={new THREE.Vector3().addVectors(originalStart, originalEnd).multiplyScalar(0.5)}
+        >
+          <cylinderGeometry
+            args={[element.section.width / 2, element.section.width / 2, originalStart.distanceTo(originalEnd), 8]}
+          />
+          <meshStandardMaterial 
+            color="#cccccc" 
+            transparent 
+            opacity={0.2} 
+            wireframe 
+          />
+        </mesh>
+      )}
+
+      {/* Current/Deformed element */}
       <mesh
         position={center}
         onPointerOver={(e) => {
@@ -162,26 +300,35 @@ const ElementComp = memo(({
         receiveShadow
       >
         <cylinderGeometry
-          args={[
-            element.section.width / 2,
-            element.section.width / 2,
-            length,
-            8,
-            1,
-            false
-          ]}
+          args={[element.section.width / 2, element.section.width / 2, length, 8]}
         />
-        <meshStandardMaterial {...materialProps} />
+        <meshStandardMaterial 
+          color={getStressColor()}
+          transparent={viewMode === 'wireframe'}
+          opacity={viewMode === 'wireframe' ? 0.7 : 1}
+          wireframe={viewMode === 'wireframe' || viewMode === 'both'}
+        />
       </mesh>
 
-      {/* Tooltip saat hover */}
+      {/* Enhanced tooltip with stress and deformation info */}
       {(hovered || isSelected) && (
         <Html position={center} center>
-          <div className="bg-white text-black text-xs p-1 rounded shadow-lg pointer-events-none">
-            <div>ID: {element.id}</div>
-            {element.type && <div>Tipe: {element.type}</div>}
+          <div className="bg-white text-black text-xs p-2 rounded shadow-lg pointer-events-none border">
+            <div className="font-semibold">Element {element.id}</div>
+            <div>Type: {element.type || 'beam'}</div>
+            <div>Section: {element.section.width}×{element.section.height || element.section.width}</div>
             {element.stress !== undefined && (
-              <div>Tegangan: {(element.stress * 100).toFixed(1)}%</div>
+              <div className="mt-1">
+                <div>Stress: {(element.stress * 100).toFixed(2)}%</div>
+                <div className="text-xs text-gray-600">
+                  {element.stress > 0 ? 'Tension' : 'Compression'}
+                </div>
+              </div>
+            )}
+            {(startDeformation || endDeformation) && (
+              <div className="mt-1 text-xs text-blue-600">
+                Deformed (exaggerated)
+              </div>
             )}
           </div>
         </Html>
@@ -190,76 +337,82 @@ const ElementComp = memo(({
   );
 });
 
-// Scene utama
+// Enhanced Scene Component with working controls
 const StructureScene = memo(({
   structure,
   onLoad,
   onElementClick,
   showLabels = false,
   showStress = false,
-  viewMode = 'solid'
-}: StructureViewerProps) => {
+  viewMode = 'solid',
+  showGrid = true,
+  showColumns = true,
+  showBeams = true,
+  showSlabs = true,
+  showFoundation = true,
+  showForces = false,
+  showDeformation = false,
+  deformationScale = 10
+}: StructureViewerProps & {
+  showGrid?: boolean;
+  showColumns?: boolean;
+  showBeams?: boolean;
+  showSlabs?: boolean;
+  showFoundation?: boolean;
+  showForces?: boolean;
+  showDeformation?: boolean;
+  deformationScale?: number;
+}) => {
   const { camera } = useThree();
-  
-  // Inisialisasi kamera
-  useEffect(() => {
-    if (!structure) return;
-    
-    // Hitung bounding box dari struktur
-    const box = new THREE.Box3().setFromPoints(
-      structure.nodes.map(node => new THREE.Vector3(node.x, node.y, node.z))
-    );
-    
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    
-    // Atur posisi kamera
-    camera.position.set(
-      center.x,
-      center.y,
-      center.z + Math.max(size.x, size.y, size.z) * 2
-    );
-    camera.lookAt(center);
-    camera.updateProjectionMatrix();
-    
-    // Panggil callback onLoad jika ada
-    if (onLoad) onLoad();
-  }, [structure, camera, onLoad]);
-  
-  if (!structure || !structure.nodes || !structure.elements) {
-    return (
-      <Html center>
-        <div className="text-center p-4 bg-white bg-opacity-75 rounded">
-          <p>Struktur tidak valid atau tidak tersedia</p>
-        </div>
-      </Html>
-    );
-  }
-  const [hoveredElement, setHoveredElement] = useState<number | null>(null);
+  const [selectedElement, setSelectedElement] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const scene = useThree(state => state.scene);
 
-  // Debug: Log struktur data yang diterima
-  useEffect(() => {
-    if (!structure) {
-      console.warn('Structure is null or undefined');
-      return;
-    }
+  // Generate sample deformation data
+  const deformationData = useMemo(() => {
+    if (!showDeformation || !structure?.nodes) return new Map();
     
-    console.log('Structure data received:', {
-      nodes: structure.nodes?.length,
-      elements: structure.elements?.length
+    const data = new Map<number, DeformationData>();
+    structure.nodes.forEach(node => {
+      const displacement = new THREE.Vector3(
+        (Math.random() - 0.5) * deformationScale * 0.1,
+        (Math.random() - 0.5) * deformationScale * 0.05,
+        (Math.random() - 0.5) * deformationScale * 0.1
+      );
+      
+      data.set(node.id, {
+        originalPosition: new THREE.Vector3(node.x, node.y, node.z),
+        deformedPosition: new THREE.Vector3(node.x, node.y, node.z).add(displacement),
+        displacement
+      });
     });
     
-    console.log('Structure data received:', {
-      nodes: structure?.nodes?.length,
-      elements: structure?.elements?.length,
-      firstNode: structure?.nodes?.[0],
-      firstElement: structure?.elements?.[0]
-    });
-  }, [structure]);
+    return data;
+  }, [structure, showDeformation, deformationScale]);
 
-  // Inisialisasi kamera dan scene
+  // Generate sample force data
+  const forceData = useMemo(() => {
+    if (!showForces || !structure?.nodes) return new Map();
+    
+    const data = new Map();
+    structure.nodes.forEach(node => {
+      // Sample loads and reactions
+      const forces: { load?: THREE.Vector3; reaction?: THREE.Vector3 } = {};
+      
+      if (node.y > 0) { // Upper nodes get loads
+        forces.load = new THREE.Vector3(0, -10 - Math.random() * 20, 0);
+      }
+      
+      if (node.y <= 0) { // Foundation nodes get reactions
+        forces.reaction = new THREE.Vector3(0, 10 + Math.random() * 15, 0);
+      }
+      
+      data.set(node.id, forces);
+    });
+    
+    return data;
+  }, [structure, showForces]);
+
+  // Initialize camera and scene
   useEffect(() => {
     try {
       if (!structure) {
@@ -270,10 +423,9 @@ const StructureScene = memo(({
         throw new Error('Struktur tidak valid: nodes atau elements kosong');
       }
 
-      // Reset error jika ada
       setError(null);
       
-      // Atur kamera
+      // Set up camera
       const points = structure.nodes.map(n => new THREE.Vector3(n.x, n.y, n.z));
       const box = new THREE.Box3().setFromPoints(points);
       
@@ -291,15 +443,14 @@ const StructureScene = memo(({
       camera.lookAt(center);
       camera.updateProjectionMatrix();
 
-      // Panggil callback onLoad setelah semua selesai
       if (onLoad) onLoad();
     } catch (err) {
       console.error('Error in StructureScene:', err);
-      setError(`Gagal memuat model 3D: ${err.message}`);
+      setError(`Gagal memuat model 3D: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }, [structure, camera, onLoad]);
 
-  // Tampilkan pesan error jika ada
+  // Show error if any
   if (error) {
     return (
       <Html center>
@@ -312,7 +463,7 @@ const StructureScene = memo(({
     );
   }
 
-  // Tampilkan loading jika struktur belum siap
+  // Show loading if structure not ready
   if (!structure || !structure.nodes?.length || !structure.elements?.length) {
     return (
       <Html center>
@@ -325,30 +476,49 @@ const StructureScene = memo(({
   }
 
   const handleElementClick = useCallback((element: Element) => {
-    setHoveredElement(element.id);
+    setSelectedElement(element.id);
     onElementClick(element);
   }, [onElementClick]);
 
+  // Filter elements based on visibility settings
+  const visibleElements = structure.elements.filter(element => {
+    switch (element.type) {
+      case 'column': return showColumns;
+      case 'beam': return showBeams;
+      case 'slab': return showSlabs;
+      case 'foundation': return showFoundation;
+      default: return true;
+    }
+  });
+
   return (
     <>
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.6} />
       <directionalLight
-        position={[10, 10, 5]}
+        position={[20, 20, 10]}
         intensity={1}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
+        shadow-camera-near={0.1}
+        shadow-camera-far={100}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
       />
       <directionalLight
-        position={[-10, -10, -5]}
-        intensity={0.5}
+        position={[-20, -10, -5]}
+        intensity={0.3}
       />
       
-      {/* Grid dan sumbu */}
-      <gridHelper args={[100, 100, '#ccc', '#eee']} rotation={[Math.PI / 2, 0, 0]} />
-      <axesHelper args={[10]} />
+      {/* Enhanced Grid */}
+      <InteractiveGrid visible={showGrid} size={50} divisions={20} />
       
-      {/* Render nodes */}
+      {/* Coordinate axes */}
+      <axesHelper args={[5]} />
+      
+      {/* Render nodes with forces and deformation */}
       {structure.nodes.map((node) => (
         <NodeComp
           key={`node-${node.id}`}
@@ -356,12 +526,13 @@ const StructureScene = memo(({
           isSelected={false}
           showLabel={showLabels}
           onClick={() => {}}
+          deformation={deformationData.get(node.id)}
+          forces={forceData.get(node.id)}
         />
       ))}
       
-      {/* Render elements */}
-      {structure.elements.map((element) => {
-        // Dapatkan node yang direferensikan oleh elemen ini
+      {/* Render visible elements with enhanced features */}
+      {visibleElements.map((element) => {
         const elementNodes = element.nodes
           .map(nodeId => structure.nodes.find(n => n.id === nodeId))
           .filter(Boolean) as Node[];
@@ -376,13 +547,14 @@ const StructureScene = memo(({
             key={`element-${element.id}`}
             element={element}
             nodes={elementNodes}
-            isSelected={hoveredElement === element.id}
+            isSelected={selectedElement === element.id}
             viewMode={viewMode}
             onClick={handleElementClick}
             onHover={(hovered) => {
-              setHoveredElement(hovered ? element.id : null);
+              setSelectedElement(hovered ? element.id : null);
             }}
             showStress={showStress}
+            deformationData={deformationData}
           />
         );
       })}
@@ -396,12 +568,158 @@ const StructureScene = memo(({
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
+        maxPolarAngle={Math.PI}
+        minPolarAngle={0}
       />
     </>
   );
 });
 
-// Komponen utama StructureViewer
+// Enhanced Control Panel Component
+const ControlPanel = memo(({ 
+  viewAngle, 
+  rotation, 
+  showColumns, 
+  showBeams, 
+  showSlabs, 
+  showFoundation,
+  showGrid,
+  showForces,
+  showDeformation,
+  onViewAngleChange,
+  onRotationChange,
+  onToggleColumns,
+  onToggleBeams,
+  onToggleSlabs,
+  onToggleFoundation,
+  onToggleGrid,
+  onToggleForces,
+  onToggleDeformation
+}: {
+  viewAngle: number;
+  rotation: number;
+  showColumns: boolean;
+  showBeams: boolean;
+  showSlabs: boolean;
+  showFoundation: boolean;
+  showGrid: boolean;
+  showForces: boolean;
+  showDeformation: boolean;
+  onViewAngleChange: (angle: number) => void;
+  onRotationChange: (angle: number) => void;
+  onToggleColumns: (show: boolean) => void;
+  onToggleBeams: (show: boolean) => void;
+  onToggleSlabs: (show: boolean) => void;
+  onToggleFoundation: (show: boolean) => void;
+  onToggleGrid: (show: boolean) => void;
+  onToggleForces: (show: boolean) => void;
+  onToggleDeformation: (show: boolean) => void;
+}) => {
+  return (
+    <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg max-w-xs">
+      <h3 className="font-semibold mb-3 text-sm">3D Controls</h3>
+      
+      {/* View Controls */}
+      <div className="space-y-3 text-xs">
+        <div>
+          <label className="block mb-1">View Angle: {viewAngle}°</label>
+          <input
+            type="range"
+            min="0"
+            max="360"
+            value={viewAngle}
+            onChange={(e) => onViewAngleChange(Number(e.target.value))}
+            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+        
+        <div>
+          <label className="block mb-1">Rotation: {rotation}°</label>
+          <input
+            type="range"
+            min="0"
+            max="360"
+            value={rotation}
+            onChange={(e) => onRotationChange(Number(e.target.value))}
+            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+      </div>
+
+      {/* Element Visibility */}
+      <div className="mt-4 space-y-2">
+        <h4 className="font-medium text-xs">Visibility</h4>
+        <div className="space-y-1 text-xs">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showGrid}
+              onChange={(e) => onToggleGrid(e.target.checked)}
+              className="w-3 h-3"
+            />
+            Grid
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showColumns}
+              onChange={(e) => onToggleColumns(e.target.checked)}
+              className="w-3 h-3"
+            />
+            Columns
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showBeams}
+              onChange={(e) => onToggleBeams(e.target.checked)}
+              className="w-3 h-3"
+            />
+            Beams
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showSlabs}
+              onChange={(e) => onToggleSlabs(e.target.checked)}
+              className="w-3 h-3"
+            />
+            Slabs
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showFoundation}
+              onChange={(e) => onToggleFoundation(e.target.checked)}
+              className="w-3 h-3"
+            />
+            Foundation
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showForces}
+              onChange={(e) => onToggleForces(e.target.checked)}
+              className="w-3 h-3"
+            />
+            Forces
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showDeformation}
+              onChange={(e) => onToggleDeformation(e.target.checked)}
+              className="w-3 h-3"
+            />
+            Deformation
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Main StructureViewer Component with enhanced functionality
 const StructureViewer = memo(({
   structure,
   showLabels = false,
@@ -414,50 +732,17 @@ const StructureViewer = memo(({
 }: StructureViewerProps) => {
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showHelp, setShowHelp] = useState(false);
-  const [localShowLabels, setLocalShowLabels] = useState(showLabels);
-  const [localViewMode, setLocalViewMode] = useState(viewMode);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
-  const [validatedStructure, setValidatedStructure] = useState<Structure3D | null>(null);
-
-  // Validate structure data when it changes
-  useEffect(() => {
-    if (!structure) {
-      setValidatedStructure(null);
-      return;
-    }
-
-    try {
-      const validation = validateStructure3D(structure);
-      
-      if (validation.isValid && validation.correctedData) {
-        setValidatedStructure(validation.correctedData);
-        setValidationErrors([]);
-        setValidationWarnings(validation.warnings);
-      } else {
-        setValidatedStructure(null);
-        setValidationErrors(validation.errors);
-        setValidationWarnings(validation.warnings);
-        console.error('Structure validation failed:', validation.errors);
-      }
-    } catch (error) {
-      setValidatedStructure(null);
-      setValidationErrors([`Structure validation error: ${error instanceof Error ? error.message : 'Unknown error'}`]);
-      setValidationWarnings([]);
-      console.error('Structure validation exception:', error);
-    }
-  }, [structure]);
-
-  // Gunakan useMemo untuk mencegah re-render yang tidak perlu
-  const sceneProps = useMemo(() => ({
-    structure: validatedStructure,
-    showLabels: localShowLabels,
-    showStress,
-    viewMode: localViewMode,
-    onElementClick: handleElementClick,
-    onLoad: handleLoad,
-  }), [validatedStructure, localShowLabels, showStress, localViewMode, onElementClick, onLoad]);
+  
+  // Enhanced control states
+  const [viewAngle, setViewAngle] = useState(20);
+  const [rotation, setRotation] = useState(45);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showColumns, setShowColumns] = useState(true);
+  const [showBeams, setShowBeams] = useState(true);
+  const [showSlabs, setShowSlabs] = useState(true);
+  const [showFoundation, setShowFoundation] = useState(true);
+  const [showForces, setShowForces] = useState(false);
+  const [showDeformation, setShowDeformation] = useState(false);
 
   const handleElementClick = useCallback((element: Element) => {
     setSelectedElement(prev => 
@@ -473,37 +758,8 @@ const StructureViewer = memo(({
     if (onLoad) onLoad();
   }, [onLoad]);
 
-  // Show validation errors
-  if (validationErrors.length > 0) {
-    return (
-      <div className="flex items-center justify-center h-full bg-red-50">
-        <div className="text-center p-4 max-w-md">
-          <div className="text-red-500 mb-2">
-            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 19c-.77.833-.23 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <p className="text-red-700 font-semibold mb-2">Data Struktur Tidak Valid</p>
-          <div className="text-red-600 text-sm space-y-1">
-            {validationErrors.map((error, index) => (
-              <p key={index}>• {error}</p>
-            ))}
-          </div>
-          {validationWarnings.length > 0 && (
-            <div className="mt-3 text-yellow-600 text-xs">
-              <p className="font-medium">Peringatan:</p>
-              {validationWarnings.map((warning, index) => (
-                <p key={index}>• {warning}</p>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Tampilkan pesan jika struktur tidak ada
-  if (!structure || !validatedStructure) {
+  // Show message if no structure
+  if (!structure) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100">
         <div className="text-center p-4">
@@ -520,52 +776,125 @@ const StructureViewer = memo(({
   }
 
   return (
-    <Enhanced3DErrorBoundary 
-      structure={validatedStructure}
-      fallbackComponent={
-        <div className="flex items-center justify-center h-full bg-yellow-50">
-          <div className="text-center p-4">
-            <div className="text-yellow-600 mb-2">
-              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 19c-.77.833-.23 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <p className="text-yellow-800 font-semibold mb-2">Tidak dapat menampilkan 3D</p>
-            <p className="text-yellow-700 text-sm">Terjadi masalah dengan rendering 3D. Silakan coba refresh halaman.</p>
-          </div>
-        </div>
-      }
-    >
-      <div className={`structure-viewer ${className}`} style={style}>
-        {/* Show validation warnings if any */}
-        {validationWarnings.length > 0 && (
-          <div className="absolute top-4 right-4 z-10 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 max-w-sm text-sm rounded shadow-lg">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">Peringatan Data Struktur:</p>
-                <div className="mt-1 text-xs space-y-1">
-                  {validationWarnings.slice(0, 3).map((warning, index) => (
-                    <p key={index}>• {warning}</p>
-                  ))}
-                  {validationWarnings.length > 3 && (
-                    <p>• ... dan {validationWarnings.length - 3} peringatan lainnya</p>
-                  )}
-                </div>
-              </div>
+    <ErrorBoundary>
+      <div className={`structure-viewer relative ${className}`} style={style}>
+        {/* Enhanced Control Panel */}
+        <ControlPanel
+          viewAngle={viewAngle}
+          rotation={rotation}
+          showColumns={showColumns}
+          showBeams={showBeams}
+          showSlabs={showSlabs}
+          showFoundation={showFoundation}
+          showGrid={showGrid}
+          showForces={showForces}
+          showDeformation={showDeformation}
+          onViewAngleChange={setViewAngle}
+          onRotationChange={setRotation}
+          onToggleColumns={setShowColumns}
+          onToggleBeams={setShowBeams}
+          onToggleSlabs={setShowSlabs}
+          onToggleFoundation={setShowFoundation}
+          onToggleGrid={setShowGrid}
+          onToggleForces={setShowForces}
+          onToggleDeformation={setShowDeformation}
+        />
+
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">Loading 3D Model...</p>
             </div>
           </div>
         )}
         
-        <Canvas camera={{ position: [10, 10, 10], fov: 50 }}>
-          <StructureScene {...sceneProps} />
+        {/* 3D Canvas */}
+        <Canvas 
+          camera={{ position: [15, 15, 15], fov: 50 }}
+          shadows
+          style={{ background: 'linear-gradient(to bottom, #87CEEB, #98D8E8)' }}
+        >
+          <StructureScene 
+            structure={structure}
+            showLabels={showLabels}
+            showStress={showStress}
+            viewMode={viewMode}
+            onElementClick={handleElementClick}
+            onLoad={handleLoad}
+            showGrid={showGrid}
+            showColumns={showColumns}
+            showBeams={showBeams}
+            showSlabs={showSlabs}
+            showFoundation={showFoundation}
+            showForces={showForces}
+            showDeformation={showDeformation}
+          />
         </Canvas>
+
+        {/* Information panel for selected element */}
+        {selectedElement && (
+          <div className="absolute bottom-4 right-4 z-10 bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg max-w-sm">
+            <h4 className="font-semibold text-sm mb-2">Selected Element</h4>
+            <div className="text-xs space-y-1">
+              <p><span className="font-medium">ID:</span> {selectedElement.id}</p>
+              <p><span className="font-medium">Type:</span> {selectedElement.type || 'beam'}</p>
+              <p><span className="font-medium">Section:</span> {selectedElement.section.width}×{selectedElement.section.height || selectedElement.section.width}</p>
+              {selectedElement.material && (
+                <p><span className="font-medium">Material:</span> {selectedElement.material.name || 'Concrete'}</p>
+              )}
+              {selectedElement.stress !== undefined && (
+                <p><span className="font-medium">Stress:</span> {(selectedElement.stress * 100).toFixed(2)}% ({selectedElement.stress > 0 ? 'Tension' : 'Compression'})</p>
+              )}
+            </div>
+            <button
+              onClick={() => setSelectedElement(null)}
+              className="mt-2 px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs"
+            >
+              Close
+            </button>
+          </div>
+        )}
+
+        {/* Quick action buttons */}
+        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+          <button
+            onClick={() => setShowStress(!showStress)}
+            className={`p-2 rounded-lg shadow-md text-xs ${
+              showStress 
+                ? 'bg-red-500 text-white' 
+                : 'bg-white/90 hover:bg-white text-gray-700'
+            }`}
+            title="Toggle Stress Visualization"
+          >
+            Stress
+          </button>
+          <button
+            onClick={() => setShowForces(!showForces)}
+            className={`p-2 rounded-lg shadow-md text-xs ${
+              showForces 
+                ? 'bg-green-500 text-white' 
+                : 'bg-white/90 hover:bg-white text-gray-700'
+            }`}
+            title="Toggle Force Visualization"
+          >
+            Forces
+          </button>
+          <button
+            onClick={() => setShowDeformation(!showDeformation)}
+            className={`p-2 rounded-lg shadow-md text-xs ${
+              showDeformation 
+                ? 'bg-orange-500 text-white' 
+                : 'bg-white/90 hover:bg-white text-gray-700'
+            }`}
+            title="Toggle Deformation"
+          >
+            Deform
+          </button>
+        </div>
       </div>
-    </Enhanced3DErrorBoundary>
+    </ErrorBoundary>
   );
 });
 
@@ -573,7 +902,7 @@ StructureViewer.displayName = 'StructureViewer';
 
 export default StructureViewer;
 
-// Ekspor tipe-tipe yang diperlukan dengan nama yang berbeda
+// Export types
 export type Node3D = Node;
 export type Element3D = Element;
 export type Structure3DType = Structure3D;

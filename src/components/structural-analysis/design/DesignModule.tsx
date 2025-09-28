@@ -131,12 +131,16 @@ export const DesignModule: React.FC<DesignModuleProps> = ({
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const designInput: DesignInput = {
+        elementType: formData.elementType,
         forces: formData.forces,
-        analysisResults: {
-          utilization: 0.85,
-          loadCombination: '1.2D + 1.6L'
+        materials: {
+          fc: formData.materials.fc,
+          fy: formData.materials.fy
         },
-        materials: formData.materials,
+        loads: {
+          deadLoad: 50, // Default values - should come from analysis
+          liveLoad: 30
+        },
         geometry: formData.geometry,
         constraints: formData.constraints
       };

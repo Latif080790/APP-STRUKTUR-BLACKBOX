@@ -9,8 +9,7 @@ export { default as DesignModule } from './DesignModule';
 
 export type { 
   DesignInput, 
-  DesignResults, 
-  ReinforcementDetail 
+  DesignResults
 } from './StructuralDesignEngine';
 
 export type { 

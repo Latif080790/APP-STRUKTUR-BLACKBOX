@@ -62,9 +62,9 @@ export class EnhancedEducationalDesignEngine {
     // Add recommendations based on validation results
     validation.errors.forEach(error => {
       recommendations.push(`❌ ${error.message}`);
-      recommendations.push(`   💡 ${error.suggestion}`);
-      if (error.examples && error.examples.length > 0) {
-        recommendations.push(`   📋 Example: ${error.examples[0]}`);
+      recommendations.push(`   💡 ${error.reason}`);
+      if (error.example) {
+        recommendations.push(`   📋 Example: ${error.example}`);
       }
     });
     

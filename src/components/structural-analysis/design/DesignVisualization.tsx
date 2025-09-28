@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { DesignResults, ReinforcementDetail } from './StructuralDesignEngine';
+import { DesignResults } from './StructuralDesignEngine';
 import { DesignSummary } from './DesignResultsManager';
 
 interface DesignVisualizationProps {
@@ -82,15 +82,13 @@ export const DesignVisualization: React.FC<DesignVisualizationProps> = ({
             <div className="flex justify-between">
               <span>Tulangan Utama:</span>
               <span className="font-mono text-sm">
-                {results.reinforcement.mainReinforcement.topBars[0]?.quantity || 0}D
-                {results.reinforcement.mainReinforcement.topBars[0]?.diameter || 0}
+                {results.reinforcement.main.count}D{results.reinforcement.main.diameter}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Sengkang:</span>
               <span className="font-mono text-sm">
-                D{results.reinforcement.shearReinforcement.stirrups.diameter}-
-                {results.reinforcement.shearReinforcement.stirrups.spacing}
+                D{results.reinforcement.shear.diameter}-{results.reinforcement.shear.spacing}
               </span>
             </div>
           </div>
@@ -186,19 +184,19 @@ export const DesignVisualization: React.FC<DesignVisualizationProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <span className="text-gray-600">Panjang Penyaluran:</span>
-            <div className="font-medium">{results.reinforcement.detailing.anchorageLength}mm</div>
+            <div className="font-medium">{results.reinforcement.development.tension}mm</div>
           </div>
           <div>
             <span className="text-gray-600">Panjang Sambungan:</span>
-            <div className="font-medium">{results.reinforcement.detailing.lapLength}mm</div>
+            <div className="font-medium">{results.reinforcement.development.splice}mm</div>
           </div>
           <div>
             <span className="text-gray-600">Panjang Kait:</span>
-            <div className="font-medium">{results.reinforcement.detailing.hookLength}mm</div>
+            <div className="font-medium">{results.reinforcement.development.hook}mm</div>
           </div>
           <div>
             <span className="text-gray-600">Jarak Minimum:</span>
-            <div className="font-medium">{results.reinforcement.detailing.minimumSpacing}mm</div>
+            <div className="font-medium">{Math.max(results.reinforcement.main.diameter, 25)}mm</div>
           </div>
         </div>
       </div>
