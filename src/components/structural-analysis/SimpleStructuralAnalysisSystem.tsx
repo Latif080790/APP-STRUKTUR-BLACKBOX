@@ -1,6 +1,7 @@
 /**
  * Simple Structural Analysis System - Working Version
  * Sistem Analisis Struktur Sederhana yang Functional
+ * Mode Single Material - Menggunakan 1 jenis material untuk semua elemen
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -9,6 +10,9 @@ import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Building2, Calculator, FileText, Palette, Info, Lightbulb, ToggleLeft, ToggleRight } from 'lucide-react';
+import SimpleMaterialSelector from './materials/SimpleMaterialSelector';
 import { Activity, AlertCircle, RotateCcw } from 'lucide-react';
 
 // Import Error Boundaries
@@ -360,6 +364,10 @@ export const SimpleStructuralAnalysisSystem = () => {
   const [loads, setLoads] = useState<Loads>(defaultLoads);
   const [seismicParams, setSeismicParams] = useState<SeismicParameters>(defaultSeismic);
   
+  // Single Material Mode State
+  const [singleMaterialMode, setSingleMaterialMode] = useState<boolean>(true);
+  const [selectedSingleMaterial, setSelectedSingleMaterial] = useState<any>(null);
+  
   // Enhanced Material & Foundation Selection
   const [materialSelection, setMaterialSelection] = useState({
     primaryStructure: 'concrete' as 'concrete' | 'steel' | 'concrete-steel' | 'steel-composite',
@@ -666,6 +674,46 @@ export const SimpleStructuralAnalysisSystem = () => {
           <p className="text-gray-600">
             Analisis struktur bangunan sesuai SNI 1726:2019, SNI 1727:2020, dan SNI 2847:2019
           </p>
+          
+          {/* Material Mode Toggle */}
+          <div className="flex items-center justify-center space-x-4 mt-4">
+            <span className="text-sm font-medium">Mode Material:</span>
+            <div className="flex items-center space-x-2">
+              <span className={`text-sm ${!singleMaterialMode ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                Multi Material
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSingleMaterialMode(!singleMaterialMode)}
+                className="p-1 h-8 w-12"
+              >
+                {singleMaterialMode ? (
+                  <ToggleRight className="h-6 w-6 text-green-600" />
+                ) : (
+                  <ToggleLeft className="h-6 w-6 text-gray-400" />
+                )}
+              </Button>
+              <span className={`text-sm ${singleMaterialMode ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+                Single Material
+              </span>
+              {singleMaterialMode && (
+                <Badge variant="outline" className="bg-green-50 text-green-700">
+                  <Lightbulb className="h-3 w-3 mr-1" />
+                  Simple
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          {singleMaterialMode && (
+            <Alert className="max-w-2xl mx-auto">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Mode Single Material:</strong> Semua elemen struktur (kolom, balok, pelat, dll) akan menggunakan 1 jenis material yang sama untuk analisis yang lebih sederhana.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {/* Progress Bar */}

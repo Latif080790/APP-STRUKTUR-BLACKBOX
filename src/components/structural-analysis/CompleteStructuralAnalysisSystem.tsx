@@ -4,12 +4,11 @@ import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { AlertCircle, RotateCcw } from 'lucide-react';
+import { AlertCircle, RotateCcw, Calculator, ToggleLeft, ToggleRight, Lightbulb, Info } from 'lucide-react';
 import { Structure3D } from '../../types/structural';
 import StructureViewer from './3d/StructureViewer';
-import { Enhanced3DViewer } from './3d/Enhanced3DViewer';
+import { Advanced3DStructureViewer } from './3d/Advanced3DStructureViewer';
 import Enhanced3DControls from './3d/Enhanced3DControls';
-import { Enhanced3DViewer } from './3d/Advanced3DViewer';
 import { ResponseSpectrumChart } from './charts/ResponseSpectrumChart';
 import ForceDiagram from './charts/ForceDiagram';
 import { ResultsDisplay } from './ResultsDisplay';
@@ -17,6 +16,7 @@ import { ReportGenerator } from './ReportGenerator';
 import ComprehensiveResultsDashboard from './results/ComprehensiveResultsDashboard';
 import generateDemoResults from './results/demoResultsData';
 import ProjectManager from './project/ProjectManager';
+import SimpleMaterialSelector from './materials/SimpleMaterialSelector';
 import { 
   StructuralAnalysisErrorBoundary, 
   FormErrorBoundary,
@@ -819,101 +819,25 @@ export default function CompleteStructuralAnalysisSystem() {
               </div>
             )}
 
-            <ErrorBoundary 
-              fallback={
-                <div className="text-center p-4 text-red-600">
-                  <p>Gagal memuat visualisasi 3D. Silakan muat ulang halaman.</p>
-                </div>
-              }
-              onError={handleModelError}
-            >
-              {structure3D ? (
+            <VisualizationErrorBoundary>
+              {inputData.geometry ? (
                 <div className="h-[500px] rounded-md overflow-hidden relative">
-                  {/* Enhanced 3D Viewer with advanced features */}
-                  <Enhanced3DViewer 
-                    structure={{
-                      nodes: structure3D.nodes.map(node => ({
-                        id: String(node.id),
-                        position: [node.x, node.y, node.z],
-                        displacement: analysisResults?.nodeResults?.find(nr => nr.nodeId === node.id)?.displacement ? 
-                          [
-                            analysisResults.nodeResults.find(nr => nr.nodeId === node.id)?.displacement?.x || 0,
-                            analysisResults.nodeResults.find(nr => nr.nodeId === node.id)?.displacement?.y || 0,
-                            analysisResults.nodeResults.find(nr => nr.nodeId === node.id)?.displacement?.z || 0
-                          ] : undefined,
-                        forces: node.loads ? [node.loads.fx || 0, node.loads.fy || 0, node.loads.fz || 0] : undefined,
-                        moments: node.loads ? [node.loads.mx || 0, node.loads.my || 0, node.loads.mz || 0] : undefined,
-                        support: {
-                          x: node.constraints?.x || false,
-                          y: node.constraints?.y || false,
-                          z: node.constraints?.z || false,
-                          rx: node.constraints?.rx || false,
-                          ry: node.constraints?.ry || false,
-                          rz: node.constraints?.rz || false,
-                        }
-                      })),
-                      elements: structure3D.elements.map(element => ({
-                        id: String(element.id),
-                        type: element.type || 'beam',
-                        startNode: String(element.nodes[0]),
-                        endNode: String(element.nodes[1]),
-                        section: {
-                          width: element.section?.width || 0.3,
-                          height: element.section?.height || 0.5,
-                          thickness: element.section?.area ? Math.sqrt(element.section.area) : undefined
-                        },
-                        material: (element.materialType === 'timber' || element.materialType === 'masonry') ? 'composite' : element.materialType || 'concrete',
-                        utilization: element.analysisResults?.stressMax ? 
-                          Math.min(element.analysisResults.stressMax / 25, 1.0) : undefined, // Normalize to 25 MPa
-                        stresses: element.analysisResults ? {
-                          max: element.analysisResults.stressMax || 0,
-                          min: element.analysisResults.stressMin || 0,
-                          vonMises: [element.analysisResults.stressMax || 0]
-                        } : undefined
-                      })),
-                      loads: structure3D.nodes.filter(node => node.loads).map(node => ({
-                        nodeId: String(node.id),
-                        forces: [node.loads?.fx || 0, node.loads?.fy || 0, node.loads?.fz || 0],
-                        moments: [node.loads?.mx || 0, node.loads?.my || 0, node.loads?.mz || 0]
-                      })),
-                      boundingBox: {
-                        min: [
-                          Math.min(...structure3D.nodes.map(n => n.x)) - 2,
-                          Math.min(...structure3D.nodes.map(n => n.y)) - 2,
-                          Math.min(...structure3D.nodes.map(n => n.z)) - 2
-                        ],
-                        max: [
-                          Math.max(...structure3D.nodes.map(n => n.x)) + 2,
-                          Math.max(...structure3D.nodes.map(n => n.y)) + 2,
-                          Math.max(...structure3D.nodes.map(n => n.z)) + 2
-                        ]
-                      },
-                      scale: 1.0
+                  {/* Advanced 3D Viewer with correct structural orientations */}
+                  <Advanced3DStructureViewer
+                    geometry={inputData.geometry}
+                    materialGrade={inputData.material}
+                    onElementSelect={(elementId) => {
+                      console.log('Selected element:', elementId);
                     }}
                     analysisResults={analysisResults}
-                    showDeformation={analysisResults ? true : false}
-                    deformationScale={5.0}
-                    showStress={analysisResults ? true : false}
-                    showForces={true}
-                    showLabels={showLabels}
-                    viewMode={viewMode}
-                    colorMode={analysisResults ? 'stress' : 'material'}
-                    onElementSelect={(elementId) => {
-                      const element = structure3D.elements.find(e => String(e.id) === elementId);
-                      if (element) setSelectedElement(element);
-                    }}
-                    onNodeSelect={(nodeId) => {
-                      console.log('Node selected:', nodeId);
-                    }}
-                    className="w-full h-full"
                   />
                 </div>
               ) : (
                 <div className="text-center p-4 text-gray-500">
-                  <p>Data struktur tidak tersedia. Silakan lakukan analisis terlebih dahulu.</p>
+                  <p>Data geometri tidak tersedia. Silakan lengkapi form geometri terlebih dahulu.</p>
                 </div>
               )}
-            </ErrorBoundary>
+            </VisualizationErrorBoundary>
             
             {/* Panel kontrol tambahan */}
             <div className="mt-4 p-4 bg-white rounded-lg shadow">
@@ -1019,14 +943,13 @@ export default function CompleteStructuralAnalysisSystem() {
   // Render tab list
   const renderTabList = () => {
     return (
-      <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="input">Input</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-6">
+        <TabsTrigger value="geometry">Geometri</TabsTrigger>
+        <TabsTrigger value="input">Input Lengkap</TabsTrigger>
         <TabsTrigger value="results" disabled={!analysisResults}>Hasil</TabsTrigger>
         <TabsTrigger value="visualization">Visualisasi</TabsTrigger>
         <TabsTrigger value="report" disabled={!analysisResults}>Laporan</TabsTrigger>
-        <TabsTrigger value="export" disabled={!currentProject}>Export</TabsTrigger>
-        <TabsTrigger value="performance">Performance</TabsTrigger>
-        <TabsTrigger value="test">Test Engine</TabsTrigger>
+        <TabsTrigger value="export" disabled={!analysisResults}>Export</TabsTrigger>
       </TabsList>
     );
   };
@@ -1071,6 +994,78 @@ export default function CompleteStructuralAnalysisSystem() {
       
       <Tabs defaultValue="input" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         {renderTabList()}
+        
+        {/* Tab Geometri - Simple Input */}
+        <TabsContent value="geometry" className="space-y-6">
+          <FormErrorBoundary>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Geometry Form */}
+              <div className="space-y-4">
+                <GeometryForm 
+                  data={geometry}
+                  onChange={setGeometry}
+                  errors={[]}
+                />
+                
+                {/* Single Material Selector (if enabled) */}
+                {singleMaterialMode && (
+                  <SimpleMaterialSelector
+                    selectedMaterial={selectedSingleMaterial}
+                    onMaterialChange={setSelectedSingleMaterial}
+                    materialType="concrete"
+                  />
+                )}
+                
+                {/* Quick Analysis Button */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <Button 
+                      onClick={runAnalysis}
+                      disabled={isAnalyzing || !geometry.length || !geometry.width}
+                      size="lg"
+                      className="w-full"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Menganalisis...
+                        </>
+                      ) : (
+                        <>
+                          <Calculator className="h-4 w-4 mr-2" />
+                          Analisis Cepat
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* 3D Preview */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Preview 3D</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <VisualizationErrorBoundary>
+                      <div className="h-[500px] rounded-md overflow-hidden">
+                        <Advanced3DStructureViewer
+                          geometry={geometry}
+                          materialGrade={selectedSingleMaterial || materials}
+                          onElementSelect={(elementId) => {
+                            console.log('Selected element:', elementId);
+                          }}
+                          analysisResults={null}
+                        />
+                      </div>
+                    </VisualizationErrorBoundary>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </FormErrorBoundary>
+        </TabsContent>
         
         {/* Tab Input */}
         <TabsContent value="input" className="space-y-6">

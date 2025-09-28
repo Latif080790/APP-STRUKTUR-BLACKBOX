@@ -304,7 +304,7 @@ export const Advanced3DStructureViewer: React.FC<Advanced3DStructureViewerProps>
     }
 
     return elements;
-  }, [geometry, materialGrade, elementVisibility, viewSettings.showFoundation, analysisResults, numberOfFloors]);
+  }, [geometry, materialGrade, elementVisibility, viewSettings.showFoundation, analysisResults]);
 
   // Canvas drawing functions
   const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {

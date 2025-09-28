@@ -34,7 +34,7 @@ import {
 // Import New Enhanced Components
 import { EnhancedMaterialSelector } from './materials/EnhancedMaterialSelector';
 import { Enhanced3DStructureViewer } from './3d/Enhanced3DStructureWrapper';
-import Advanced3DStructureViewer from './3d/Advanced3DStructureViewer';
+import OptimizedBuildingViewer3D from './3d/OptimizedBuildingViewer3D';
 import EnhancedReportGenerator from './EnhancedReportGenerator';
 import SmartDesignValidator from './design/SmartDesignValidator';
 
@@ -1041,8 +1041,8 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
                 </div>
               </div>
               
-              {/* Advanced 3D Structure Viewer */}
-              <Advanced3DStructureViewer
+              {/* Optimized 3D Building Viewer */}
+              <OptimizedBuildingViewer3D
                 geometry={{
                   length: geometry.length,
                   width: geometry.width,
