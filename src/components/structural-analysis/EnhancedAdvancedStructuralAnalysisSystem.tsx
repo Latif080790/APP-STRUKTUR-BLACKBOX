@@ -32,9 +32,10 @@ import {
 } from 'lucide-react';
 
 // Import New Enhanced Components
-import { SNIMaterialSelector } from './materials/SNIMaterialProperties';
+import { EnhancedMaterialSelector } from './materials/EnhancedMaterialSelector';
 import { Enhanced3DStructureViewer } from './3d/Enhanced3DStructureWrapper';
-import EnhancedTechnicalDrawing from './design/EnhancedTechnicalDrawing';
+import Advanced3DStructureViewer from './3d/Advanced3DStructureViewer';
+import EnhancedReportGenerator from './EnhancedReportGenerator';
 import SmartDesignValidator from './design/SmartDesignValidator';
 
 // Import Analysis Modules
@@ -48,6 +49,7 @@ import EnhancedAnalysisVisualization from './analysis/EnhancedAnalysisVisualizat
 
 // Import Design Module
 import DesignModule from './design/DesignModule';
+import ReinforcementDrawing from './ReinforcementDrawing';
 
 // Type definitions
 interface ProjectInfo {
@@ -74,16 +76,9 @@ interface Geometry {
 }
 
 interface MaterialProperties {
-  steelGrade: 'BJ-34' | 'BJ-37' | 'BJ-41' | 'BJ-50' | 'BJ-55';
-  concreteGrade: string;
-  isComposite: boolean;
-  additionalProperties: {
-    fc: number;
-    fy: number;
-    Es: number;
-    concreteType: 'normal' | 'lightweight' | 'high_strength';
-    exposureCondition: 'mild' | 'moderate' | 'severe' | 'extreme';
-  };
+  type: 'concrete' | 'steel' | 'composite';
+  grade: string;
+  properties: any;
 }
 
 interface Loads {
@@ -156,12 +151,11 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
   });
 
   const [materialProperties, setMaterialProperties] = useState<MaterialProperties>({
-    steelGrade: 'BJ-50',
-    concreteGrade: 'K-350',
-    isComposite: false,
-    additionalProperties: {
-      fc: 30,
-      fy: 420,
+    type: 'concrete',
+    grade: 'K-300',
+    properties: {
+      fc: 25,
+      fy: 250,
       Es: 200000,
       concreteType: 'normal',
       exposureCondition: 'moderate'
@@ -228,7 +222,9 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
     if (geometry.width <= 0) errors.push({ field: 'width', message: 'Width must be > 0', severity: 'error' });
     if (geometry.numberOfFloors <= 0) errors.push({ field: 'floors', message: 'Number of floors must be > 0', severity: 'error' });
     if (geometry.heightPerFloor < 2.8) errors.push({ field: 'height', message: 'Tinggi lantai minimum 2.8m per SNI', severity: 'error' });
-    if (materialProperties.additionalProperties.fc < 20) errors.push({ field: 'fc', message: 'Mutu beton minimum 20 MPa', severity: 'error' });
+    if (materialProperties.properties.fc && materialProperties.properties.fc < 20) {
+      errors.push({ field: 'fc', message: 'Mutu beton minimum 20 MPa', severity: 'error' });
+    }
     if (loads.deadLoad < 3.0) errors.push({ field: 'deadLoad', message: 'Beban mati minimum 3.0 kN/m²', severity: 'warning' });
     if (loads.liveLoad < 1.9) errors.push({ field: 'liveLoad', message: 'Beban hidup minimum 1.9 kN/m²', severity: 'error' });
     
@@ -285,10 +281,10 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
           irregularity: geometry.irregularity
         },
         materials: {
-          fc: materialProperties.additionalProperties.fc,
-          fy: materialProperties.additionalProperties.fy,
-          Es: materialProperties.additionalProperties.Es,
-          concreteType: materialProperties.additionalProperties.concreteType
+          fc: materialProperties.properties.fc || 25,
+          fy: materialProperties.properties.fy || 400,
+          Es: materialProperties.properties.Es || 200000,
+          concreteType: materialProperties.type
         },
         loads: {
           deadLoad: loads.deadLoad,
@@ -343,9 +339,9 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
           },
           materials: {
             concrete: {
-              fc: materialProperties.additionalProperties.fc,
-              ft: materialProperties.additionalProperties.fc * 0.1,
-              Ec: 4700 * Math.sqrt(materialProperties.additionalProperties.fc),
+              fc: materialProperties.properties.fc || 25,
+              ft: (materialProperties.properties.fc || 25) * 0.1,
+              Ec: 4700 * Math.sqrt(materialProperties.properties.fc || 25),
               poisson: 0.2,
               density: 2400,
               shrinkage: 0.0003,
@@ -353,12 +349,12 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
               age: 28
             },
             steel: {
-              fy: materialProperties.additionalProperties.fy,
-              fu: materialProperties.additionalProperties.fy * 1.2,
-              Es: materialProperties.additionalProperties.Es,
+              fy: materialProperties.properties.fy || 400,
+              fu: (materialProperties.properties.fy || 400) * 1.2,
+              Es: materialProperties.properties.Es || 200000,
               poisson: 0.3,
               density: 7850,
-              grade: 'BJ-50'
+              grade: materialProperties.grade
             }
           },
           loadCases: [
@@ -417,10 +413,10 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
       const dynamicInput: DynamicAnalysisInput = {
         geometry: staticInput.geometry,
         materials: {
-          fc: materialProperties.additionalProperties.fc,
-          fy: materialProperties.additionalProperties.fy,
-          Es: materialProperties.additionalProperties.Es,
-          Ec: 4700 * Math.sqrt(materialProperties.additionalProperties.fc) // MPa
+          fc: materialProperties.properties.fc || 25,
+          fy: materialProperties.properties.fy || 400,
+          Es: materialProperties.properties.Es || 200000,
+          Ec: 4700 * Math.sqrt(materialProperties.properties.fc || 25) // MPa
         },
         masses: {
           floorMass,
@@ -798,10 +794,6 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
             <BarChart3 className="h-4 w-4" />
             <span>Results</span>
           </TabsTrigger>
-          <TabsTrigger value="drawings" className="flex items-center space-x-1">
-            <Palette className="h-4 w-4" />
-            <span>Drawings</span>
-          </TabsTrigger>
           <TabsTrigger value="design" className="flex items-center space-x-1">
             <Wrench className="h-4 w-4" />
             <span>Design</span>
@@ -1049,8 +1041,8 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
                 </div>
               </div>
               
-              {/* Enhanced 3D Structure Viewer */}
-              <Enhanced3DStructureViewer 
+              {/* Advanced 3D Structure Viewer */}
+              <Advanced3DStructureViewer
                 geometry={{
                   length: geometry.length,
                   width: geometry.width,
@@ -1058,9 +1050,13 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
                   numberOfFloors: geometry.numberOfFloors,
                   baySpacingX: geometry.baySpacingX,
                   baySpacingY: geometry.baySpacingY,
-                  irregularity: geometry.irregularity
+                  foundationDepth: 2
                 }}
-                materialGrade={materialProperties.steelGrade}
+                materialGrade={materialProperties.grade}
+                onElementSelect={(element) => {
+                  console.log('Selected element:', element);
+                }}
+                analysisResults={combinedResults}
               />
             </CardContent>
           </Card>
@@ -1076,21 +1072,15 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SNIMaterialSelector 
-                selectedGrade={materialProperties.steelGrade}
-                onSteelGradeSelect={(grade) => {
+              <EnhancedMaterialSelector 
+                onMaterialChange={(material) => {
                   setMaterialProperties({
-                    ...materialProperties,
-                    steelGrade: grade as any,
-                    additionalProperties: {
-                      ...materialProperties.additionalProperties,
-                      fy: grade === 'BJ-34' ? 240 : grade === 'BJ-37' ? 240 : grade === 'BJ-41' ? 250 : grade === 'BJ-50' ? 410 : 550
-                    }
+                    type: material.type || 'concrete',
+                    grade: material.grade || 'K-300',
+                    properties: material.properties || { fc: 25, fy: 400, Es: 200000 }
                   });
                 }}
-                onCompositeCreate={(composite) => {
-                  console.log('Composite created:', composite);
-                }}
+                selectedMaterial={materialProperties}
               />
             </CardContent>
           </Card>
@@ -1489,6 +1479,43 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
                   Export Excel
                 </Button>
               </div>
+              
+              {/* Enhanced Professional Report Generator */}
+              <EnhancedReportGenerator
+                projectInfo={{
+                  name: projectInfo.name,
+                  location: "Indonesia",
+                  client: "Client Name",
+                  engineer: projectInfo.engineer,
+                  checker: "Design Checker",
+                  date: projectInfo.date,
+                  projectNumber: "P-2024-001",
+                  revision: "Rev 01"
+                }}
+                geometry={geometry}
+                materialProperties={materialProperties}
+                loads={loads}
+                analysisResults={{
+                  static: analysisResults,
+                  dynamic: enhancedDynamicResults,
+                  seismic: combinedResults,
+                  foundation: combinedResults,
+                  design: combinedResults
+                }}
+                onExport={(format) => {
+                  console.log(`Exporting report as ${format}`);
+                  // Handle different export formats
+                  if (format === 'pdf') {
+                    exportResults('pdf');
+                  } else if (format === 'docx') {
+                    // Handle Word export
+                    alert('Word export feature coming soon!');
+                  } else if (format === 'share') {
+                    // Handle sharing functionality
+                    alert('Report sharing feature coming soon!');
+                  }
+                }}
+              />
             </>
           ) : (
             <Card>
@@ -1531,43 +1558,6 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* Technical Drawings Tab */}
-        <TabsContent value="drawings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Palette className="h-5 w-5" />
-                <span>Technical Drawings</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-8">
-                <h3 className="text-lg font-semibold mb-4">Enhanced Technical Drawing</h3>
-                <p className="text-gray-600 mb-4">
-                  Professional CAD-style technical drawings dengan dimensioning dan multiple views
-                </p>
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="bg-gray-100 p-4 rounded border">
-                    <h4 className="font-semibold mb-2">Plan View</h4>
-                    <div className="bg-white border-2 border-dashed p-4 min-h-32 flex items-center justify-center">
-                      📐 {geometry.length}m × {geometry.width}m
-                    </div>
-                  </div>
-                  <div className="bg-gray-100 p-4 rounded border">
-                    <h4 className="font-semibold mb-2">Elevation View</h4>
-                    <div className="bg-white border-2 border-dashed p-4 min-h-32 flex items-center justify-center">
-                      🏗️ {geometry.numberOfFloors} floors × {geometry.heightPerFloor}m
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-sm text-blue-600">
-                  Material: {materialProperties.steelGrade} Steel | fc' = {materialProperties.additionalProperties.fc} MPa
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Design Module Tab */}
         <TabsContent value="design" className="space-y-6">
           <Card>
@@ -1583,9 +1573,9 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
                   <h4 className="font-semibold mb-2">✅ Input Validation</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>Geometry: {geometry.length}m × {geometry.width}m × {geometry.numberOfFloors} floors</div>
-                    <div>Material: {materialProperties.steelGrade} Steel</div>
-                    <div>Concrete: fc' = {materialProperties.additionalProperties.fc} MPa</div>
-                    <div>Steel: fy = {materialProperties.additionalProperties.fy} MPa</div>
+                    <div>Material: {materialProperties.grade}</div>
+                    <div>Concrete: fc' = {materialProperties.properties.fc || 25} MPa</div>
+                    <div>Steel: fy = {materialProperties.properties.fy || 400} MPa</div>
                   </div>
                 </div>
                 
@@ -1620,6 +1610,15 @@ const EnhancedAdvancedStructuralAnalysisSystem: React.FC = () => {
               checker: 'Design Checker'
             }}
           />
+          
+          {/* Reinforcement Drawing - Added after calculation completion */}
+          {combinedResults && (
+            <ReinforcementDrawing
+              analysisResults={combinedResults}
+              geometry={geometry}
+              materialProperties={materialProperties}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
