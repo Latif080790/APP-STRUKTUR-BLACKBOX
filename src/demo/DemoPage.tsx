@@ -4,9 +4,93 @@
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+// Custom Card components defined inline
+// Custom Button component defined inline
+// Custom Tabs components defined inline
+
+// Simple UI components
+const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="border rounded-lg shadow-sm">{children}</div>
+);
+
+const CardHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="border-b p-4">{children}</div>
+);
+
+const CardTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
+);
+
+const CardContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`p-4 ${className}`}>{children}</div>
+);
+
+const Button: React.FC<{ 
+  children: React.ReactNode; 
+  onClick?: () => void; 
+  variant?: 'default' | 'outline';
+  size?: 'default' | 'lg';
+  className?: string;
+}> = ({ children, onClick, variant = 'default', size = 'default', className = '' }) => (
+  <button 
+    onClick={onClick}
+    className={`px-4 py-2 rounded ${
+      variant === 'outline' 
+        ? 'border border-gray-300 text-gray-700 hover:bg-gray-50' 
+        : 'bg-blue-600 text-white hover:bg-blue-700'
+    } ${size === 'lg' ? 'px-8 py-3' : ''} ${className}`}
+  >
+    {children}
+  </button>
+);
+
+// Simple Tabs components
+const Tabs: React.FC<{ 
+  children: React.ReactNode; 
+  defaultValue?: string;
+  className?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+}> = ({ children, defaultValue, className = '', value, onValueChange }) => (
+  <div className={className}>
+    {children}
+  </div>
+);
+
+const TabsList: React.FC<{ 
+  children: React.ReactNode; 
+  className?: string;
+}> = ({ children, className = '' }) => (
+  <div className={className}>
+    {children}
+  </div>
+);
+
+const TabsTrigger: React.FC<{ 
+  children: React.ReactNode; 
+  value: string;
+  className?: string;
+}> = ({ children, value, className = '' }) => (
+  <button 
+    data-value={value}
+    className={`px-4 py-2 ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const TabsContent: React.FC<{ 
+  children: React.ReactNode; 
+  value: string;
+  className?: string;
+}> = ({ children, value, className = '' }) => (
+  <div 
+    data-value={value}
+    className={className}
+  >
+    {children}
+  </div>
+);
 
 // Simple Badge component inline
 const Badge = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -25,7 +109,7 @@ import {
   Zap
 } from 'lucide-react';
 
-import WorkingBasicStructuralAnalysisSystem from './WorkingBasicStructuralAnalysisSystem';
+import WorkingBasicStructuralAnalysisSystem from '../structural-analysis/WorkingBasicStructuralAnalysisSystem';
 
 interface DemoFeature {
   id: string;

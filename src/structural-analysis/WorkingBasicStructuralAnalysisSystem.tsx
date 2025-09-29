@@ -4,22 +4,122 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Button } from '../ui/button';
-import { Progress } from '../ui/progress';
-import { Alert, AlertDescription } from '../ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+// Simple UI components
+const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="border rounded-lg shadow-sm">{children}</div>
+);
+
+const CardHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="border-b p-4">{children}</div>
+);
+
+const CardTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h3 className="text-lg font-semibold">{children}</h3>
+);
+
+const CardContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`p-4 ${className}`}>{children}</div>
+);
+
+const Button: React.FC<{ 
+  children: React.ReactNode; 
+  onClick?: () => void; 
+  variant?: 'default' | 'outline';
+  className?: string;
+}> = ({ children, onClick, variant = 'default', className = '' }) => (
+  <button 
+    onClick={onClick}
+    className={`px-4 py-2 rounded ${
+      variant === 'outline' 
+        ? 'border border-gray-300 text-gray-700 hover:bg-gray-50' 
+        : 'bg-blue-600 text-white hover:bg-blue-700'
+    } ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const Progress: React.FC<{ 
+  value: number; 
+  className?: string;
+}> = ({ value, className = '' }) => (
+  <div className={`w-full bg-gray-200 rounded-full h-2 ${className}`}>
+    <div 
+      className="bg-blue-600 h-2 rounded-full" 
+      style={{ width: `${value}%` }}
+    ></div>
+  </div>
+);
+
+const Alert: React.FC<{ 
+  children: React.ReactNode; 
+  variant?: 'default' | 'destructive';
+}> = ({ children, variant = 'default' }) => (
+  <div className={`p-4 rounded ${
+    variant === 'destructive' 
+      ? 'bg-red-50 border border-red-200 text-red-800' 
+      : 'bg-blue-50 border border-blue-200'
+  }`}>
+    {children}
+  </div>
+);
+
+const AlertDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div>{children}</div>
+);
+
+const Tabs: React.FC<{ 
+  children: React.ReactNode; 
+  value?: string;
+  onValueChange?: (value: string) => void;
+}> = ({ children, value, onValueChange }) => (
+  <div>
+    {children}
+  </div>
+);
+
+const TabsList: React.FC<{ 
+  children: React.ReactNode; 
+  className?: string;
+}> = ({ children, className = '' }) => (
+  <div className={className}>
+    {children}
+  </div>
+);
+
+const TabsTrigger: React.FC<{ 
+  children: React.ReactNode; 
+  value: string;
+  className?: string;
+}> = ({ children, value, className = '' }) => (
+  <button 
+    data-value={value}
+    className={`px-4 py-2 ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const TabsContent: React.FC<{ 
+  children: React.ReactNode; 
+  value: string;
+  className?: string;
+}> = ({ children, value, className = '' }) => (
+  <div 
+    data-value={value}
+    className={className}
+  >
+    {children}
+  </div>
+);
+
+// Custom UI components defined inline
 import { Activity, AlertCircle } from 'lucide-react';
 
-// Import Error Boundaries
-import { 
-  StructuralAnalysisErrorBoundary, 
-  FormErrorBoundary,
-  VisualizationErrorBoundary 
-} from '../common/ErrorBoundary';
+// Error boundaries are not available in this version
 
 // Import 3D Viewer
-import Simple3DViewer from './3d/Simple3DViewer';
+import Simple3DViewer from './advanced-3d/Simple3DViewer';
 
 // Interface sederhana tanpa konflik dengan yang ada
 interface BasicProjectInfo {
