@@ -72,8 +72,9 @@ const Tabs: React.FC<{
   children: React.ReactNode; 
   value?: string;
   onValueChange?: (value: string) => void;
-}> = ({ children, value, onValueChange }) => (
-  <div>
+  className?: string;
+}> = ({ children, value, onValueChange, className = '' }) => (
+  <div className={className}>
     {children}
   </div>
 );
@@ -311,7 +312,7 @@ export const WorkingBasicStructuralAnalysisSystem = () => {
   }, [geometry, loads]);
 
   return (
-    <StructuralAnalysisErrorBoundary>
+    <div>
       <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
         
         {/* Header */}
@@ -348,195 +349,191 @@ export const WorkingBasicStructuralAnalysisSystem = () => {
         )}
 
         {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="input" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="input">Input Data</TabsTrigger>
-            <TabsTrigger value="results" disabled={!results}>Hasil Analisis</TabsTrigger>
+            <TabsTrigger value="results">Hasil Analisis</TabsTrigger>
             <TabsTrigger value="3d">Visualisasi 3D</TabsTrigger>
           </TabsList>
 
           {/* Input Tab */}
           <TabsContent value="input" className="space-y-6">
-            <FormErrorBoundary>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* Project Info */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informasi Proyek</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Nama Proyek</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded-md"
-                        value={project.name}
-                        onChange={(e) => setProject(prev => ({ ...prev, name: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Lokasi</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded-md"
-                        value={project.location}
-                        onChange={(e) => setProject(prev => ({ ...prev, location: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Engineer</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded-md"
-                        value={project.engineer}
-                        onChange={(e) => setProject(prev => ({ ...prev, engineer: e.target.value }))}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Geometry */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Geometri Struktur</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Panjang (m)</label>
-                        <input
-                          type="number"
-                          className="w-full p-2 border rounded-md"
-                          value={geometry.length}
-                          onChange={(e) => setGeometry(prev => ({ ...prev, length: parseFloat(e.target.value) || 0 }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Lebar (m)</label>
-                        <input
-                          type="number"
-                          className="w-full p-2 border rounded-md"
-                          value={geometry.width}
-                          onChange={(e) => setGeometry(prev => ({ ...prev, width: parseFloat(e.target.value) || 0 }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Tinggi Lantai (m)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-2 border rounded-md"
-                          value={geometry.heightPerFloor}
-                          onChange={(e) => setGeometry(prev => ({ ...prev, heightPerFloor: parseFloat(e.target.value) || 0 }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Jumlah Lantai</label>
-                        <input
-                          type="number"
-                          className="w-full p-2 border rounded-md"
-                          value={geometry.floors}
-                          onChange={(e) => setGeometry(prev => ({ ...prev, floors: parseInt(e.target.value) || 0 }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Bentang X</label>
-                        <input
-                          type="number"
-                          className="w-full p-2 border rounded-md"
-                          value={geometry.baysX}
-                          onChange={(e) => setGeometry(prev => ({ ...prev, baysX: parseInt(e.target.value) || 0 }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Bentang Y</label>
-                        <input
-                          type="number"
-                          className="w-full p-2 border rounded-md"
-                          value={geometry.baysY}
-                          onChange={(e) => setGeometry(prev => ({ ...prev, baysY: parseInt(e.target.value) || 0 }))}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Materials */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Material</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">f'c (MPa)</label>
-                        <input
-                          type="number"
-                          className="w-full p-2 border rounded-md"
-                          value={materials.fc}
-                          onChange={(e) => setMaterials(prev => ({ ...prev, fc: parseFloat(e.target.value) || 0 }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">fy (MPa)</label>
-                        <input
-                          type="number"
-                          className="w-full p-2 border rounded-md"
-                          value={materials.fy}
-                          onChange={(e) => setMaterials(prev => ({ ...prev, fy: parseFloat(e.target.value) || 0 }))}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Loads */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Beban</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Dead Load (kN/m²)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-2 border rounded-md"
-                          value={loads.deadLoad}
-                          onChange={(e) => setLoads(prev => ({ ...prev, deadLoad: parseFloat(e.target.value) || 0 }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Live Load (kN/m²)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-2 border rounded-md"
-                          value={loads.liveLoad}
-                          onChange={(e) => setLoads(prev => ({ ...prev, liveLoad: parseFloat(e.target.value) || 0 }))}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
-              {/* Run Analysis Button */}
-              <div className="flex justify-center pt-6">
-                <Button 
-                  onClick={runAnalysis} 
-                  disabled={isAnalyzing}
-                  size="lg"
-                  className="px-8"
-                >
-                  <Activity className="w-4 h-4 mr-2" />
-                  {isAnalyzing ? 'Menganalisis...' : 'Jalankan Analisis'}
-                </Button>
-              </div>
-            </FormErrorBoundary>
+              {/* Project Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informasi Proyek</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Nama Proyek</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded-md"
+                      value={project.name}
+                      onChange={(e) => setProject(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Lokasi</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded-md"
+                      value={project.location}
+                      onChange={(e) => setProject(prev => ({ ...prev, location: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Engineer</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded-md"
+                      value={project.engineer}
+                      onChange={(e) => setProject(prev => ({ ...prev, engineer: e.target.value }))}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Geometry */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Geometri Struktur</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Panjang (m)</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded-md"
+                        value={geometry.length}
+                        onChange={(e) => setGeometry(prev => ({ ...prev, length: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Lebar (m)</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded-md"
+                        value={geometry.width}
+                        onChange={(e) => setGeometry(prev => ({ ...prev, width: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Tinggi Lantai (m)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="w-full p-2 border rounded-md"
+                        value={geometry.heightPerFloor}
+                        onChange={(e) => setGeometry(prev => ({ ...prev, heightPerFloor: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Jumlah Lantai</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded-md"
+                        value={geometry.floors}
+                        onChange={(e) => setGeometry(prev => ({ ...prev, floors: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Bentang X</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded-md"
+                        value={geometry.baysX}
+                        onChange={(e) => setGeometry(prev => ({ ...prev, baysX: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Bentang Y</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded-md"
+                        value={geometry.baysY}
+                        onChange={(e) => setGeometry(prev => ({ ...prev, baysY: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Materials */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Material</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">f'c (MPa)</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded-md"
+                        value={materials.fc}
+                        onChange={(e) => setMaterials(prev => ({ ...prev, fc: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">fy (MPa)</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded-md"
+                        value={materials.fy}
+                        onChange={(e) => setMaterials(prev => ({ ...prev, fy: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Loads */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Beban</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Dead Load (kN/m²)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="w-full p-2 border rounded-md"
+                        value={loads.deadLoad}
+                        onChange={(e) => setLoads(prev => ({ ...prev, deadLoad: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Live Load (kN/m²)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="w-full p-2 border rounded-md"
+                        value={loads.liveLoad}
+                        onChange={(e) => setLoads(prev => ({ ...prev, liveLoad: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+            </div>
+            
+            {/* Run Analysis Button */}
+            <div className="flex justify-center pt-6">
+              <Button 
+                onClick={runAnalysis} 
+                className="px-8"
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                {isAnalyzing ? 'Menganalisis...' : 'Jalankan Analisis'}
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Results Tab */}
@@ -592,7 +589,7 @@ export const WorkingBasicStructuralAnalysisSystem = () => {
 
           {/* 3D Visualization Tab */}
           <TabsContent value="3d">
-            <VisualizationErrorBoundary>
+            <div>
               <Card>
                 <CardHeader>
                   <CardTitle>Visualisasi 3D Struktur</CardTitle>
@@ -609,11 +606,11 @@ export const WorkingBasicStructuralAnalysisSystem = () => {
                   </div>
                 </CardContent>
               </Card>
-            </VisualizationErrorBoundary>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
-    </StructuralAnalysisErrorBoundary>
+    </div>
   );
 };
 
