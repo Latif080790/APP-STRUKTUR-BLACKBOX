@@ -1,5 +1,6 @@
 import React from 'react';
 import { StructuralAnalysisSystem } from '../structural-analysis';
+import { DemoPage } from './DemoPage';
 
 /**
  * Demo Runner
@@ -20,7 +21,7 @@ export const DemoRunner: React.FC = () => {
       </header>
       <main>
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <StructuralAnalysisSystem />
+          <DemoPage />
         </div>
       </main>
       <footer className="bg-white mt-12">
