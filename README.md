@@ -1,70 +1,106 @@
-# 🏗️ APP-STRUKTUR-BLACKBOX
-Advanced Structural Analysis System
+# Structural Analysis System
 
-## 📋 Workflow Documentation
+A comprehensive structural analysis application for designing and analyzing building structures.
 
-### 📖 Choose Your Workflow Guide:
+## Project Structure
 
-| User Type | Document | Purpose | Time |
-|-----------|----------|---------|------|
-| **End User** | [📋 WORKFLOW.md](./WORKFLOW.md) | Complete user manual | 60 min read |
-| **Quick Start** | [⚡ QUICK-WORKFLOW.md](./QUICK-WORKFLOW.md) | Fast start guide | 5 min read |
-| **Developer** | [🔧 DEV-WORKFLOW.md](./DEV-WORKFLOW.md) | Development guide | 30 min read |
-| **Admin/Deploy** | [🚀 DEPLOY-WORKFLOW.md](./DEPLOY-WORKFLOW.md) | Deployment guide | 10 min read |
-
-### 🚀 Quick Start
-```bash
-git clone https://github.com/Latif080790/APP-STRUKTUR-BLACKBOX.git
-cd APP-STRUKTUR-BLACKBOX
-npm install && npm run dev
-# Open: http://localhost:8080
+```
+src/
+├── structural-analysis/
+│   ├── analysis/           # Structural analysis algorithms and calculations
+│   ├── design/             # Design modules for beams, columns, and slabs
+│   ├── drawing/            # Structural drawing generation
+│   ├── types/              # TypeScript type definitions
+│   ├── StructuralAnalysisSystem.tsx  # Main application component
+│   └── index.ts            # Module exports
+├── types/                  # Global type definitions
+└── main.tsx               # Application entry point
 ```
 
-### ✨ Key Features
-- 🏢 **Complete Structural Analysis**: Frame analysis with advanced algorithms
-- 🎯 **Smart Recommendations**: AI-powered material and foundation selection
-- 🌐 **3D Visualization**: Interactive Three.js rendering
-- 📊 **Professional Reports**: PDF generation with technical calculations
-- 📱 **Mobile Responsive**: Works on all devices
-- ⚡ **Real-time Analysis**: Instant feedback and validation
+## Features
 
-### 🏗️ Foundation Selection Logic
-**Advanced Technical Criteria:**
-- **Bored Pile**: Soft soil, high buildings, vibration-sensitive areas
-- **Driven Pile**: Hard soil, heavy loads, fast installation
-- **Auto-Selection**: Based on soil conditions, building load, seismic zone
+1. **Design Modules**
+   - Beam Design Calculator
+   - Column Design Calculator
+   - Slab Design Calculator
 
-### 🎯 System Workflow Overview
-```
-Input → Configure → Analyze → Visualize → Report → Export
-  ↑                                                    ↓
-  └─────────────── Iterate & Optimize ←──────────────┘
-```
+2. **Visualization**
+   - 3D Structure Viewer
+   - 2D Structural Drawings
 
----
+3. **Analysis**
+   - Structural analysis engine
+   - Displacement calculations
+   - Stress analysis
+   - Safety checks
 
-## 🛠️ Technology Stack
-- **Frontend**: React 18 + TypeScript
-- **3D Rendering**: Three.js
-- **UI Components**: Radix UI + Tailwind CSS
-- **Charts**: Recharts
-- **Build**: Vite
-- **Analysis Engine**: Custom structural algorithms
+## Getting Started
 
-## 🎓 Learning Path
-1. **Beginners** → Start with [QUICK-WORKFLOW.md](./QUICK-WORKFLOW.md)
-2. **Users** → Read complete [WORKFLOW.md](./WORKFLOW.md)
-3. **Developers** → Follow [DEV-WORKFLOW.md](./DEV-WORKFLOW.md)
-4. **Administrators** → Review [DEPLOY-WORKFLOW.md](./DEPLOY-WORKFLOW.md)
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## 📞 Support
-- **Documentation**: Complete workflows provided
-- **Issues**: GitHub Issues for bug reports
-- **Discussions**: GitHub Discussions for questions
-- **Professional**: Contact for enterprise support
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
----
+3. Build for production:
+   ```bash
+   npm run build
+   ```
 
-**🚀 Ready to analyze structures? Choose your workflow guide above and get started!**
+## Technology Stack
 
-*Professional structural analysis made accessible - From concept to construction.*
+- React with TypeScript
+- Vite build tool
+- Tailwind CSS for styling
+- SVG for visualizations
+
+## Design Modules
+
+### Beam Design Module
+- Calculates bending moments, shear forces, and deflections
+- Supports different support conditions (simply supported, fixed, cantilever)
+- Material selection (concrete, steel)
+- Section selection (rectangular, I-section)
+
+### Column Design Module
+- Calculates axial loads, bending moments, and slenderness ratios
+- Supports different end conditions (pinned-pinned, fixed-fixed, fixed-pinned)
+- Material selection (concrete, steel)
+- Section selection (rectangular, circular, I-section)
+
+### Slab Design Module
+- Calculates moments, shear forces, and deflections for slab systems
+- Supports different support conditions (four sides, two sides, cantilever)
+- Reinforcement calculations
+- Thickness optimization
+
+## Analysis Capabilities
+
+- Displacement analysis
+- Internal force calculations
+- Stress analysis
+- Safety factor evaluation
+- Code compliance checking (SNI standards)
+
+## Visualization
+
+- 3D structural model viewer
+- 2D plan drawings
+- Element labeling
+- Grid system for reference
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a pull request
+
+## License
+
+This project is licensed under the MIT License.
