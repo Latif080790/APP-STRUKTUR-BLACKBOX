@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import WorkflowController from './core/WorkflowController';
 
 function App() {
   const [activeView, setActiveView] = useState('overview');
+  const [workflowController] = useState(() => new WorkflowController('project-001'));
+  const [workflowState, setWorkflowState] = useState(workflowController.getState());
+  const [progressReport, setProgressReport] = useState(workflowController.generateProgressReport());
   
   const analysisData = {
     maxStress: 15.8,
@@ -10,6 +14,39 @@ function App() {
     safetyFactor: 2.5,
     analysisStatus: 'Selesai'
   };
+
+  // Subscribe to workflow changes
+  useEffect(() => {
+    const unsubscribe = workflowController.subscribe((state) => {
+      setWorkflowState(state);
+      setProgressReport(workflowController.generateProgressReport());
+    });
+    return unsubscribe;
+  }, [workflowController]);
+
+  // Simulate some data for demonstration
+  useEffect(() => {
+    // Set initial geometry data
+    workflowController.setData('geometry', {
+      height: 45,
+      floors: 15,
+      irregularity: 0.2,
+      location: { seismicZone: 'high' }
+    });
+    
+    // Set material data
+    workflowController.setData('materials', {
+      concrete: { fc: 35 },
+      steel: { fy: 400 }
+    });
+    
+    // Set load data
+    workflowController.setData('loads', {
+      deadLoad: 4.0,
+      liveLoad: 2.5,
+      seismicLoad: true
+    });
+  }, [workflowController]);
 
   const renderContent = () => {
     switch (activeView) {
@@ -130,13 +167,319 @@ function App() {
           </div>
         );
       
+      case 'analytics':
+        return (
+          <div className="p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white/90 mb-2">Analytics & Insights Terintegrasi</h2>
+              <p className="text-white/60">Analisis mendalam dengan AI dan visualisasi data real-time</p>
+            </div>
+            
+            {/* Real-time Analytics Dashboard */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+              <div className="xl:col-span-2">
+                <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                  <h3 className="text-white/90 font-semibold mb-4">Trend Analisis Real-time</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 rounded-lg p-4 border border-blue-400/20">
+                      <div className="text-blue-400 text-sm mb-1">Efisiensi Struktur</div>
+                      <div className="text-2xl font-bold text-white/90">87.3%</div>
+                      <div className="text-white/60 text-xs mt-1">+2.1% dari baseline</div>
+                      <div className="w-full bg-white/10 rounded-full h-2 mt-2">
+                        <div className="bg-blue-400 h-2 rounded-full" style={{width: '87.3%'}}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 rounded-lg p-4 border border-green-400/20">
+                      <div className="text-green-400 text-sm mb-1">Safety Factor</div>
+                      <div className="text-2xl font-bold text-white/90">2.45</div>
+                      <div className="text-white/60 text-xs mt-1">Aman sesuai SNI</div>
+                      <div className="w-full bg-white/10 rounded-full h-2 mt-2">
+                        <div className="bg-green-400 h-2 rounded-full" style={{width: '98%'}}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 rounded-lg p-4 border border-purple-400/20">
+                      <div className="text-purple-400 text-sm mb-1">Material Usage</div>
+                      <div className="text-2xl font-bold text-white/90">91.2%</div>
+                      <div className="text-white/60 text-xs mt-1">Optimasi maksimal</div>
+                      <div className="w-full bg-white/10 rounded-full h-2 mt-2">
+                        <div className="bg-purple-400 h-2 rounded-full" style={{width: '91.2%'}}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 rounded-lg p-4 border border-orange-400/20">
+                      <div className="text-orange-400 text-sm mb-1">Cost Efficiency</div>
+                      <div className="text-2xl font-bold text-white/90">Rp 12.8M</div>
+                      <div className="text-white/60 text-xs mt-1">-8.3% dari estimasi</div>
+                      <div className="w-full bg-white/10 rounded-full h-2 mt-2">
+                        <div className="bg-orange-400 h-2 rounded-full" style={{width: '76%'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* AI-Powered Insights */}
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">AI Insights</h3>
+                <div className="space-y-4">
+                  <div className="bg-green-600/10 border border-green-400/20 rounded-lg p-3">
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mt-2"></div>
+                      <div>
+                        <div className="text-green-400 text-sm font-medium">Optimasi Material</div>
+                        <div className="text-white/70 text-xs mt-1">Gunakan profil WF 350.175 untuk penghematan 12%</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-600/10 border border-blue-400/20 rounded-lg p-3">
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+                      <div>
+                        <div className="text-blue-400 text-sm font-medium">Perkuatan Tambahan</div>
+                        <div className="text-white/70 text-xs mt-1">Pertimbangkan bracing di grid C-D</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-yellow-600/10 border border-yellow-400/20 rounded-lg p-3">
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2"></div>
+                      <div>
+                        <div className="text-yellow-400 text-sm font-medium">Review Koneksi</div>
+                        <div className="text-white/70 text-xs mt-1">Verifikasi sambungan balok-kolom</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-purple-600/10 border border-purple-400/20 rounded-lg p-3">
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full mt-2"></div>
+                      <div>
+                        <div className="text-purple-400 text-sm font-medium">Compliance Check</div>
+                        <div className="text-white/70 text-xs mt-1">Semua standar SNI terpenuhi ✓</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Workflow Integration Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Analisis Workflow Performance</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <span className="text-white/80">Rata-rata waktu per stage</span>
+                    <span className="text-blue-400 font-medium">2.3 menit</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <span className="text-white/80">Tingkat keberhasilan validasi</span>
+                    <span className="text-green-400 font-medium">94.2%</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <span className="text-white/80">Error rate</span>
+                    <span className="text-yellow-400 font-medium">1.8%</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <span className="text-white/80">Auto-correction rate</span>
+                    <span className="text-purple-400 font-medium">89.5%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Prediksi Trend</h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-lg border border-blue-400/20">
+                    <div className="text-blue-400 text-sm font-medium mb-1">Proyeksi Beban Kerja</div>
+                    <div className="text-white/70 text-xs">+15% peningkatan dalam 30 hari</div>
+                    <div className="w-full bg-white/10 rounded-full h-1 mt-2">
+                      <div className="bg-blue-400 h-1 rounded-full" style={{width: '65%'}}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-gradient-to-r from-green-600/10 to-blue-600/10 rounded-lg border border-green-400/20">
+                    <div className="text-green-400 text-sm font-medium mb-1">Efisiensi Sistem</div>
+                    <div className="text-white/70 text-xs">Optimasi otomatis tersedia</div>
+                    <div className="w-full bg-white/10 rounded-full h-1 mt-2">
+                      <div className="bg-green-400 h-1 rounded-full" style={{width: '82%'}}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-gradient-to-r from-purple-600/10 to-pink-600/10 rounded-lg border border-purple-400/20">
+                    <div className="text-purple-400 text-sm font-medium mb-1">Resource Utilization</div>
+                    <div className="text-white/70 text-xs">Peak hours: 14:00-16:00</div>
+                    <div className="w-full bg-white/10 rounded-full h-1 mt-2">
+                      <div className="bg-purple-400 h-1 rounded-full" style={{width: '78%'}}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Real-time System Health */}
+            <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+              <h3 className="text-white/90 font-semibold mb-4">System Health Monitor</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center p-4">
+                  <div className="text-2xl font-bold text-green-400 mb-2">99.8%</div>
+                  <div className="text-white/60 text-sm">Uptime</div>
+                  <div className="text-green-400 text-xs mt-1">• Optimal</div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-2xl font-bold text-blue-400 mb-2">847</div>
+                  <div className="text-white/60 text-sm">Processes/day</div>
+                  <div className="text-blue-400 text-xs mt-1">• High Load</div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-2xl font-bold text-purple-400 mb-2">1.2s</div>
+                  <div className="text-white/60 text-sm">Avg Response</div>
+                  <div className="text-purple-400 text-xs mt-1">• Fast</div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-2xl font-bold text-orange-400 mb-2">24</div>
+                  <div className="text-white/60 text-sm">Active Users</div>
+                  <div className="text-orange-400 text-xs mt-1">• Normal</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
       default:
         return (
           <div className="p-6">
             <div className="mb-6">
               <h2 className="text-3xl font-bold text-white/90 mb-2">Dashboard Professional</h2>
-              <p className="text-white/60">Monitoring real-time sistem analisis struktural enterprise</p>
+              <p className="text-white/60">Monitoring real-time sistem analisis struktural enterprise dengan workflow terintegrasi</p>
             </div>
+            
+            {/* Workflow Progress Section */}
+            <div className="mb-8">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Progress Workflow Terintegrasi</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Progress Bar */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white/80 text-sm">Stage: {workflowState.currentStage}</span>
+                      <span className="text-blue-400 text-sm">{progressReport.progress}%</span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-3">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                        style={{ width: `${progressReport.progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {['input', 'modeling', 'analysis', 'validation', 'export'].map((stage, index) => (
+                        <div key={stage} className={`flex items-center space-x-2 text-sm ${
+                          workflowState.currentStage === stage ? 'text-blue-400' : 
+                          progressReport.progress > index * 20 ? 'text-green-400' : 'text-white/50'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${
+                            workflowState.currentStage === stage ? 'bg-blue-400 animate-pulse' :
+                            progressReport.progress > index * 20 ? 'bg-green-400' : 'bg-white/30'
+                          }`}></div>
+                          <span>{stage === 'input' ? 'Input Geometri' : 
+                                stage === 'modeling' ? 'Pemodelan Material' :
+                                stage === 'analysis' ? 'Analisis Struktur' :
+                                stage === 'validation' ? 'Validasi Hasil' : 'Export Laporan'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Validation Gates */}
+                  <div>
+                    <h4 className="text-white/80 font-medium mb-3">Status Validasi</h4>
+                    <div className="space-y-2">
+                      <div className={`flex items-center justify-between p-2 rounded-lg ${
+                        progressReport.validationStatus.geometryValid ? 'bg-green-600/20' : 'bg-red-600/20'
+                      }`}>
+                        <span className="text-white/80 text-sm">Geometri</span>
+                        <span className={progressReport.validationStatus.geometryValid ? 'text-green-400' : 'text-red-400'}>
+                          {progressReport.validationStatus.geometryValid ? '✓' : '✗'}
+                        </span>
+                      </div>
+                      <div className={`flex items-center justify-between p-2 rounded-lg ${
+                        progressReport.validationStatus.materialsValid ? 'bg-green-600/20' : 'bg-red-600/20'
+                      }`}>
+                        <span className="text-white/80 text-sm">Material</span>
+                        <span className={progressReport.validationStatus.materialsValid ? 'text-green-400' : 'text-red-400'}>
+                          {progressReport.validationStatus.materialsValid ? '✓' : '✗'}
+                        </span>
+                      </div>
+                      <div className={`flex items-center justify-between p-2 rounded-lg ${
+                        progressReport.validationStatus.loadsValid ? 'bg-green-600/20' : 'bg-red-600/20'
+                      }`}>
+                        <span className="text-white/80 text-sm">Beban</span>
+                        <span className={progressReport.validationStatus.loadsValid ? 'text-green-400' : 'text-red-400'}>
+                          {progressReport.validationStatus.loadsValid ? '✓' : '✗'}
+                        </span>
+                      </div>
+                      <div className={`flex items-center justify-between p-2 rounded-lg ${
+                        progressReport.validationStatus.analysisValid ? 'bg-green-600/20' : 'bg-red-600/20'
+                      }`}>
+                        <span className="text-white/80 text-sm">Analisis</span>
+                        <span className={progressReport.validationStatus.analysisValid ? 'text-green-400' : 'text-red-400'}>
+                          {progressReport.validationStatus.analysisValid ? '✓' : '✗'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="mt-6 flex space-x-3">
+                  <button 
+                    onClick={() => workflowController.advanceToNextStage()}
+                    className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 rounded-lg text-white transition-all"
+                  >
+                    Lanjut ke Stage Berikutnya
+                  </button>
+                  <button className="px-4 py-2 bg-green-600/30 hover:bg-green-600/50 border border-green-400/30 rounded-lg text-white transition-all">
+                    Validasi Manual
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* SNI Compliance Section */}
+            <div className="mb-8">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Kepatuhan Standar SNI</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {progressReport.compliance.map((standard, index) => (
+                    <div key={index} className="bg-green-600/20 border border-green-400/20 rounded-lg p-3 text-center">
+                      <div className="text-green-400 text-sm font-medium">{standard}</div>
+                      <div className="text-green-300 text-xs mt-1">✓ Sesuai</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* AI Recommendations */}
+            {progressReport.recommendations.length > 0 && (
+              <div className="mb-8">
+                <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                  <h3 className="text-white/90 font-semibold mb-4">🤖 Rekomendasi AI</h3>
+                  <div className="space-y-3">
+                    {progressReport.recommendations.map((recommendation, index) => (
+                      <div key={index} className="bg-blue-600/20 border border-blue-400/20 rounded-lg p-3">
+                        <p className="text-blue-300 text-sm">{recommendation}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-lg rounded-xl p-6 border border-blue-400/20">
                 <div className="text-3xl font-bold text-white/90 mb-2">24</div>
