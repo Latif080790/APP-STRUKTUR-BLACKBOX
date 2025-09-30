@@ -3,8 +3,8 @@
  * Menampilkan model 3D struktur dengan kontrol interaktif dan visualisasi yang lengkap
  */
 
-import React, { useState, useCallback, useMemo, memo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useState, useCallback, useMemo, memo, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Html, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 // Custom UI components defined inline
@@ -110,6 +110,8 @@ interface Enhanced3DViewerProps {
   className?: string;
   style?: React.CSSProperties;
   analysisResults?: any;
+  // Add animation props
+  timeSeriesData?: any[]; // Time series analysis results
 }
 
 // Enhanced Node Component dengan interactive features
@@ -129,6 +131,7 @@ const EnhancedNodeComp = memo(({
   onClick: (node: any) => void;
 }) => {
   const [hovered, setHovered] = useState(false);
+  const meshRef = useRef<THREE.Mesh>(null);
 
   const nodeColor = useMemo(() => {
     if (color) return color;
@@ -137,8 +140,16 @@ const EnhancedNodeComp = memo(({
     return '#f1c40f';
   }, [color, isSelected, hovered]);
 
+  // Enable frustum culling for better performance
+  React.useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.frustumCulled = true;
+    }
+  }, []);
+
   return (
     <mesh 
+      ref={meshRef}
       position={[node.x, node.y, node.z]}
       onClick={(e) => {
         e.stopPropagation();
@@ -208,6 +219,7 @@ const EnhancedElementComp = memo(({
   showStress,
   stressScale = 1,
   onClick,
+  cameraPosition
 }: {
   element: Element;
   nodes: any[];
@@ -216,8 +228,10 @@ const EnhancedElementComp = memo(({
   showStress: boolean;
   stressScale?: number;
   onClick: (element: Element) => void;
+  cameraPosition: THREE.Vector3;
 }) => {
   const [hovered, setHovered] = useState(false);
+  const meshRef = useRef<THREE.Mesh>(null);
   
   const startNode = nodes.find(n => n.id === element.nodes[0]);
   const endNode = nodes.find(n => n.id === element.nodes[1]);
@@ -233,6 +247,27 @@ const EnhancedElementComp = memo(({
   // Calculate rotation to align cylinder with element direction
   const up = new THREE.Vector3(0, 1, 0);
   const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
+
+  // Level of Detail (LOD) implementation
+  const distanceToCamera = center.distanceTo(cameraPosition);
+  const elementCount = nodes.length + element.nodes.length;
+  
+  // LOD logic - reduce detail based on distance and complexity
+  const useLOD = (distance: number, count: number) => {
+    if (distance > 50 && count > 1000) {
+      return 'low'; // Low detail for distant, complex structures
+    } else if (distance > 20 && count > 500) {
+      return 'medium'; // Medium detail
+    }
+    return 'high'; // High detail for close or simple structures
+  };
+  
+  const lodLevel = useLOD(distanceToCamera, elementCount);
+  
+  // Adjust geometry detail based on LOD level
+  const segments = lodLevel === 'low' ? 4 : lodLevel === 'medium' ? 6 : 8;
+  const width = element.section?.width || 0.3;
+  const height = element.section?.height || 0.3;
 
   // Material properties based on element type and stress
   const materialColor = useMemo(() => {
@@ -259,14 +294,18 @@ const EnhancedElementComp = memo(({
     }
   }, [isSelected, hovered, showStress, element.stress, element.type]);
 
-  // Element dimensions
-  const width = element.section?.width || 0.3;
-  const height = element.section?.height || 0.3;
+  // Enable frustum culling for better performance
+  React.useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.frustumCulled = true;
+    }
+  }, []);
 
   return (
     <group>
       {/* Main element geometry */}
       <mesh
+        ref={meshRef}
         position={center}
         quaternion={quaternion}
         onClick={(e) => {
@@ -287,7 +326,7 @@ const EnhancedElementComp = memo(({
         {element.type === 'slab' ? (
           <boxGeometry args={[width, 0.2, length]} />
         ) : (
-          <cylinderGeometry args={[width/2, height/2, length, 8]} />
+          <cylinderGeometry args={[width/2, height/2, length, segments]} />
         )}
         
         <meshStandardMaterial
@@ -306,7 +345,7 @@ const EnhancedElementComp = memo(({
           {element.type === 'slab' ? (
             <boxGeometry args={[width, 0.2, length]} />
           ) : (
-            <cylinderGeometry args={[width/2, height/2, length, 8]} />
+            <cylinderGeometry args={[width/2, height/2, length, segments]} />
           )}
           <meshBasicMaterial color="#2c3e50" wireframe={true} />
         </mesh>
@@ -354,7 +393,11 @@ const Enhanced3DScene = memo(({
   viewMode,
   showGrid,
   nodeScale,
-  elementTransparency
+  elementTransparency,
+  // Animation props
+  isAnimating,
+  currentTimeIndex,
+  timeSeriesData
 }: {
   structure: Structure3D;
   onElementClick: (element: Element) => void;
@@ -365,9 +408,14 @@ const Enhanced3DScene = memo(({
   showGrid: boolean;
   nodeScale: number;
   elementTransparency: number;
+  // Animation props
+  isAnimating: boolean;
+  currentTimeIndex: number;
+  timeSeriesData?: any[];
 }) => {
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
+  const { camera } = useThree();
 
   const handleElementClick = useCallback((element: Element) => {
     setSelectedElement(prev => prev?.id === element.id ? null : element);
@@ -396,6 +444,11 @@ const Enhanced3DScene = memo(({
   React.useEffect(() => {
     if (onLoad) onLoad();
   }, [onLoad]);
+
+  // Get camera position for LOD calculations
+  const cameraPosition = useMemo(() => {
+    return new THREE.Vector3().copy(camera.position);
+  }, [camera.position]);
 
   return (
     <>
@@ -459,6 +512,7 @@ const Enhanced3DScene = memo(({
           isSelected={selectedElement?.id === element.id}
           viewMode={viewMode}
           showStress={showStress}
+          cameraPosition={cameraPosition}
           onClick={handleElementClick}
         />
       ))}
@@ -494,7 +548,15 @@ const ControlPanel = memo(({
   nodeScale,
   setNodeScale,
   onReset,
-  analysisResults
+  analysisResults,
+  // Animation controls
+  isAnimating,
+  setIsAnimating,
+  animationSpeed,
+  setAnimationSpeed,
+  currentTimeIndex,
+  setTimeIndex,
+  timeSeriesData
 }: {
   showLabels: boolean;
   setShowLabels: (value: boolean) => void;
@@ -508,6 +570,14 @@ const ControlPanel = memo(({
   setNodeScale: (value: number) => void;
   onReset: () => void;
   analysisResults?: any;
+  // Animation controls
+  isAnimating: boolean;
+  setIsAnimating: (value: boolean) => void;
+  animationSpeed: number;
+  setAnimationSpeed: (value: number) => void;
+  currentTimeIndex: number;
+  setTimeIndex: (value: number) => void;
+  timeSeriesData?: any[];
 }) => {
   return (
     <Card className="absolute top-4 left-4 w-64 bg-white/90 backdrop-blur-sm z-10">
@@ -591,6 +661,61 @@ const ControlPanel = memo(({
           <div className="text-xs text-gray-500 mt-1">{nodeScale.toFixed(1)}x</div>
         </div>
 
+        {/* Animation Controls */}
+        {timeSeriesData && timeSeriesData.length > 0 && (
+          <div className="pt-2 border-t">
+            <Label className="text-xs font-medium">Animation</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAnimating(!isAnimating)}
+                className="flex items-center gap-1"
+              >
+                {isAnimating ? (
+                  <>
+                    <EyeOff className="h-3 w-3" />
+                    Pause
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-3 w-3" />
+                    Play
+                  </>
+                )}
+              </Button>
+              
+              <Input
+                type="range"
+                min="0"
+                max={timeSeriesData.length - 1}
+                step="1"
+                value={currentTimeIndex}
+                onChange={(e) => setTimeIndex(parseInt(e.target.value))}
+                className="flex-1"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 mt-2">
+              <Label className="text-xs">Speed:</Label>
+              <Input
+                type="range"
+                min="0.1"
+                max="5"
+                step="0.1"
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <span className="text-xs w-8">{animationSpeed.toFixed(1)}x</span>
+            </div>
+            
+            <div className="text-xs text-gray-600 mt-1">
+              Time: {currentTimeIndex + 1} / {timeSeriesData.length}
+            </div>
+          </div>
+        )}
+
         {/* Analysis Results Summary */}
         {analysisResults && (
           <div className="pt-2 border-t">
@@ -614,7 +739,8 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   onLoad,
   className = '',
   style,
-  analysisResults
+  analysisResults,
+  timeSeriesData // Add time series data prop
 }) => {
   const [showLabels, setShowLabels] = useState(false);
   const [showStress, setShowStress] = useState(false);
@@ -622,6 +748,35 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   const [showGrid, setShowGrid] = useState(true);
   const [nodeScale, setNodeScale] = useState(1);
   const [cameraKey, setCameraKey] = useState(0);
+  
+  // Animation state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationSpeed, setAnimationSpeed] = useState(1);
+  const [currentTimeIndex, setTimeIndex] = useState(0);
+  const animationRef = useRef<number | null>(null);
+
+  // Animation loop
+  useEffect(() => {
+    if (isAnimating && timeSeriesData && timeSeriesData.length > 0) {
+      const animate = () => {
+        setTimeIndex(prev => {
+          if (prev >= timeSeriesData.length - 1) {
+            return 0; // Loop back to start
+          }
+          return prev + 1;
+        });
+        animationRef.current = requestAnimationFrame(animate);
+      };
+      
+      animationRef.current = requestAnimationFrame(animate);
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isAnimating, timeSeriesData]);
 
   const handleReset = useCallback(() => {
     setCameraKey(prev => prev + 1);
@@ -630,6 +785,12 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
     setShowStress(false);
     setShowGrid(true);
     setNodeScale(1);
+    // Reset animation
+    setIsAnimating(false);
+    setTimeIndex(0);
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
   }, []);
 
   if (!structure || !structure.nodes?.length || !structure.elements?.length) {
@@ -672,6 +833,10 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             showGrid={showGrid}
             nodeScale={nodeScale}
             elementTransparency={1}
+            // Animation props
+            isAnimating={isAnimating}
+            currentTimeIndex={currentTimeIndex}
+            timeSeriesData={timeSeriesData}
           />
         </Canvas>
 
@@ -688,6 +853,14 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           setNodeScale={setNodeScale}
           onReset={handleReset}
           analysisResults={analysisResults}
+          // Animation controls
+          isAnimating={isAnimating}
+          setIsAnimating={setIsAnimating}
+          animationSpeed={animationSpeed}
+          setAnimationSpeed={setAnimationSpeed}
+          currentTimeIndex={currentTimeIndex}
+          setTimeIndex={setTimeIndex}
+          timeSeriesData={timeSeriesData}
         />
       </div>
     </VisualizationErrorBoundary>

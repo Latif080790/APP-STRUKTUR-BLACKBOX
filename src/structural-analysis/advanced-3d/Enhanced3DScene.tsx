@@ -7,16 +7,15 @@ import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import { useFrame, useThree, extend } from '@react-three/fiber';
 import { Text, Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { Structure3D, Node, Element } from '../../../types/structural';
+import { Structure3D, Node, Element } from '@/types/structural';
 import { ViewPreset, ColorMode, RenderMode } from './Enhanced3DControls';
-import { AnalysisResult } from '../../../utils/structuralAnalysis';
 
 // Extend Three.js with additional geometries if needed
 extend({ LineBasicMaterial: THREE.LineBasicMaterial });
 
 export interface Enhanced3DSceneProps {
   structure: Structure3D;
-  analysisResults?: AnalysisResult | null;
+  analysisResults?: any | null;
   
   // View Controls
   viewPreset: ViewPreset;
@@ -37,6 +36,10 @@ export interface Enhanced3DSceneProps {
   animationSpeed: number;
   animationScale: number;
   
+  // Time-based animation
+  currentTimeIndex: number;
+  timeSeriesData?: any[];
+  
   // Interaction
   selectedElementId?: string | null;
   onElementClick?: (element: Element) => void;
@@ -51,19 +54,21 @@ const STRESS_COLORS = {
   critical: new THREE.Color(0xff0000)  // Red
 };
 
-const MEMBER_TYPE_COLORS = {
+const MEMBER_TYPE_COLORS: Record<string, THREE.Color> = {
   beam: new THREE.Color(0x8B4513),      // Brown
   column: new THREE.Color(0x4682B4),    // Steel Blue
   slab: new THREE.Color(0x808080),      // Gray
   wall: new THREE.Color(0xD2B48C),      // Tan
-  foundation: new THREE.Color(0x654321)  // Dark Brown
+  foundation: new THREE.Color(0x654321), // Dark Brown
+  brace: new THREE.Color(0xFF6347),     // Tomato
+  truss: new THREE.Color(0x4169E1)      // Royal Blue
 };
 
 const MATERIAL_COLORS = {
   concrete: new THREE.Color(0xC0C0C0),  // Silver
   steel: new THREE.Color(0x4682B4),     // Steel Blue
   composite: new THREE.Color(0x8A2BE2), // Blue Violet
-  timber: new THREE.Color(0xDEB887)     // Burlywood
+  timber: new THREE.Color(0xDEB887)     // Burlywood,
 };
 
 // Stress visualization component for elements
@@ -78,6 +83,9 @@ const StressVisualizedElement: React.FC<{
   onClick: (element: Element) => void;
   animationTime?: number;
   animationScale?: number;
+  // Time-based deformation
+  currentTimeIndex: number;
+  timeSeriesData?: any[];
 }> = ({
   element,
   nodes,
@@ -88,14 +96,15 @@ const StressVisualizedElement: React.FC<{
   isSelected,
   onClick,
   animationTime = 0,
-  animationScale = 1
+  animationScale = 1,
+  currentTimeIndex,
+  timeSeriesData
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const lineRef = useRef<THREE.Line>(null);
 
   // Get start and end nodes
-  const startNode = nodes.find(n => n.id === element.startNodeId);
-  const endNode = nodes.find(n => n.id === element.endNodeId);
+  const startNode = nodes.find(n => n.id === element.nodes[0]);
+  const endNode = nodes.find(n => n.id === element.nodes[1]);
 
   if (!startNode || !endNode) return null;
 
@@ -105,6 +114,42 @@ const StressVisualizedElement: React.FC<{
   const direction = new THREE.Vector3().subVectors(end, start);
   const length = direction.length();
   const center = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+
+  // Apply time-based deformation if available
+  const deformedCenter = useMemo(() => {
+    if (!timeSeriesData || timeSeriesData.length === 0 || currentTimeIndex >= timeSeriesData.length) {
+      return center;
+    }
+    
+    const timeData = timeSeriesData[currentTimeIndex];
+    if (!timeData || !timeData.displacements) {
+      return center;
+    }
+    
+    // Get displacement for start and end nodes
+    const startDisp = timeData.displacements.find((d: any) => d.nodeId === startNode.id);
+    const endDisp = timeData.displacements.find((d: any) => d.nodeId === endNode.id);
+    
+    if (!startDisp || !endDisp) {
+      return center;
+    }
+    
+    // Apply displacement to start and end points
+    const deformedStart = new THREE.Vector3(
+      start.x + startDisp.ux,
+      start.y + startDisp.uy,
+      start.z + startDisp.uz
+    );
+    
+    const deformedEnd = new THREE.Vector3(
+      end.x + endDisp.ux,
+      end.y + endDisp.uy,
+      end.z + endDisp.uz
+    );
+    
+    // Calculate new center
+    return new THREE.Vector3().addVectors(deformedStart, deformedEnd).multiplyScalar(0.5);
+  }, [center, timeSeriesData, currentTimeIndex, startNode.id, endNode.id]);
 
   // Calculate color based on color mode
   const getElementColor = useCallback(() => {
@@ -136,12 +181,12 @@ const StressVisualizedElement: React.FC<{
 
   // Animation deformation
   const animatedCenter = useMemo(() => {
-    if (!animationTime || animationScale === 1) return center;
+    if (!animationTime || animationScale === 1) return deformedCenter;
     
     // Simple sinusoidal deformation for demonstration
     const deformation = Math.sin(animationTime) * animationScale * 0.01;
-    return center.clone().add(new THREE.Vector3(0, deformation, 0));
-  }, [center, animationTime, animationScale]);
+    return deformedCenter.clone().add(new THREE.Vector3(0, deformation, 0));
+  }, [deformedCenter, animationTime, animationScale]);
 
   // Element geometry based on type
   const geometry = useMemo(() => {
@@ -225,7 +270,6 @@ const StressVisualizedElement: React.FC<{
       {/* Pure wireframe mode */}
       {renderMode === 'wireframe' && (
         <Line
-          ref={lineRef}
           points={[start, end]}
           color={isSelected ? 0xff6b6b : color}
           lineWidth={3}
@@ -252,9 +296,9 @@ const EnhancedNode: React.FC<{
   }, [node, onClick]);
 
   // Determine if node is a support
-  const isSupport = node.constraints && (
-    node.constraints.dx || node.constraints.dy || node.constraints.dz ||
-    node.constraints.rx || node.constraints.ry || node.constraints.rz
+  const isSupport = node.supports && (
+    node.supports.ux || node.supports.uy || node.supports.uz ||
+    node.supports.rx || node.supports.ry || node.supports.rz
   );
 
   return (
@@ -278,7 +322,7 @@ const EnhancedNode: React.FC<{
       {showSupports && isSupport && (
         <group>
           {/* Fixed support visualization */}
-          {node.constraints?.dx && node.constraints?.dy && node.constraints?.dz && (
+          {node.supports?.ux && node.supports?.uy && node.supports?.uz && (
             <mesh position={[0, -0.3, 0]}>
               <boxGeometry args={[0.6, 0.1, 0.6]} />
               <meshStandardMaterial color={0x8bc34a} />
@@ -286,7 +330,7 @@ const EnhancedNode: React.FC<{
           )}
           
           {/* Pin support visualization */}
-          {node.constraints?.dx && node.constraints?.dy && !node.constraints?.dz && (
+          {node.supports?.ux && node.supports?.uy && !node.supports?.uz && (
             <mesh position={[0, -0.25, 0]}>
               <coneGeometry args={[0.2, 0.4, 6]} />
               <meshStandardMaterial color={0x8bc34a} />
@@ -294,8 +338,8 @@ const EnhancedNode: React.FC<{
           )}
 
           {/* Roller support visualization */}
-          {((node.constraints?.dx && !node.constraints?.dy) || 
-            (!node.constraints?.dx && node.constraints?.dy)) && (
+          {((node.supports?.ux && !node.supports?.uy) || 
+            (!node.supports?.ux && node.supports?.uy)) && (
             <group position={[0, -0.3, 0]}>
               <mesh position={[-0.2, 0, 0]}>
                 <sphereGeometry args={[0.1, 8, 8]} />
@@ -337,6 +381,9 @@ export const Enhanced3DScene: React.FC<Enhanced3DSceneProps> = ({
   isAnimating,
   animationSpeed,
   animationScale,
+  // Time-based animation props
+  currentTimeIndex,
+  timeSeriesData,
   selectedElementId,
   onElementClick = () => {},
   onNodeClick = () => {}
@@ -401,7 +448,7 @@ export const Enhanced3DScene: React.FC<Enhanced3DSceneProps> = ({
       <directionalLight position={[-10, -10, -5]} intensity={0.4} />
 
       {/* Nodes */}
-      {showNodes && structure.nodes.map(node => (
+      {showNodes && structure.nodes.map((node: Node) => (
         <EnhancedNode
           key={node.id}
           node={node}
@@ -413,7 +460,7 @@ export const Enhanced3DScene: React.FC<Enhanced3DSceneProps> = ({
       ))}
 
       {/* Elements */}
-      {showElements && structure.elements.map(element => (
+      {showElements && structure.elements.map((element: Element) => (
         <StressVisualizedElement
           key={element.id}
           element={element}
@@ -426,11 +473,14 @@ export const Enhanced3DScene: React.FC<Enhanced3DSceneProps> = ({
           onClick={onElementClick}
           animationTime={isAnimating ? animationTime : 0}
           animationScale={animationScale}
+          // Time-based animation props
+          currentTimeIndex={currentTimeIndex}
+          timeSeriesData={timeSeriesData}
         />
       ))}
 
       {/* Load visualization */}
-      {showLoads && structure.loads?.map((load, index) => (
+      {showLoads && structure.loads?.map((load: any, index: number) => (
         <group key={index} position={[load.x || 0, load.y || 0, load.z || 0]}>
           {/* Load arrow */}
           <mesh>

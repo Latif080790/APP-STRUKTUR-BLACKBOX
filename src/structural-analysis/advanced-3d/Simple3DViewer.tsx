@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { 
@@ -69,9 +69,18 @@ interface Simple3DViewerProps {
 // Simple Node Component
 const SimpleNode = ({ node, onClick }: { node: any; onClick: (node: any) => void }) => {
   const [hovered, setHovered] = useState(false);
+  const meshRef = React.useRef<THREE.Mesh>(null);
+
+  // Enable frustum culling for better performance
+  React.useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.frustumCulled = true;
+    }
+  }, []);
 
   return (
     <mesh 
+      ref={meshRef}
       position={[node.x, node.y, node.z]}
       onClick={(e: any) => {
         e.stopPropagation();
@@ -91,14 +100,17 @@ const SimpleElement = ({
   element, 
   nodes, 
   isSelected, 
-  onClick 
+  onClick,
+  cameraPosition
 }: { 
   element: Element; 
   nodes: any[]; 
   isSelected: boolean; 
   onClick: (element: Element) => void; 
+  cameraPosition: THREE.Vector3;
 }) => {
   const [hovered, setHovered] = useState(false);
+  const meshRef = React.useRef<THREE.Mesh>(null);
   
   const startNode = nodes.find(n => n.id === element.nodes[0]);
   const endNode = nodes.find(n => n.id === element.nodes[1]);
@@ -115,14 +127,42 @@ const SimpleElement = ({
   const up = new THREE.Vector3(0, 1, 0);
   const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
 
+  // Level of Detail (LOD) implementation
+  const distanceToCamera = center.distanceTo(cameraPosition);
+  const elementCount = nodes.length + element.nodes.length;
+  
+  // Simple LOD logic - reduce detail based on distance
+  const useLOD = (distance: number, count: number) => {
+    if (distance > 50 && count > 1000) {
+      return 'low'; // Low detail for distant, complex structures
+    } else if (distance > 20 && count > 500) {
+      return 'medium'; // Medium detail
+    }
+    return 'high'; // High detail for close or simple structures
+  };
+  
+  const lodLevel = useLOD(distanceToCamera, elementCount);
+  
+  // Adjust geometry detail based on LOD level
+  const segments = lodLevel === 'low' ? 4 : lodLevel === 'medium' ? 6 : 8;
+  const radius = 0.15;
+
   const getColor = () => {
     if (isSelected) return '#3b82f6';
     if (hovered) return '#10b981';
     return element.type === 'column' ? '#64748b' : '#94a3b8';
   };
 
+  // Enable frustum culling for better performance
+  React.useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.frustumCulled = true;
+    }
+  }, []);
+
   return (
     <mesh
+      ref={meshRef}
       position={center}
       quaternion={quaternion}
       onClick={(e: any) => {
@@ -132,7 +172,7 @@ const SimpleElement = ({
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      <cylinderGeometry args={[0.15, 0.15, length, 8]} />
+      <cylinderGeometry args={[radius, radius, length, segments]} />
       <meshStandardMaterial color={getColor()} />
     </mesh>
   );
@@ -151,6 +191,7 @@ const Simple3DScene = ({
   showGrid: boolean;
 }) => {
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+  const { camera } = useThree();
 
   const handleElementClick = useCallback((element: Element) => {
     setSelectedElement((prev: Element | null) => prev?.id === element.id ? null : element);
@@ -175,6 +216,11 @@ const Simple3DScene = ({
   React.useEffect(() => {
     if (onLoad) onLoad();
   }, [onLoad]);
+
+  // Get camera position for LOD calculations
+  const cameraPosition = useMemo(() => {
+    return new THREE.Vector3().copy(camera.position);
+  }, [camera.position]);
 
   return (
     <>
@@ -211,6 +257,7 @@ const Simple3DScene = ({
           nodes={structure.nodes}
           isSelected={selectedElement?.id === element.id}
           onClick={handleElementClick}
+          cameraPosition={cameraPosition}
         />
       ))}
 
