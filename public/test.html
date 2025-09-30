@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test Page</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #3730a3 100%);
+            color: white;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            color: white;
+        }
+        .btn-dashboard { background-color: #2563eb; }
+        .btn-workspace { background-color: #059669; }
+        .btn-integration { background-color: #7c3aed; }
+        .status {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ Structural Analysis System</h1>
+        <p>Static HTML test page - Successfully loaded!</p>
+        <div class="buttons">
+            <button class="btn-dashboard" onclick="alert('Dashboard clicked!')">Dashboard</button>
+            <button class="btn-workspace" onclick="alert('Workspace clicked!')">Workspace</button>
+            <button class="btn-integration" onclick="alert('Integration clicked!')">Smart Integration</button>
+        </div>
+        <div class="status">
+            <p>Frontend: ✅ Running on http://localhost:5174/</p>
+            <p>Backend: ✅ Running on http://localhost:3001/</p>
+            <p>Test: ✅ Static HTML works correctly</p>
+        </div>
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 0.5rem;">
+            <h3>Next Steps:</h3>
+            <p style="font-size: 0.9rem;">If you can see this page, the server is working. The issue is with React rendering.</p>
+            <button onclick="window.location.href = '/';" style="background-color: #dc2626; padding: 0.5rem 1rem;">
+                Back to React App
+            </button>
+        </div>
+    </div>
+</body>
+</html>
