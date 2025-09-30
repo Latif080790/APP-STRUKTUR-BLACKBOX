@@ -7,6 +7,21 @@ import { Structure3DViewer } from './Structure3DViewer';
 import { StructuralDrawing } from './drawing/StructuralDrawing';
 import { analyzeStructure } from './analysis/StructuralAnalyzer';
 
+// Import icons
+import { 
+  Building2, 
+  AlertCircle,
+  Info,
+  Star,
+  Zap,
+  Waves,
+  Activity
+} from 'lucide-react';
+
+// Import dynamic analysis functions
+import { dynamicAnalysis } from './analysis/DynamicAnalyzer';
+import DynamicAnalysisResults from './DynamicAnalysisResults';
+
 // Simple UI components
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="border rounded-lg shadow-sm">{children}</div>
@@ -122,7 +137,7 @@ const Calculator: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' })
 );
 
 export const StructuralAnalysisSystem: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'beams' | 'columns' | 'slabs' | '3d' | 'drawing' | 'analysis'>('beams');
+  const [activeTab, setActiveTab] = useState<'beams' | 'columns' | 'slabs' | '3d' | 'drawing' | 'analysis' | 'dynamic'>('beams');
   const [structure, setStructure] = useState<Structure3D>({
     nodes: [],
     elements: [],
@@ -132,6 +147,8 @@ export const StructuralAnalysisSystem: React.FC = () => {
   });
   const [completedElements, setCompletedElements] = useState<Element[]>([]);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [dynamicAnalysisResult, setDynamicAnalysisResult] = useState<any>(null);
+  const [isDynamicAnalyzing, setIsDynamicAnalyzing] = useState(false);
 
   // Handle element completion from design modules
   const handleElementComplete = (element: Element) => {
@@ -185,6 +202,21 @@ export const StructuralAnalysisSystem: React.FC = () => {
     const result = analyzeStructure(structureToAnalyze);
     setAnalysisResult(result);
     setActiveTab('analysis');
+  };
+
+  // Perform dynamic analysis
+  const performDynamicAnalysis = async () => {
+    setIsDynamicAnalyzing(true);
+    try {
+      const structureToAnalyze = generateStructure();
+      const result = dynamicAnalysis(structureToAnalyze, 'modal', { numModes: 5 });
+      setDynamicAnalysisResult(result);
+      setActiveTab('dynamic');
+    } catch (error) {
+      console.error('Dynamic analysis error:', error);
+    } finally {
+      setIsDynamicAnalyzing(false);
+    }
   };
 
   return (
@@ -281,6 +313,20 @@ export const StructuralAnalysisSystem: React.FC = () => {
                 <Calculator className="h-4 w-4" />
                 Analysis
               </button>
+              <button
+                onClick={performDynamicAnalysis}
+                disabled={structure.elements.length === 0 || isDynamicAnalyzing}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  structure.elements.length === 0 || isDynamicAnalyzing
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : activeTab === 'dynamic'
+                    ? 'bg-white shadow text-purple-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Waves className="h-4 w-4" />
+                Dynamic
+              </button>
             </div>
 
             {/* Design Modules */}
@@ -368,6 +414,43 @@ export const StructuralAnalysisSystem: React.FC = () => {
                       </CardContent>
                     </Card>
                   </div>
+                </div>
+              )}
+              
+              {activeTab === 'dynamic' && (
+                <div className="space-y-6">
+                  {isDynamicAnalyzing ? (
+                    <div className="flex items-center justify-center h-64">
+                      <div className="text-center">
+                        <Activity className="h-8 w-8 animate-spin mx-auto text-blue-500" />
+                        <p className="mt-2 text-gray-600">Performing dynamic analysis...</p>
+                      </div>
+                    </div>
+                  ) : dynamicAnalysisResult ? (
+                    <DynamicAnalysisResults 
+                      modalResults={{
+                        frequencies: dynamicAnalysisResult.frequencies,
+                        modeShapes: dynamicAnalysisResult.modeShapes
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center p-8 bg-gray-50 rounded-lg">
+                      <Waves className="h-12 w-12 mx-auto text-gray-400" />
+                      <h3 className="mt-4 text-lg font-medium text-gray-900">Dynamic Analysis</h3>
+                      <p className="mt-2 text-gray-500">
+                        Perform modal analysis to determine natural frequencies and mode shapes.
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          onClick={performDynamicAnalysis}
+                          disabled={structure.elements.length === 0}
+                        >
+                          <Waves className="h-4 w-4 mr-2" />
+                          Run Dynamic Analysis
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
