@@ -7,11 +7,87 @@ import React, { useState, useCallback, useMemo, memo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Html, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
-import { Button } from '../../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { Label } from '../../ui/label';
-import { Input } from '../../ui/input';
-import { SimpleSelect } from '../../ui/simple-select';
+// Custom UI components defined inline
+const Button: React.FC<{ 
+  children: React.ReactNode; 
+  onClick?: () => void; 
+  variant?: 'default' | 'outline';
+  size?: 'default' | 'sm' | 'lg';
+  className?: string;
+  disabled?: boolean;
+}> = ({ children, onClick, variant = 'default', size = 'default', className = '', disabled = false }) => (
+  <button 
+    onClick={onClick}
+    disabled={disabled}
+    className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background ${
+      variant === 'outline' 
+        ? 'border border-input hover:bg-accent hover:text-accent-foreground' 
+        : 'bg-primary text-primary-foreground hover:bg-primary/90'
+    } ${
+      size === 'sm' ? 'h-9 px-3 rounded-md' :
+      size === 'lg' ? 'h-11 px-8 rounded-md' :
+      'h-10 py-2 px-4'
+    } ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}>
+    {children}
+  </div>
+);
+
+const CardHeader: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
+    {children}
+  </div>
+);
+
+const CardTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <h3 className={`text-2xl font-semibold leading-none tracking-tight ${className}`}>
+    {children}
+  </h3>
+);
+
+const CardContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`p-6 pt-0 ${className}`}>
+    {children}
+  </div>
+);
+
+const Label: React.FC<{ children: React.ReactNode; htmlFor?: string; className?: string }> = ({ children, htmlFor, className = '' }) => (
+  <label htmlFor={htmlFor} className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}>
+    {children}
+  </label>
+);
+
+const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { className?: string }> = ({ className = '', ...props }) => (
+  <input 
+    className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    {...props}
+  />
+);
+
+const SimpleSelect: React.FC<{ 
+  value: string;
+  onValueChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+}> = ({ value, onValueChange, options, className = '' }) => (
+  <select 
+    value={value}
+    onChange={(e) => onValueChange(e.target.value)}
+    className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+  >
+    {options.map((option) => (
+      <option key={option.value} value={option.value}>
+        {option.label}
+      </option>
+    ))}
+  </select>
+);
 import { 
   Eye, 
   EyeOff, 
@@ -24,8 +100,8 @@ import {
   Layers,
   Activity
 } from 'lucide-react';
-import { Structure3D, Element } from '../../../types/structural';
-import { VisualizationErrorBoundary } from '../../common/ErrorBoundary';
+import { Structure3D, Element } from '@/types/structural';
+import VisualizationErrorBoundary from '../common/Enhanced3DErrorBoundary';
 
 interface Enhanced3DViewerProps {
   structure: Structure3D | null;
@@ -246,7 +322,7 @@ const EnhancedElementComp = memo(({
             <div className="grid grid-cols-2 gap-1 text-gray-600">
               <div>Length: {length.toFixed(2)}m</div>
               <div>Section: {width.toFixed(2)}×{height.toFixed(2)}</div>
-              <div>Material: {element.materialType || 'concrete'}</div>
+              <div>Material: {element.material?.type || 'concrete'}</div>
               {element.stress !== undefined && (
                 <div className={`font-medium ${element.stress > 0 ? 'text-red-600' : 'text-blue-600'}`}>
                   Stress: {(element.stress * 100).toFixed(1)}%
@@ -299,7 +375,7 @@ const Enhanced3DScene = memo(({
   }, [onElementClick]);
 
   const handleNodeClick = useCallback((node: any) => {
-    setSelectedNode(prev => prev?.id === node.id ? null : node);
+    setSelectedNode((prev: any) => prev?.id === node.id ? null : node);
   }, []);
 
   // Calculate bounding box and center
@@ -360,7 +436,7 @@ const Enhanced3DScene = memo(({
       )}
 
       {/* Coordinate axes */}
-      <axesHelper args={[size * 0.3]} position={center} />
+      <axesHelper args={[size * 0.3]} position={center as [number, number, number]} />
 
       {/* Render nodes */}
       {structure.nodes?.map((node) => (
@@ -394,7 +470,7 @@ const Enhanced3DScene = memo(({
         screenSpacePanning={false}
         minDistance={size * 0.5}
         maxDistance={size * 5}
-        target={center}
+        target={center as [number, number, number]}
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
@@ -447,7 +523,7 @@ const ControlPanel = memo(({
           <Label className="text-xs font-medium">View Mode</Label>
           <SimpleSelect
             value={viewMode}
-            onValueChange={setViewMode}
+            onValueChange={(value) => setViewMode(value as 'solid' | 'wireframe' | 'both')}
             options={[
               { value: 'solid', label: 'Solid' },
               { value: 'wireframe', label: 'Wireframe' },
