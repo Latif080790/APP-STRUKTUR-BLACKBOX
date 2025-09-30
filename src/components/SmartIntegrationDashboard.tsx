@@ -9,6 +9,7 @@ import { Brain, Building, Zap, Settings, BarChart3, FileText, Download, Share2 }
 import { AIAnalysisEngine, StructuralFeatures, OptimizationObjective, AIRecommendation } from '../structural-analysis/engines/AIAnalysisEngine';
 import { BIMIntegrationEngine, BIMModel, IFCExportOptions, DWGExportOptions } from '../structural-analysis/engines/BIMIntegrationEngine';
 import { AdvancedStructuralEngine, StructuralNode, StructuralElement, LoadCase } from '../structural-analysis/engines/AdvancedStructuralEngine';
+import { apiService } from '../services/apiService';
 
 interface SmartIntegrationDashboardProps {
   onNavigate: (view: string) => void;
@@ -92,96 +93,49 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
       // Stage 1: Structural Analysis
       setAnalysisProgress({ stage: 'structural', progress: 10, currentTask: 'Menjalankan analisis struktural...' });
       
-      // Add nodes to the structural engine
-      const node1: StructuralNode = {
-        id: 'N1',
-        x: 0, y: 0, z: 0,
-        constraints: { x: true, y: true, z: true, rx: true, ry: true, rz: true },
-        loads: { fx: 0, fy: 0, fz: 0, mx: 0, my: 0, mz: 0 }
-      };
-      
-      const node2: StructuralNode = {
-        id: 'N2',
-        x: 8, y: 0, z: 0,
-        constraints: { x: false, y: true, z: false, rx: false, ry: false, rz: false },
-        loads: { fx: 0, fy: -100, fz: 0, mx: 0, my: 0, mz: 0 }
-      };
-      
-      engines.structural.addNode(node1);
-      engines.structural.addNode(node2);
-      
-      const element: StructuralElement = {
-        id: 'E1',
-        nodeIds: ['N1', 'N2'],
-        material: {
-          E: 25000000000, // 25 GPa
-          G: 10000000000, // 10 GPa
-          nu: 0.2,
-          rho: 2400,
-          fy: 400000000, // 400 MPa
-          fu: 550000000, // 550 MPa
-          alpha: 1.2e-5,
-          type: 'steel'
+      // Prepare analysis data
+      const analysisData = {
+        modelData: {
+          nodes: [
+            { id: 'N1', x: 0, y: 0, z: 0, constraints: { x: true, y: true, z: true, rx: true, ry: true, rz: true } },
+            { id: 'N2', x: 8, y: 0, z: 0, constraints: { x: false, y: true, z: false, rx: false, ry: false, rz: false } }
+          ],
+          elements: [
+            { id: 'E1', nodeIds: ['N1', 'N2'], material: { E: 25000000000, nu: 0.2 }, section: { A: 0.18, Ix: 0.0072 } }
+          ]
         },
-        section: {
-          A: 0.18,
-          Ix: 0.0072,
-          Iy: 0.0054,
-          Iz: 0.0054,
-          J: 0.0001,
-          Sy: 0.24,
-          Sz: 0.18,
-          ry: 0.18,
-          rz: 0.15
-        },
-        type: 'beam'
+        analysisType: 'linear_static',
+        loadCases: [
+          { name: 'Dead Load', loads: [{ nodeId: 'N2', fx: 0, fy: -100, fz: 0 }] }
+        ]
       };
       
-      engines.structural.addElement(element);
-      
-      const loadCase: LoadCase = {
-        id: 'LC1',
-        name: 'Dead Load',
-        type: 'dead',
-        factor: 1.4,
-        nodes: new Map([['N2', { fx: 0, fy: -100, fz: 0, mx: 0, my: 0, mz: 0 }]]),
-        elements: new Map()
-      };
-      
-      engines.structural.addLoadCase(loadCase);
-      
-      const structuralResults = await engines.structural.runLinearStaticAnalysis('LC1');
+      // Call backend API
+      const structuralResults = await apiService.analysis.structural(analysisData);
+      console.log('📊 Analisis struktural selesai:', structuralResults);
       
       setAnalysisProgress({ stage: 'ai', progress: 40, currentTask: 'Menghasilkan rekomendasi AI...' });
       
       // Stage 2: AI Analysis
-      const aiRecommendations = await engines.ai.generateSmartRecommendations(currentProject.features);
-      
-      setAnalysisProgress({ stage: 'ai', progress: 60, currentTask: 'Mengoptimasi desain dengan AI...' });
-      
-      const optimizationObjective: OptimizationObjective = {
-        type: 'minimize_cost',
-        constraints: [
-          { type: 'stress', limit: 15.75, direction: 'max' },
-          { type: 'deflection', limit: 20, direction: 'max' }
-        ]
-      };
-      
-      const optimizationResults = await engines.ai.optimizeDesign(currentProject.features, optimizationObjective);
+      const aiRecommendations = await apiService.ai.getRecommendations(currentProject.features);
+      console.log('🤖 Rekomendasi AI:', aiRecommendations);
       
       setAnalysisProgress({ stage: 'bim', progress: 80, currentTask: 'Mengintegrasikan dengan BIM...' });
       
-      // Stage 3: BIM Integration
-      const bimModel = await engines.bim.importIFC('./demo-structure.ifc');
+      // Stage 3: BIM Integration (simulated)
+      const bimResponse = { success: true, fileId: 'bim_' + Date.now() };
       
       setAnalysisProgress({ stage: 'complete', progress: 100, currentTask: 'Analisis lengkap!' });
 
       // Update project with results
       const updatedProject = {
         ...currentProject,
-        analysisResults: { structural: structuralResults, optimization: optimizationResults },
-        aiRecommendations,
-        bimModel: bimModel || undefined,
+        analysisResults: { 
+          structural: structuralResults.results, 
+          metadata: structuralResults.metadata 
+        },
+        aiRecommendations: aiRecommendations.recommendations || [],
+        bimModel: bimResponse.fileId ? { id: bimResponse.fileId, name: 'Demo Model' } : undefined,
         lastModified: new Date()
       };
       
@@ -192,8 +146,15 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
       }, 2000);
 
     } catch (error) {
-      console.error('Analysis failed:', error);
-      setAnalysisProgress({ stage: 'idle', progress: 0, currentTask: 'Analysis failed - Ready to retry' });
+      console.error('❌ Analysis failed:', error);
+      setAnalysisProgress({ 
+        stage: 'idle', 
+        progress: 0, 
+        currentTask: 'Analysis failed - Ready to retry' 
+      });
+      
+      // Show error notification
+      alert('Analisis gagal. Pastikan backend server berjalan di port 3001.');
     }
   };
 

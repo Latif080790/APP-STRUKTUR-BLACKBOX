@@ -1,0 +1,42 @@
+import express, { Request, Response } from 'express';
+
+const router = express.Router();
+
+// Sample material data sesuai standar SNI
+const materials = [
+  {
+    id: '1',
+    name: 'Beton Normal C25/30',
+    category: 'concrete',
+    grade: 'C25/30',
+    standard: 'SNI 2847-2019',
+    properties: {
+      fc: 25, // MPa
+      ft: 2.5, // MPa  
+      E: 25000, // MPa
+      density: 2400, // kg/m³
+      poisson: 0.2
+    },
+    testResults: [
+      { testType: 'Compressive Strength', result: 26.8, unit: 'MPa', date: '2024-01-15', status: 'pass' }
+    ],
+    sustainabilityMetrics: {
+      carbonFootprint: 350,
+      recyclability: 6.5,
+      sustainabilityScore: 7.0
+    },
+    costPerUnit: 120,
+    supplier: 'PT Beton Indonesia'
+  }
+];
+
+// Get all materials
+router.get('/', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: materials,
+    total: materials.length
+  });
+});
+
+export default router;

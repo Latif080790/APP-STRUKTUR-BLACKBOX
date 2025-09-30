@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, Download, BookOpen, Beaker, Target, Settings, Database, Layers } from 'lucide-react';
+import { apiService } from '../services/apiService';
 
 interface MaterialProperty {
   name: string;
@@ -51,90 +52,55 @@ export const AdvancedMaterialLibrary: React.FC<{ onNavigate: (view: string) => v
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
 
-  // Initialize material database
+  // Initialize material database from API
   useEffect(() => {
-    const sampleMaterials: Material[] = [
-      {
-        id: 'concrete-c40',
-        name: 'High Strength Concrete',
-        category: 'concrete',
-        grade: 'C40/50',
-        standard: 'EN 206',
-        properties: [
-          { name: 'Compressive Strength', value: 40, unit: 'MPa', tolerance: 2, testMethod: 'Cylinder Test', standard: 'EN 12390-3' },
-          { name: 'Tensile Strength', value: 3.5, unit: 'MPa', tolerance: 0.3, testMethod: 'Split Test', standard: 'EN 12390-6' },
-          { name: 'Elastic Modulus', value: 34000, unit: 'MPa', tolerance: 1000, testMethod: 'Static Load', standard: 'EN 12390-13' },
-          { name: 'Density', value: 2400, unit: 'kg/m³', tolerance: 50, testMethod: 'Density Test', standard: 'EN 12390-7' }
-        ],
-        testData: [
-          { testType: 'Compressive Strength', date: new Date('2024-01-15'), result: 42.3, unit: 'MPa', standard: 'EN 12390-3', status: 'pass' },
-          { testType: 'Tensile Strength', date: new Date('2024-01-15'), result: 3.7, unit: 'MPa', standard: 'EN 12390-6', status: 'pass' }
-        ],
-        applications: ['High-rise buildings', 'Bridges', 'Industrial structures', 'Precast elements'],
-        availabilityRegions: ['Indonesia', 'Southeast Asia', 'Global'],
-        costPerUnit: 120,
-        sustainabilityScore: 7.5,
-        carbonFootprint: 380,
-        recyclability: 6.5,
-        description: 'High-performance concrete suitable for heavy-duty structural applications with excellent durability.',
-        supplier: 'Holcim Indonesia',
-        certifications: ['SNI 2847', 'EN 206', 'ASTM C150']
-      },
-      {
-        id: 'steel-a992',
-        name: 'Structural Steel Grade A992',
-        category: 'steel',
-        grade: 'A992',
-        standard: 'ASTM A992',
-        properties: [
-          { name: 'Yield Strength', value: 345, unit: 'MPa', tolerance: 10, testMethod: 'Tensile Test', standard: 'ASTM A370' },
-          { name: 'Ultimate Strength', value: 450, unit: 'MPa', tolerance: 15, testMethod: 'Tensile Test', standard: 'ASTM A370' },
-          { name: 'Elastic Modulus', value: 200000, unit: 'MPa', tolerance: 5000, testMethod: 'Static Test', standard: 'ASTM E111' },
-          { name: 'Density', value: 7850, unit: 'kg/m³', tolerance: 50, testMethod: 'Density Test', standard: 'ASTM A6' }
-        ],
-        testData: [
-          { testType: 'Yield Strength', date: new Date('2024-01-20'), result: 352, unit: 'MPa', standard: 'ASTM A370', status: 'pass' },
-          { testType: 'Ultimate Strength', date: new Date('2024-01-20'), result: 465, unit: 'MPa', standard: 'ASTM A370', status: 'pass' }
-        ],
-        applications: ['Steel frame buildings', 'Bridges', 'Industrial structures', 'High-rise construction'],
-        availabilityRegions: ['Indonesia', 'Asia Pacific', 'Global'],
-        costPerUnit: 850,
-        sustainabilityScore: 8.0,
-        carbonFootprint: 2100,
-        recyclability: 9.5,
-        description: 'Premium structural steel with excellent weldability and ductility for seismic applications.',
-        supplier: 'Krakatau Steel',
-        certifications: ['ASTM A992', 'AISC', 'SNI 1729']
-      },
-      {
-        id: 'timber-gl32c',
-        name: 'Glued Laminated Timber',
-        category: 'timber',
-        grade: 'GL32c',
-        standard: 'EN 14080',
-        properties: [
-          { name: 'Bending Strength', value: 32, unit: 'MPa', tolerance: 2, testMethod: 'Bending Test', standard: 'EN 408' },
-          { name: 'Compression Parallel', value: 29, unit: 'MPa', tolerance: 2, testMethod: 'Compression Test', standard: 'EN 408' },
-          { name: 'Elastic Modulus', value: 13600, unit: 'MPa', tolerance: 500, testMethod: 'Bending Test', standard: 'EN 408' },
-          { name: 'Density', value: 410, unit: 'kg/m³', tolerance: 20, testMethod: 'Density Test', standard: 'EN 408' }
-        ],
-        testData: [
-          { testType: 'Bending Strength', date: new Date('2024-01-10'), result: 33.2, unit: 'MPa', standard: 'EN 408', status: 'pass' }
-        ],
-        applications: ['Long-span roofs', 'Sustainable construction', 'Architectural features', 'Bridges'],
-        availabilityRegions: ['Indonesia', 'Europe', 'North America'],
-        costPerUnit: 450,
-        sustainabilityScore: 9.5,
-        carbonFootprint: -850, // Carbon negative
-        recyclability: 8.5,
-        description: 'Engineered timber product with excellent strength-to-weight ratio and sustainability.',
-        supplier: 'PT Timber Engineering',
-        certifications: ['EN 14080', 'FSC Certified', 'PEFC']
+    const loadMaterials = async () => {
+      try {
+        const response = await apiService.materials.getAll();
+        if (response.success) {
+          setMaterials(response.data);
+          setFilteredMaterials(response.data);
+          console.log('🧱 Materials loaded from API:', response.data);
+        }
+      } catch (error) {
+        console.error('❌ Failed to load materials:', error);
+        
+        // Fallback to sample data if API fails
+        const sampleMaterials: Material[] = [
+          {
+            id: 'concrete-c40',
+            name: 'High Strength Concrete',
+            category: 'concrete',
+            grade: 'C40/50',
+            standard: 'EN 206',
+            properties: [
+              { name: 'Compressive Strength', value: 40, unit: 'MPa', tolerance: 2, testMethod: 'Cylinder Test', standard: 'EN 12390-3' },
+              { name: 'Tensile Strength', value: 3.5, unit: 'MPa', tolerance: 0.3, testMethod: 'Split Test', standard: 'EN 12390-6' },
+              { name: 'Elastic Modulus', value: 34000, unit: 'MPa', tolerance: 1000, testMethod: 'Static Load', standard: 'EN 12390-13' },
+              { name: 'Density', value: 2400, unit: 'kg/m³', tolerance: 50, testMethod: 'Density Test', standard: 'EN 12390-7' }
+            ],
+            testData: [
+              { testType: 'Compressive Strength', date: new Date('2024-01-15'), result: 42.3, unit: 'MPa', standard: 'EN 12390-3', status: 'pass' },
+              { testType: 'Tensile Strength', date: new Date('2024-01-15'), result: 3.7, unit: 'MPa', standard: 'EN 12390-6', status: 'pass' }
+            ],
+            applications: ['High-rise buildings', 'Bridges', 'Industrial structures', 'Precast elements'],
+            availabilityRegions: ['Indonesia', 'Southeast Asia', 'Global'],
+            costPerUnit: 120,
+            sustainabilityScore: 7.5,
+            carbonFootprint: 380,
+            recyclability: 6.5,
+            description: 'High-performance concrete suitable for heavy-duty structural applications with excellent durability.',
+            supplier: 'Holcim Indonesia',
+            certifications: ['SNI 2847', 'EN 206', 'ASTM C150']
+          }
+        ];
+        
+        setMaterials(sampleMaterials);
+        setFilteredMaterials(sampleMaterials);
       }
-    ];
+    };
 
-    setMaterials(sampleMaterials);
-    setFilteredMaterials(sampleMaterials);
+    loadMaterials();
   }, []);
 
   // Filter materials based on category and search

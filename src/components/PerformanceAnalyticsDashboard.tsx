@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Gauge, Shield, Zap, Activity, Clock, Target, AlertTriangle, BarChart3, PieChart, LineChart } from 'lucide-react';
+import { apiService } from '../services/apiService';
 
 interface PerformanceMetrics {
   structuralHealth: number;
@@ -71,6 +72,28 @@ export const PerformanceAnalyticsDashboard: React.FC<{ onNavigate: (view: string
       recommendation: 'Evaluasi sistem peredam getaran dan penguatan struktur'
     }
   ]);
+
+  // Load initial metrics from API
+  useEffect(() => {
+    const loadMetrics = async () => {
+      try {
+        const response = await apiService.performance.getMetrics();
+        if (response.success) {
+          setMetrics({
+            ...response.metrics,
+            efficiency: 92,
+            sustainability: 85
+          });
+          console.log('📊 Performance metrics loaded:', response.metrics);
+        }
+      } catch (error) {
+        console.error('❌ Failed to load performance metrics:', error);
+        // Keep default values if API fails
+      }
+    };
+
+    loadMetrics();
+  }, []);
 
   // Simulate real-time data updates
   useEffect(() => {
