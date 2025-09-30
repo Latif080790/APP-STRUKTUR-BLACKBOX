@@ -11,6 +11,7 @@ src/
 │   ├── analysis/           # Structural analysis algorithms and calculations
 │   ├── design/             # Design modules for beams, columns, and slabs
 │   ├── drawing/            # Structural drawing generation
+│   ├── educational/        # Educational components for students and professors
 │   ├── types/              # TypeScript type definitions
 │   ├── StructuralAnalysisSystem.tsx  # Main application component
 │   └── index.ts            # Module exports
@@ -35,12 +36,20 @@ src/
    - Internal force analysis (axial, shear, moment, torsion)
    - Stress analysis
    - Safety checks with material-specific criteria
+   - Static and dynamic analysis (modal analysis, response spectrum)
    - Code compliance checking (SNI standards)
 
 4. **Export Capabilities**
    - Structure data export (JSON, CSV)
    - Analysis results export (CSV)
    - 3D visualization export (PNG images)
+
+5. **Educational Features**
+   - Interactive tutorial guide for students
+   - Structural theory reference materials
+   - Example problems library
+   - Progress tracking for learners
+   - Course management tools for professors
 
 ## Getting Started
 
@@ -94,6 +103,8 @@ src/
 - Internal force calculations (axial, shear, moment, torsion)
 - Stress analysis with combined stress checking
 - Safety factor evaluation with material-specific criteria
+- Static analysis (displacements, forces, stresses)
+- Dynamic analysis (modal analysis, response spectrum)
 - Code compliance checking (SNI standards)
 
 ## Visualization
@@ -103,7 +114,8 @@ src/
 - Element labeling and property display
 - Grid system for reference
 - Camera controls (pan, zoom, rotate)
-- Stress visualization
+- Stress and force visualization
+- Mode shape animation for dynamic analysis
 
 ## Export Features
 
@@ -111,6 +123,22 @@ src/
 - Analysis results export in CSV format
 - 3D visualization export as PNG images
 - High-resolution rendering for presentations
+
+## Educational Features
+
+### For Students
+- Interactive tutorial guide
+- Structural theory reference
+- Example problems library
+- Progress tracking
+- Self-paced learning
+
+### For Professors
+- Course management tools
+- Assignment creation and distribution
+- Grading tools
+- Curriculum resources
+- Assessment tools
 
 ## Contributing
 
