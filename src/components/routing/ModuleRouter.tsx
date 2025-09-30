@@ -6,7 +6,14 @@ import React, { lazy, Suspense } from 'react';
 import { LoadingSpinner } from '../ui/ProfessionalUI';
 import { theme } from '../../styles/theme';
 
-// Lazy load all structural analysis modules
+// Dashboard Components
+const CleanDashboard = lazy(() => import('../CleanDashboard').then(mod => ({ default: mod.CleanDashboard })));
+const ProfessionalWorkspace = lazy(() => import('../ProfessionalWorkspace').then(mod => ({ default: mod.ProfessionalWorkspace })));
+const SmartIntegrationDashboard = lazy(() => import('../SmartIntegrationDashboard'));
+const PerformanceAnalyticsDashboard = lazy(() => import('../PerformanceAnalyticsDashboard'));
+const AdvancedMaterialLibrary = lazy(() => import('../AdvancedMaterialLibrary'));
+
+// Keep legacy systems untuk reference dan comparison
 const StructuralAnalysisSystem = lazy(() => import('../../structural-analysis/StructuralAnalysisSystem').then(mod => ({ default: mod.StructuralAnalysisSystem })));
 const BasicStructuralAnalysisSystem = lazy(() => import('../../structural-analysis/BasicStructuralAnalysisSystem'));
 const CompleteStructuralAnalysisSystem = lazy(() => import('../../structural-analysis/CompleteStructuralAnalysisSystemV2'));
@@ -61,6 +68,11 @@ const MarketplaceInterface = lazy(() => import('../../marketplace').then(mod => 
 
 export type ModuleKey = 
   | 'dashboard'
+  | 'workspace'             // NEW: Professional workspace
+  | 'smart-integration'     // NEW: Smart Integration Dashboard
+  | 'performance-analytics' // NEW: Performance Analytics
+  | 'material-library'      // NEW: Advanced Material Library
+  | 'unified-analysis'      // NEW: Main unified system
   | 'structural-analysis'
   | 'basic-analysis'
   | 'complete-analysis'
@@ -98,10 +110,50 @@ export interface ModuleDefinition {
 }
 
 export const moduleDefinitions: ModuleDefinition[] = [
-  // Analysis Modules
+  // SMART INTEGRATION: Combined AI + BIM + Structural
+  {
+    key: 'smart-integration',
+    title: 'Smart Integration Dashboard',
+    description: 'AI-Powered Structural Analysis dengan BIM Integration dan Advanced Optimization',
+    icon: '🚀',
+    category: 'analysis',
+    component: SmartIntegrationDashboard,
+  },
+  
+  // PERFORMANCE ANALYTICS: Real-time monitoring & insights
+  {
+    key: 'performance-analytics',
+    title: 'Performance Analytics',
+    description: 'Real-time monitoring, predictive analytics, dan performance optimization insights',
+    icon: '📊',
+    category: 'analysis',
+    component: PerformanceAnalyticsDashboard,
+  },
+  
+  // MATERIAL LIBRARY: Advanced material database
+  {
+    key: 'material-library',
+    title: 'Advanced Material Library',
+    description: 'Comprehensive material database dengan testing data dan multi-standard compliance',
+    icon: '🧱',
+    category: 'tools',
+    component: AdvancedMaterialLibrary,
+  },
+  
+  // PRIMARY: Unified Analysis System (PLACEHOLDER)
+  // {
+  //   key: 'unified-analysis',
+  //   title: 'Unified Analysis System',
+  //   description: 'Comprehensive structural analysis dengan Matrix Method, Multi-Standards Compliance, dan Engineering-Grade Accuracy',
+  //   icon: '🚀',
+  //   category: 'analysis',
+  //   component: UnifiedStructuralAnalysisSystem,
+  // },
+  
+  // LEGACY: Analysis Modules (untuk comparison)
   {
     key: 'structural-analysis',
-    title: 'Structural Analysis',
+    title: 'Legacy: Structural Analysis',
     description: 'Complete structural analysis system with advanced features',
     icon: '🏗️',
     category: 'analysis',
