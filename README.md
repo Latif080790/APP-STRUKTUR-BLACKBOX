@@ -7,6 +7,7 @@ A comprehensive structural analysis application for designing and analyzing buil
 ```
 src/
 ├── structural-analysis/
+│   ├── advanced-3d/        # Advanced 3D visualization components
 │   ├── analysis/           # Structural analysis algorithms and calculations
 │   ├── design/             # Design modules for beams, columns, and slabs
 │   ├── drawing/            # Structural drawing generation
@@ -25,7 +26,7 @@ src/
    - Slab Design Calculator
 
 2. **Visualization**
-   - 3D Structure Viewer
+   - Advanced 3D Structure Viewer
    - 2D Structural Drawings
 
 3. **Analysis**

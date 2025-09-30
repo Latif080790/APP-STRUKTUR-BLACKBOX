@@ -7,6 +7,14 @@ This document explains the organization of the Structural Analysis System projec
 ```
 src/
 ├── structural-analysis/        # Main structural analysis module
+│   ├── advanced-3d/           # Advanced 3D visualization components
+│   │   ├── Advanced3DViewer.tsx   # Advanced 3D viewer
+│   │   ├── Enhanced3DControls.tsx # Enhanced 3D controls
+│   │   ├── Enhanced3DScene.tsx    # Enhanced 3D scene
+│   │   ├── Enhanced3DViewer.tsx   # Enhanced 3D viewer
+│   │   ├── Simple3DViewer.tsx     # Simple 3D viewer
+│   │   ├── StructureViewer.tsx    # Structure-specific viewer
+│   │   └── advanced-validation.ts # 3D validation utilities
 │   ├── analysis/              # Structural analysis algorithms
 │   │   ├── StructuralAnalyzer.ts  # Core analysis functions
 │   │   └── index.ts           # Analysis module exports
@@ -68,6 +76,16 @@ Contains components for generating structural drawings:
 
 - `Structure3DViewer.tsx`: 3D visualization component for viewing structures
 - `StructuralAnalysisSystem.tsx`: Main application component that integrates all modules
+
+#### Advanced 3D Visualization (`src/structural-analysis/advanced-3d/`)
+
+Contains advanced 3D visualization components:
+- `Advanced3DViewer.tsx`: Professional-grade 3D viewer with enhanced features
+- `Enhanced3DControls.tsx`: Advanced controls for 3D navigation
+- `Enhanced3DScene.tsx`: Enhanced 3D scene renderer with optimizations
+- `Enhanced3DViewer.tsx`: Enhanced viewer with additional capabilities
+- `Simple3DViewer.tsx`: Basic 3D viewer component for simple visualizations
+- `StructureViewer.tsx`: Structure-specific 3D viewer with analysis integration
 
 #### Types
 
