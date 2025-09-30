@@ -15,12 +15,16 @@ import {
   Star,
   Zap,
   Waves,
-  Activity
+  Activity,
+  FileText
 } from 'lucide-react';
 
 // Import dynamic analysis functions
 import { dynamicAnalysis } from './analysis/DynamicAnalyzer';
 import DynamicAnalysisResults from './DynamicAnalysisResults';
+
+// Import standard integration component
+import StandardIntegration from '../standards/StandardIntegration';
 
 // Simple UI components
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -137,7 +141,7 @@ const Calculator: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' })
 );
 
 export const StructuralAnalysisSystem: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'beams' | 'columns' | 'slabs' | '3d' | 'drawing' | 'analysis' | 'dynamic'>('beams');
+  const [activeTab, setActiveTab] = useState<'beams' | 'columns' | 'slabs' | '3d' | 'drawing' | 'analysis' | 'dynamic' | 'standards'>('beams');
   const [structure, setStructure] = useState<Structure3D>({
     nodes: [],
     elements: [],
@@ -327,6 +331,17 @@ export const StructuralAnalysisSystem: React.FC = () => {
                 <Waves className="h-4 w-4" />
                 Dynamic
               </button>
+              <button
+                onClick={() => setActiveTab('standards')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'standards'
+                    ? 'bg-white shadow text-green-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <FileText className="h-4 w-4" />
+                Standards
+              </button>
             </div>
 
             {/* Design Modules */}
@@ -452,6 +467,10 @@ export const StructuralAnalysisSystem: React.FC = () => {
                     </div>
                   )}
                 </div>
+              )}
+              
+              {activeTab === 'standards' && (
+                <StandardIntegration />
               )}
             </div>
 

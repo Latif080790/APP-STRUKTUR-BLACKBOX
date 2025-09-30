@@ -12,6 +12,7 @@ src/
 │   ├── design/             # Design modules for beams, columns, and slabs
 │   ├── drawing/            # Structural drawing generation
 │   ├── educational/        # Educational components for students and professors
+│   ├── standards/          # Structural design standards implementation
 │   ├── types/              # TypeScript type definitions
 │   ├── StructuralAnalysisSystem.tsx  # Main application component
 │   └── index.ts            # Module exports
@@ -38,6 +39,7 @@ src/
    - Safety checks with material-specific criteria
    - Static and dynamic analysis (modal analysis, response spectrum)
    - Code compliance checking (SNI standards)
+   - International standards support (ACI, AISC, Eurocode, ASCE)
 
 4. **Export Capabilities**
    - Structure data export (JSON, CSV)
@@ -50,6 +52,13 @@ src/
    - Example problems library
    - Progress tracking for learners
    - Course management tools for professors
+
+6. **Standards Integration**
+   - SNI Indonesia standards (SNI 1726, 1727, 2847, 1729)
+   - International standards (ACI 318, AISC, Eurocode, ASCE 7)
+   - Seismic zone mapping for Indonesia
+   - Load combination automation
+   - Material property databases
 
 ## Getting Started
 
@@ -106,6 +115,21 @@ src/
 - Static analysis (displacements, forces, stresses)
 - Dynamic analysis (modal analysis, response spectrum)
 - Code compliance checking (SNI standards)
+- International standards support (ACI, AISC, Eurocode, ASCE)
+
+## Standards Integration
+
+### Indonesian Standards (SNI)
+- **SNI 1726:2019** - Seismic design requirements
+- **SNI 1727:2020** - Load combinations and requirements
+- **SNI 2847:2019** - Reinforced concrete design
+- **SNI 1729:2020** - Structural steel design
+
+### International Standards
+- **ACI 318** - Concrete structure design
+- **AISC** - Steel structure design
+- **Eurocode** - European design standards
+- **ASCE 7** - Load combinations and seismic design
 
 ## Visualization
 
