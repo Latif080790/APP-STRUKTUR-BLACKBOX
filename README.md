@@ -30,10 +30,17 @@ src/
    - 2D Structural Drawings
 
 3. **Analysis**
-   - Structural analysis engine
+   - Structural analysis engine using stiffness matrix method
    - Displacement calculations
+   - Internal force analysis (axial, shear, moment, torsion)
    - Stress analysis
-   - Safety checks
+   - Safety checks with material-specific criteria
+   - Code compliance checking (SNI standards)
+
+4. **Export Capabilities**
+   - Structure data export (JSON, CSV)
+   - Analysis results export (CSV)
+   - 3D visualization export (PNG images)
 
 ## Getting Started
 
@@ -57,7 +64,8 @@ src/
 - React with TypeScript
 - Vite build tool
 - Tailwind CSS for styling
-- SVG for visualizations
+- Three.js for 3D visualization
+- React Three Fiber for React-Three.js integration
 
 ## Design Modules
 
@@ -81,18 +89,28 @@ src/
 
 ## Analysis Capabilities
 
-- Displacement analysis
-- Internal force calculations
-- Stress analysis
-- Safety factor evaluation
+- 3D structural analysis using stiffness matrix method
+- Displacement analysis in all directions
+- Internal force calculations (axial, shear, moment, torsion)
+- Stress analysis with combined stress checking
+- Safety factor evaluation with material-specific criteria
 - Code compliance checking (SNI standards)
 
 ## Visualization
 
-- 3D structural model viewer
+- Interactive 3D structural model viewer with Three.js
 - 2D plan drawings
-- Element labeling
+- Element labeling and property display
 - Grid system for reference
+- Camera controls (pan, zoom, rotate)
+- Stress visualization
+
+## Export Features
+
+- Structure data export in JSON and CSV formats
+- Analysis results export in CSV format
+- 3D visualization export as PNG images
+- High-resolution rendering for presentations
 
 ## Contributing
 

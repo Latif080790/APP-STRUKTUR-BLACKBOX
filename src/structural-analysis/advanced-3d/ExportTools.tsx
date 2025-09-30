@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { 
   Download, 
   Image, 
@@ -91,6 +91,39 @@ const downloadFile = (content: string, filename: string, mimeType: string) => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+};
+
+// Helper function to export 3D scene as image
+const export3DSceneAsImage = async (canvas: HTMLCanvasElement | null, filename: string) => {
+  if (!canvas) {
+    throw new Error('Canvas not found');
+  }
+  
+  // Create a higher resolution canvas for better quality export
+  const highResCanvas = document.createElement('canvas');
+  const scale = 2; // 2x resolution
+  highResCanvas.width = canvas.width * scale;
+  highResCanvas.height = canvas.height * scale;
+  
+  const ctx = highResCanvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Could not get 2D context');
+  }
+  
+  // Scale the context
+  ctx.scale(scale, scale);
+  
+  // Draw the original canvas onto the high-res canvas
+  ctx.drawImage(canvas, 0, 0);
+  
+  // Convert to data URL and download
+  const dataUrl = highResCanvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 // Main Export Tools Component
@@ -201,25 +234,54 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
     }
   }, [structure, analysisResults, onExportStart, onExportComplete, onExportError]);
   
-  // Export screenshot (placeholder - would need integration with Three.js renderer)
+  // Export screenshot
   const exportScreenshot = useCallback(() => {
     try {
       onExportStart?.();
       setIsExporting(true);
       
-      // In a real implementation, this would capture the Three.js canvas
-      // For now, we'll just show an alert
-      alert('Screenshot export would capture the current 3D view. This is a placeholder implementation.');
+      // Try to find the canvas element
+      const canvas = document.querySelector('canvas');
+      if (!canvas) {
+        throw new Error('3D canvas not found');
+      }
+      
+      // Export the canvas as PNG
+      export3DSceneAsImage(canvas, '3d_structure_view.png');
       
       onExportComplete?.();
     } catch (error) {
-      onExportError?.('Failed to export screenshot');
+      onExportError?.('Failed to export screenshot: ' + (error as Error).message);
       console.error('Export error:', error);
     } finally {
       setIsExporting(false);
     }
   }, [onExportStart, onExportComplete, onExportError]);
   
+  // Export high resolution render
+  const exportHighResRender = useCallback(() => {
+    try {
+      onExportStart?.();
+      setIsExporting(true);
+      
+      // Try to find the canvas element
+      const canvas = document.querySelector('canvas');
+      if (!canvas) {
+        throw new Error('3D canvas not found');
+      }
+      
+      // Export the canvas as high-res PNG
+      export3DSceneAsImage(canvas, '3d_structure_render.png');
+      
+      onExportComplete?.();
+    } catch (error) {
+      onExportError?.('Failed to export high resolution render: ' + (error as Error).message);
+      console.error('Export error:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [onExportStart, onExportComplete, onExportError]);
+
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
@@ -306,7 +368,7 @@ export const ExportTools: React.FC<ExportToolsProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={exportScreenshot}
+              onClick={exportHighResRender}
               disabled={isExporting}
               className="flex items-center gap-2"
             >
