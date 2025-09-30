@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import WorkflowController from './core/WorkflowController';
+import NotificationManager from './core/NotificationManager';
+import ProjectManager from './core/ProjectManager';
 
 function App() {
   const [activeView, setActiveView] = useState('overview');
   const [workflowController] = useState(() => new WorkflowController('project-001'));
+  const [notificationManager] = useState(() => new NotificationManager());
+  const [projectManager] = useState(() => new ProjectManager());
+  
   const [workflowState, setWorkflowState] = useState(workflowController.getState());
   const [progressReport, setProgressReport] = useState(workflowController.generateProgressReport());
+  const [notifications, setNotifications] = useState(notificationManager.getNotifications());
+  const [currentProject, setCurrentProject] = useState(projectManager.getCurrentProject());
+  const [projectReport, setProjectReport] = useState(projectManager.generateProjectReport());
   
   const analysisData = {
     maxStress: 15.8,
@@ -15,14 +23,28 @@ function App() {
     analysisStatus: 'Selesai'
   };
 
-  // Subscribe to workflow changes
+  // Subscribe to all managers
   useEffect(() => {
-    const unsubscribe = workflowController.subscribe((state) => {
+    const unsubscribeWorkflow = workflowController.subscribe((state) => {
       setWorkflowState(state);
       setProgressReport(workflowController.generateProgressReport());
     });
-    return unsubscribe;
-  }, [workflowController]);
+    
+    const unsubscribeNotifications = notificationManager.subscribe((notifications) => {
+      setNotifications(notifications);
+    });
+    
+    const unsubscribeProject = projectManager.subscribe((project) => {
+      setCurrentProject(project);
+      setProjectReport(projectManager.generateProjectReport());
+    });
+    
+    return () => {
+      unsubscribeWorkflow();
+      unsubscribeNotifications();
+      unsubscribeProject();
+    };
+  }, [workflowController, notificationManager, projectManager]);
 
   // Simulate some data for demonstration
   useEffect(() => {
@@ -160,6 +182,274 @@ function App() {
                   </button>
                   <button className="p-3 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-400/20 rounded-lg text-center transition-all">
                     <p className="text-white text-sm">Revit</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'project':
+        return (
+          <div className="p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white/90 mb-2">Project Overview</h2>
+              <p className="text-white/60">Manajemen proyek komprehensif dengan timeline dan budget tracking</p>
+            </div>
+            
+            {/* Project Header Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-2">
+                <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-white/90">{currentProject?.name}</h3>
+                      <p className="text-white/60 mt-1">{currentProject?.description}</p>
+                      <div className="flex items-center space-x-4 mt-3">
+                        <span className="text-blue-300 text-sm">🏢 {currentProject?.buildingInfo.type}</span>
+                        <span className="text-green-300 text-sm">🏗️ {currentProject?.buildingInfo.floors} lantai</span>
+                        <span className="text-purple-300 text-sm">📏 {currentProject?.location.city}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-white/90">{projectReport.summary.progress}%</div>
+                      <div className="text-white/60 text-sm">Progress</div>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Timeline */}
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white/80 text-sm">Timeline Progress</span>
+                      <span className="text-blue-400 text-sm">{projectReport.summary.daysRemaining} hari tersisa</span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-3">
+                      <div 
+                        className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-500"
+                        style={{ width: `${projectReport.summary.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  {/* Phase Status */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {projectReport.timeline.phases.map((phase: any, index: number) => (
+                      <div key={index} className={`p-3 rounded-lg border ${
+                        phase.status === 'completed' ? 'bg-green-600/20 border-green-400/20' :
+                        phase.status === 'active' ? 'bg-blue-600/20 border-blue-400/20' :
+                        'bg-gray-600/20 border-gray-400/20'
+                      }`}>
+                        <div className="text-white/80 text-sm font-medium">{phase.name}</div>
+                        <div className="text-white/60 text-xs mt-1">{phase.progress}% selesai</div>
+                        <div className={`text-xs mt-1 ${
+                          phase.status === 'completed' ? 'text-green-400' :
+                          phase.status === 'active' ? 'text-blue-400' : 'text-gray-400'
+                        }`}>
+                          {phase.status === 'completed' ? '✓ Selesai' :
+                           phase.status === 'active' ? '▶ Aktif' : '○ Pending'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Budget & Compliance */}
+              <div className="space-y-6">
+                <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                  <h3 className="text-white/90 font-semibold mb-4">Budget Status</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/70 text-sm">Total Budget</span>
+                      <span className="text-white/90 font-medium">Rp {(projectReport.budget.total / 1000000000).toFixed(1)}M</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/70 text-sm">Terpakai</span>
+                      <span className="text-orange-400 font-medium">{projectReport.budget.utilization}%</span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          projectReport.budget.utilization > 80 ? 'bg-red-400' :
+                          projectReport.budget.utilization > 60 ? 'bg-yellow-400' : 'bg-green-400'
+                        }`}
+                        style={{ width: `${projectReport.budget.utilization}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                  <h3 className="text-white/90 font-semibold mb-4">SNI Compliance</h3>
+                  <div className="text-center mb-3">
+                    <div className="text-2xl font-bold text-green-400">{projectReport.compliance.compliance_rate}%</div>
+                    <div className="text-white/60 text-sm">Standar Terpenuhi</div>
+                  </div>
+                  <div className="space-y-2">
+                    {projectReport.compliance.verified.slice(0, 3).map((standard: string, index: number) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <span className="text-white/70">{standard}</span>
+                        <span className="text-green-400">✓</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Risk Assessment */}
+            {projectReport.risks.length > 0 && (
+              <div className="mb-8">
+                <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                  <h3 className="text-white/90 font-semibold mb-4">Risk Assessment</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {projectReport.risks.map((risk: any, index: number) => (
+                      <div key={index} className={`p-4 rounded-lg border ${
+                        risk.level === 'high' ? 'bg-red-600/20 border-red-400/20' :
+                        risk.level === 'medium' ? 'bg-yellow-600/20 border-yellow-400/20' :
+                        'bg-blue-600/20 border-blue-400/20'
+                      }`}>
+                        <div className={`font-medium text-sm ${
+                          risk.level === 'high' ? 'text-red-400' :
+                          risk.level === 'medium' ? 'text-yellow-400' : 'text-blue-400'
+                        }`}>
+                          {risk.type.toUpperCase()} RISK
+                        </div>
+                        <div className="text-white/80 text-sm mt-1">{risk.description}</div>
+                        <div className="text-white/60 text-xs mt-2">{risk.recommendation}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Recent Activities */}
+            <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+              <h3 className="text-white/90 font-semibold mb-4">Aktivitas Terbaru</h3>
+              <div className="space-y-3">
+                {projectManager.getRecentActivities(5).map((activity: any) => (
+                  <div key={activity.id} className="flex items-start space-x-3 p-3 bg-white/5 rounded-lg">
+                    <div className={`w-2 h-2 rounded-full mt-2 ${
+                      activity.category === 'analysis' ? 'bg-blue-400' :
+                      activity.category === 'design' ? 'bg-green-400' :
+                      activity.category === 'review' ? 'bg-purple-400' : 'bg-orange-400'
+                    }`}></div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="text-white/80 text-sm font-medium">{activity.action}</div>
+                        <div className="text-white/50 text-xs">{activity.timestamp.toLocaleTimeString('id-ID')}</div>
+                      </div>
+                      <div className="text-white/60 text-sm mt-1">{activity.description}</div>
+                      <div className="text-white/50 text-xs mt-1">oleh {activity.user}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'team':
+        return (
+          <div className="p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white/90 mb-2">Tim & Kolaborasi</h2>
+              <p className="text-white/60">Manajemen tim profesional dengan real-time collaboration</p>
+            </div>
+            
+            {/* Team Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-lg rounded-xl p-6 border border-blue-400/20">
+                <div className="text-2xl font-bold text-white/90 mb-2">{projectReport.team.total}</div>
+                <div className="text-blue-300 text-sm">Total Anggota</div>
+              </div>
+              <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 backdrop-blur-lg rounded-xl p-6 border border-green-400/20">
+                <div className="text-2xl font-bold text-white/90 mb-2">{projectReport.team.online}</div>
+                <div className="text-green-300 text-sm">Online Sekarang</div>
+              </div>
+              <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-lg rounded-xl p-6 border border-purple-400/20">
+                <div className="text-2xl font-bold text-white/90 mb-2">{Object.keys(projectReport.team.roles).length}</div>
+                <div className="text-purple-300 text-sm">Peran Aktif</div>
+              </div>
+              <div className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 backdrop-blur-lg rounded-xl p-6 border border-orange-400/20">
+                <div className="text-2xl font-bold text-white/90 mb-2">4.8</div>
+                <div className="text-orange-300 text-sm">Rating Kolaborasi</div>
+              </div>
+            </div>
+            
+            {/* Team Members */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Anggota Tim</h3>
+                <div className="space-y-3">
+                  {projectManager.getProjectMembers().map((member: any) => (
+                    <div key={member.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-lg">
+                        {member.avatar || '👤'}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-white/80 font-medium">{member.name}</span>
+                          <div className={`w-2 h-2 rounded-full ${
+                            member.status === 'online' ? 'bg-green-400' :
+                            member.status === 'busy' ? 'bg-yellow-400' : 'bg-gray-400'
+                          }`}></div>
+                        </div>
+                        <div className="text-white/60 text-sm">
+                          {member.role.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                        </div>
+                        <div className="text-white/50 text-xs">
+                          Terakhir aktif: {member.lastActivity.toLocaleTimeString('id-ID')}
+                        </div>
+                      </div>
+                      <div className={`px-2 py-1 rounded text-xs ${
+                        member.status === 'online' ? 'bg-green-600/20 text-green-400' :
+                        member.status === 'busy' ? 'bg-yellow-600/20 text-yellow-400' :
+                        'bg-gray-600/20 text-gray-400'
+                      }`}>
+                        {member.status === 'online' ? 'Online' :
+                         member.status === 'busy' ? 'Sibuk' : 'Offline'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Collaboration Tools */}
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Tools Kolaborasi</h3>
+                <div className="space-y-3">
+                  <button className="w-full flex items-center space-x-3 p-3 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/20 rounded-lg text-left transition-all">
+                    <span className="text-blue-400">📝</span>
+                    <div>
+                      <div className="text-white/80 font-medium">Shared Workspace</div>
+                      <div className="text-white/60 text-sm">Ruang kerja bersama real-time</div>
+                    </div>
+                  </button>
+                  
+                  <button className="w-full flex items-center space-x-3 p-3 bg-green-600/20 hover:bg-green-600/30 border border-green-400/20 rounded-lg text-left transition-all">
+                    <span className="text-green-400">💬</span>
+                    <div>
+                      <div className="text-white/80 font-medium">Team Chat</div>
+                      <div className="text-white/60 text-sm">Komunikasi instant tim</div>
+                    </div>
+                  </button>
+                  
+                  <button className="w-full flex items-center space-x-3 p-3 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-400/20 rounded-lg text-left transition-all">
+                    <span className="text-purple-400">🔄</span>
+                    <div>
+                      <div className="text-white/80 font-medium">Version Control</div>
+                      <div className="text-white/60 text-sm">Kontrol versi model 3D</div>
+                    </div>
+                  </button>
+                  
+                  <button className="w-full flex items-center space-x-3 p-3 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-400/20 rounded-lg text-left transition-all">
+                    <span className="text-orange-400">📅</span>
+                    <div>
+                      <div className="text-white/80 font-medium">Meeting Schedule</div>
+                      <div className="text-white/60 text-sm">Jadwal meeting dan review</div>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -541,11 +831,73 @@ function App() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Project Status */}
+              <div className="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span className="text-white/80 text-sm">{currentProject?.name.substring(0, 20)}...</span>
+              </div>
+              
+              {/* Notifications */}
+              <div className="relative">
+                <button className="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 transition-all">
+                  <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5m0 0V3" />
+                  </svg>
+                  {notifications.length > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
+                
+                {/* Notification Dropdown (simplified for now) */}
+                {notifications.length > 0 && (
+                  <div className="absolute right-0 top-12 w-80 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 z-50 max-h-96 overflow-y-auto">
+                    <h4 className="text-white/90 font-medium mb-3">Notifikasi Terbaru</h4>
+                    <div className="space-y-2">
+                      {notifications.slice(0, 5).map((notification) => (
+                        <div key={notification.id} className={`p-3 rounded-lg border ${
+                          notification.type === 'error' ? 'bg-red-600/20 border-red-400/20' :
+                          notification.type === 'warning' ? 'bg-yellow-600/20 border-yellow-400/20' :
+                          notification.type === 'success' ? 'bg-green-600/20 border-green-400/20' :
+                          'bg-blue-600/20 border-blue-400/20'
+                        }`}>
+                          <div className="text-white/90 text-sm font-medium">{notification.title}</div>
+                          <div className="text-white/70 text-xs mt-1">{notification.message}</div>
+                          <div className="text-white/50 text-xs mt-1">
+                            {notification.timestamp.toLocaleTimeString('id-ID')}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Team Status */}
+              <div className="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-2">
+                <div className="flex -space-x-1">
+                  {projectManager.getProjectMembers().filter(m => m.status === 'online').slice(0, 3).map((member, index) => (
+                    <div key={member.id} className="w-6 h-6 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-xs border-2 border-slate-900">
+                      {member.avatar || '👤'}
+                    </div>
+                  ))}
+                  {projectManager.getProjectMembers().filter(m => m.status === 'online').length > 3 && (
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs text-white/70 border-2 border-slate-900">
+                      +{projectManager.getProjectMembers().filter(m => m.status === 'online').length - 3}
+                    </div>
+                  )}
+                </div>
+                <span className="text-white/80 text-sm">{projectManager.getProjectMembers().filter(m => m.status === 'online').length} online</span>
+              </div>
+              
+              {/* System Status */}
               <div className="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-white/80 text-sm">Sistem Aktif</span>
               </div>
               
+              {/* Time */}
               <div className="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-2">
                 <span className="text-white/80 text-sm">{new Date().toLocaleTimeString('id-ID')}</span>
               </div>
@@ -576,8 +928,47 @@ function App() {
                 >
                   <span className="text-lg">{item.icon}</span>
                   <span>{item.label}</span>
+                  {item.id === 'integration' && notifications.length > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[16px] text-center ml-auto">
+                      {notifications.length}
+                    </span>
+                  )}
                 </button>
-              ))}
+              ))
+              }
+              
+              {/* Project Management Section */}
+              <div className="mt-6 pt-4 border-t border-white/10">
+                <h4 className="text-white/60 text-xs uppercase tracking-wider mb-3 px-4">Manajemen Proyek</h4>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setActiveView('project')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                      activeView === 'project'
+                        ? 'bg-purple-600/30 text-white border border-purple-400/30'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-lg">📋</span>
+                    <span>Project Overview</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveView('team')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                      activeView === 'team'
+                        ? 'bg-green-600/30 text-white border border-green-400/30'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-lg">👥</span>
+                    <span>Tim & Kolaborasi</span>
+                    <span className="bg-green-500 text-white text-xs rounded-full px-2 py-1 min-w-[16px] text-center ml-auto">
+                      {projectManager.getProjectMembers().filter(m => m.status === 'online').length}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           </nav>
         </div>
