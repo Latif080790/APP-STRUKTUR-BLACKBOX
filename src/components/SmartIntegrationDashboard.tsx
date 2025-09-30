@@ -5,11 +5,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Brain, Building, Zap, Settings, BarChart3, FileText, Download, Share2 } from 'lucide-react';
+import { Brain, Building, Zap, Settings, BarChart3, FileText, Download, Share2, Users, Wifi, WifiOff } from 'lucide-react';
 import { AIAnalysisEngine, StructuralFeatures, OptimizationObjective, AIRecommendation } from '../structural-analysis/engines/AIAnalysisEngine';
 import { BIMIntegrationEngine, BIMModel, IFCExportOptions, DWGExportOptions } from '../structural-analysis/engines/BIMIntegrationEngine';
 import { AdvancedStructuralEngine, StructuralNode, StructuralElement, LoadCase } from '../structural-analysis/engines/AdvancedStructuralEngine';
 import { apiService } from '../services/apiService';
+import { webSocketService, RealTimeNotification, CollaborationUser } from '../services/webSocketService';
 
 interface SmartIntegrationDashboardProps {
   onNavigate: (view: string) => void;
@@ -32,6 +33,13 @@ interface AnalysisProgress {
   currentTask: string;
 }
 
+interface RealTimeState {
+  connected: boolean;
+  activeUsers: CollaborationUser[];
+  notifications: RealTimeNotification[];
+  lastUpdate?: Date;
+}
+
 export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps> = ({ onNavigate }) => {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [currentProject, setCurrentProject] = useState<ProjectData | null>(null);
@@ -45,8 +53,14 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
     bim: new BIMIntegrationEngine(),
     structural: new AdvancedStructuralEngine()
   });
+  const [realTimeState, setRealTimeState] = useState<RealTimeState>({
+    connected: false,
+    activeUsers: [],
+    notifications: [],
+    lastUpdate: undefined
+  });
 
-  // Initialize demo project
+  // Initialize demo project and WebSocket
   useEffect(() => {
     const demoProject: ProjectData = {
       id: 'demo-001',
@@ -84,7 +98,72 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
 
     setProjects([demoProject]);
     setCurrentProject(demoProject);
+    
+    // Initialize WebSocket service
+    initializeWebSocket();
+    
+    // Cleanup on unmount
+    return () => {
+      webSocketService.disconnect();
+    };
   }, []);
+
+  // Initialize WebSocket with event handlers
+  const initializeWebSocket = () => {
+    webSocketService.setEventHandlers({
+      onConnect: () => {
+        console.log('🔗 Connected to real-time service');
+        setRealTimeState(prev => ({ ...prev, connected: true, lastUpdate: new Date() }));
+        if (currentProject) {
+          webSocketService.joinProject(currentProject.id);
+        }
+      },
+      onDisconnect: () => {
+        console.log('❌ Disconnected from real-time service');
+        setRealTimeState(prev => ({ ...prev, connected: false }));
+      },
+      onAnalysisUpdate: (data) => {
+        console.log('📊 Real-time analysis update:', data);
+        setAnalysisProgress(prev => ({ ...prev, ...data }));
+      },
+      onPerformanceUpdate: (data) => {
+        console.log('⚡ Performance update:', data);
+        // Handle performance updates
+      },
+      onUserJoined: (user) => {
+        console.log('👤 User joined:', user);
+        setRealTimeState(prev => ({
+          ...prev,
+          activeUsers: [...prev.activeUsers.filter(u => u.id !== user.id), user]
+        }));
+      },
+      onUserLeft: (user) => {
+        console.log('👋 User left:', user);
+        setRealTimeState(prev => ({
+          ...prev,
+          activeUsers: prev.activeUsers.filter(u => u.id !== user.id)
+        }));
+      },
+      onProjectUpdate: (project) => {
+        console.log('🏢 Project update:', project);
+        if (currentProject?.id === project.id) {
+          setCurrentProject({ ...currentProject, ...project });
+        }
+      },
+      onNotification: (notification) => {
+        console.log('🔔 Notification:', notification);
+        setRealTimeState(prev => ({
+          ...prev,
+          notifications: [notification, ...prev.notifications.slice(0, 4)]
+        }));
+      },
+      onError: (error) => {
+        console.error('❌ WebSocket error:', error);
+      }
+    });
+    
+    webSocketService.init();
+  };
 
   const runComprehensiveAnalysis = async () => {
     if (!currentProject) return;
@@ -114,11 +193,29 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
       const structuralResults = await apiService.analysis.structural(analysisData);
       console.log('📊 Analisis struktural selesai:', structuralResults);
       
+      // Send real-time update
+      if (realTimeState.connected) {
+        webSocketService.sendAnalysisUpdate(currentProject.id, {
+          stage: 'ai',
+          progress: 40,
+          results: structuralResults
+        });
+      }
+      
       setAnalysisProgress({ stage: 'ai', progress: 40, currentTask: 'Menghasilkan rekomendasi AI...' });
       
       // Stage 2: AI Analysis
       const aiRecommendations = await apiService.ai.getRecommendations(currentProject.features);
       console.log('🤖 Rekomendasi AI:', aiRecommendations);
+      
+      // Send real-time update
+      if (realTimeState.connected) {
+        webSocketService.sendAnalysisUpdate(currentProject.id, {
+          stage: 'bim',
+          progress: 80,
+          aiRecommendations: aiRecommendations.recommendations
+        });
+      }
       
       setAnalysisProgress({ stage: 'bim', progress: 80, currentTask: 'Mengintegrasikan dengan BIM...' });
       
@@ -128,18 +225,68 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
       setAnalysisProgress({ stage: 'complete', progress: 100, currentTask: 'Analisis lengkap!' });
 
       // Update project with results
-      const updatedProject = {
+      const updatedProject: ProjectData = {
         ...currentProject,
         analysisResults: { 
           structural: structuralResults.results, 
           metadata: structuralResults.metadata 
         },
         aiRecommendations: aiRecommendations.recommendations || [],
-        bimModel: bimResponse.fileId ? { id: bimResponse.fileId, name: 'Demo Model' } : undefined,
+        bimModel: bimResponse.fileId ? {
+          id: bimResponse.fileId,
+          name: 'Demo Model',
+          version: '1.0',
+          created: new Date(),
+          modified: new Date(),
+          author: 'AI System',
+          description: 'Generated BIM model',
+          elements: [],
+          properties: {
+            units: { length: 'm', force: 'kN', stress: 'MPa', angle: 'deg' },
+            coordinateSystem: {
+              origin: [0, 0, 0],
+              xAxis: [1, 0, 0],
+              yAxis: [0, 1, 0],
+              zAxis: [0, 0, 1]
+            },
+            projectInfo: {
+              name: 'Demo Project',
+              site: 'Jakarta',
+              client: 'Demo Client',
+              architect: 'AI Architect',
+              engineer: 'AI Engineer'
+            },
+            buildingInfo: {
+              floors: 15,
+              height: 67.5,
+              area: 1100,
+              volume: 74250,
+              occupancy: 'Office',
+              constructionType: 'Reinforced Concrete'
+            }
+          }
+        } : undefined,
         lastModified: new Date()
       };
       
       setCurrentProject(updatedProject);
+      
+      // Send completion notification
+      if (realTimeState.connected) {
+        webSocketService.sendNotification({
+          type: 'success',
+          title: 'Analysis Complete',
+          message: 'Smart analysis has been completed successfully',
+          projectId: currentProject.id
+        });
+        
+        webSocketService.sendAnalysisUpdate(currentProject.id, {
+          stage: 'complete',
+          progress: 100,
+          analysisResults: updatedProject.analysisResults,
+          aiRecommendations: updatedProject.aiRecommendations
+        });
+      }
       
       setTimeout(() => {
         setAnalysisProgress({ stage: 'idle', progress: 0, currentTask: 'Ready for next analysis' });
@@ -228,6 +375,23 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
               <p className="text-blue-200">AI-Powered Structural Analysis with BIM Integration</p>
             </div>
             <div className="flex space-x-3">
+              {/* Real-time Status Indicator */}
+              <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                realTimeState.connected 
+                  ? 'bg-green-500/20 text-green-300' 
+                  : 'bg-red-500/20 text-red-300'
+              }`}>
+                {realTimeState.connected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+                <span className="text-sm">
+                  {realTimeState.connected ? 'Connected' : 'Offline'}
+                </span>
+                {realTimeState.activeUsers.length > 0 && (
+                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                    {realTimeState.activeUsers.length} active
+                  </span>
+                )}
+              </div>
+              
               <button
                 onClick={() => onNavigate('dashboard')}
                 className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all"
@@ -243,6 +407,39 @@ export const SmartIntegrationDashboard: React.FC<SmartIntegrationDashboardProps>
             </div>
           </div>
         </div>
+
+        {/* Real-time Notifications Panel */}
+        {realTimeState.notifications.length > 0 && (
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Real-time Updates
+            </h2>
+            <div className="space-y-3">
+              {realTimeState.notifications.slice(0, 3).map((notification, index) => (
+                <div 
+                  key={notification.id || index} 
+                  className={`p-3 rounded-lg border border-white/10 ${
+                    notification.type === 'success' ? 'bg-green-500/10' :
+                    notification.type === 'error' ? 'bg-red-500/10' :
+                    notification.type === 'warning' ? 'bg-yellow-500/10' :
+                    'bg-blue-500/10'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium text-white text-sm">{notification.title}</h4>
+                      <p className="text-blue-200 text-xs mt-1">{notification.message}</p>
+                    </div>
+                    <span className="text-xs text-blue-300">
+                      {new Date(notification.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Project Overview */}
         {currentProject && (
