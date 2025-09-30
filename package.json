@@ -6,12 +6,22 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:prod": "NODE_ENV=production tsc && vite build --mode production",
+    "build:analyze": "npm run build:prod && npx vite-bundle-analyzer dist/stats.html",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
     "preview": "vite preview",
+    "preview:prod": "vite preview --mode production",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "echo \"E2E tests not implemented yet\"",
+    "deploy:staging": "npm run build:prod && echo \"Deploy to staging\"",
+    "deploy:production": "npm run build:prod && npm run test:run && echo \"Deploy to production\"",
+    "health-check": "curl -f http://localhost:8080 || exit 1",
+    "clean": "rm -rf dist node_modules/.vite",
+    "postinstall": "echo \"Installation complete\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
