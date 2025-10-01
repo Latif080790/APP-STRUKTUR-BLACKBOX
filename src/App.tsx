@@ -4,6 +4,9 @@ import NotificationManager from './core/NotificationManager';
 import ProjectManager from './core/ProjectManager';
 import HierarchicalWorkflowEngine from './core/HierarchicalWorkflowEngine';
 import { UnifiedAnalysisEngine, defaultUnifiedAnalysisEngine } from './core/UnifiedAnalysisEngine';
+import SystemTestRunner from './components/SystemTestRunner';
+import PerformanceMonitor from './core/PerformanceMonitor';
+import ProfessionalDashboard from './components/ProfessionalDashboard';
 
 function App() {
   const [activeView, setActiveView] = useState('overview');
@@ -12,6 +15,7 @@ function App() {
   const [projectManager] = useState(() => new ProjectManager());
   const [hierarchicalWorkflow] = useState(() => new HierarchicalWorkflowEngine());
   const [unifiedAnalysisEngine] = useState(() => defaultUnifiedAnalysisEngine);
+  const [performanceMonitor] = useState(() => new PerformanceMonitor());
   
   const [workflowState, setWorkflowState] = useState(workflowController.getState());
   const [progressReport, setProgressReport] = useState(workflowController.generateProgressReport());
@@ -84,6 +88,93 @@ function App() {
 
   const renderContent = () => {
     switch (activeView) {
+      case 'overview':
+        return (
+          <div className="p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white/90 mb-2">System Overview</h2>
+              <p className="text-white/60">Dashboard utama untuk monitoring dan analisis sistem struktural enterprise</p>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <button 
+                onClick={() => setActiveView('workspace')}
+                className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-lg rounded-xl p-6 border border-blue-400/20 hover:border-blue-400/40 transition-all group"
+              >
+                <div className="text-blue-400 text-3xl mb-3 group-hover:scale-110 transition-transform">🔧</div>
+                <h3 className="text-white/90 font-semibold mb-2">Professional Workspace</h3>
+                <p className="text-white/60 text-sm">Akses lengkap tools analisis struktural</p>
+              </button>
+              
+              <button 
+                onClick={() => setActiveView('dashboard')}
+                className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-lg rounded-xl p-6 border border-purple-400/20 hover:border-purple-400/40 transition-all group"
+              >
+                <div className="text-purple-400 text-3xl mb-3 group-hover:scale-110 transition-transform">🎯</div>
+                <h3 className="text-white/90 font-semibold mb-2">Professional Dashboard</h3>
+                <p className="text-white/60 text-sm">Real-time monitoring dan AI insights</p>
+              </button>
+              
+              <button 
+                onClick={() => setActiveView('workflow')}
+                className="bg-gradient-to-br from-indigo-600/20 to-indigo-800/20 backdrop-blur-lg rounded-xl p-6 border border-indigo-400/20 hover:border-indigo-400/40 transition-all group"
+              >
+                <div className="text-indigo-400 text-3xl mb-3 group-hover:scale-110 transition-transform">🔄</div>
+                <h3 className="text-white/90 font-semibold mb-2">Workflow Hierarkis</h3>
+                <p className="text-white/60 text-sm">Alur kerja terstruktur sesuai standar</p>
+              </button>
+            </div>
+            
+            {/* System Status */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Status Sistem</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-green-600/10 rounded-lg border border-green-400/20">
+                    <span className="text-green-400">✓ Unified Analysis Engine</span>
+                    <span className="text-green-400 text-sm">Aktif</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-green-600/10 rounded-lg border border-green-400/20">
+                    <span className="text-green-400">✓ Professional Dashboard</span>
+                    <span className="text-green-400 text-sm">Ready</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-green-600/10 rounded-lg border border-green-400/20">
+                    <span className="text-green-400">✓ Data Persistence</span>
+                    <span className="text-green-400 text-sm">Enabled</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-green-600/10 rounded-lg border border-green-400/20">
+                    <span className="text-green-400">✓ Advanced Export</span>
+                    <span className="text-green-400 text-sm">Available</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                <h3 className="text-white/90 font-semibold mb-4">Recent Activities</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 p-3 bg-blue-600/10 rounded-lg">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <span className="text-white/80 text-sm">Professional Dashboard initialized</span>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-purple-600/10 rounded-lg">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                    <span className="text-white/80 text-sm">Data Persistence Manager ready</span>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-green-600/10 rounded-lg">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-white/80 text-sm">Advanced Export Manager configured</span>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-orange-600/10 rounded-lg">
+                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                    <span className="text-white/80 text-sm">Production Deployment ready</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
       case 'workspace':
         return (
           <div className="p-6">
@@ -297,6 +388,12 @@ function App() {
             </div>
           </div>
         );
+      
+      case 'dashboard':
+        return <ProfessionalDashboard />;
+      
+      case 'testing':
+        return <SystemTestRunner />;
       
       case 'project':
         return (
@@ -1312,7 +1409,9 @@ function App() {
               {[
                 { id: 'overview', label: 'Overview', icon: '📊' },
                 { id: 'workspace', label: 'Workspace', icon: '🔧' },
+                { id: 'dashboard', label: 'Professional Dashboard', icon: '🎯' },
                 { id: 'integration', label: 'Integration', icon: '🤖' },
+                { id: 'testing', label: 'System Testing', icon: '🧪' },
                 { id: 'analytics', label: 'Analytics', icon: '📈' }
               ].map((item) => (
                 <button
