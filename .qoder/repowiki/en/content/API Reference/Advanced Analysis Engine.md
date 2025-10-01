@@ -2,9 +2,9 @@
 
 <cite>
 **Referenced Files in This Document**   
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts)
-- [structural.ts](file://src/types/structural.ts)
-- [SparseMatrixSolver.ts](file://src/structural-analysis/analysis/SparseMatrixSolver.ts)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts)
+- [structural.ts](file://src\types\structural.ts)
+- [SparseMatrixSolver.ts](file://src\structural-analysis\analysis\SparseMatrixSolver.ts)
 </cite>
 
 ## Table of Contents
@@ -24,8 +24,8 @@ The Advanced Analysis Engine provides sophisticated structural analysis capabili
 The engine operates on a Structure3D object that contains the complete structural model including nodes, elements, materials, sections, and loads. It uses sparse matrix representations for efficient computation of large structural systems.
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L123-L612)
-- [structural.ts](file://src/types/structural.ts#L92-L98)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L123-L612)
+- [structural.ts](file://src\types\structural.ts#L92-L98)
 
 ## Core Components
 
@@ -65,13 +65,13 @@ AdvancedAnalysisEngine --> SparseVector : "uses"
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L123-L612)
-- [structural.ts](file://src/types/structural.ts#L92-L98)
-- [SparseMatrixSolver.ts](file://src/structural-analysis/analysis/SparseMatrixSolver.ts#L5-L14)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L123-L612)
+- [structural.ts](file://src\types\structural.ts#L92-L98)
+- [SparseMatrixSolver.ts](file://src\structural-analysis\analysis\SparseMatrixSolver.ts#L5-L14)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L123-L612)
-- [structural.ts](file://src/types/structural.ts#L92-L98)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L123-L612)
+- [structural.ts](file://src\types\structural.ts#L92-L98)
 
 ## Configuration Objects
 
@@ -100,10 +100,10 @@ magnitude : number
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L18-L31)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L18-L31)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L18-L31)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L18-L31)
 
 ### PushoverConfig
 
@@ -125,10 +125,10 @@ elementRotationLimit : number
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L36-L46)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L36-L46)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L36-L46)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L36-L46)
 
 ### BucklingConfig
 
@@ -149,10 +149,10 @@ magnitude : number
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L51-L60)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L51-L60)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L51-L60)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L51-L60)
 
 ## Time-History Analysis
 
@@ -179,11 +179,11 @@ ReturnResults --> End([End])
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L136-L226)
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L417-L430)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L136-L226)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L417-L430)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L136-L226)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L136-L226)
 
 ### Implementation Details
 
@@ -232,11 +232,11 @@ ReturnResults --> End([End])
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L231-L314)
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L492-L503)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L231-L314)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L492-L503)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L231-L314)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L231-L314)
 
 ### Implementation Details
 
@@ -277,11 +277,11 @@ ReturnResults --> End([End])
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L319-L356)
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L597-L611)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L319-L356)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L597-L611)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L319-L356)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L319-L356)
 
 ### Implementation Details
 
@@ -392,11 +392,11 @@ AdvancedAnalysisResult --|> AnalysisResult
 ```
 
 **Diagram sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L65-L118)
-- [structural.ts](file://src/types/structural.ts#L120-L129)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L65-L118)
+- [structural.ts](file://src\types\structural.ts#L120-L129)
 
 **Section sources**
-- [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts#L65-L118)
+- [AdvancedAnalysisEngine.ts](file://src\structural-analysis\analysis\AdvancedAnalysisEngine.ts#L65-L118)
 
 The AdvancedAnalysisResult structure includes:
 

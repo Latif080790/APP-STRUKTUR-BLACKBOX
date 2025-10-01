@@ -1,16 +1,29 @@
-
+<docs>
 # Application Entry Points
 
 <cite>
 **Referenced Files in This Document**   
-- [main.tsx](file://src/main.tsx)
-- [App.tsx](file://src/App.tsx)
-- [index.css](file://src/index.css)
-- [vite.config.ts](file://vite.config.ts)
-- [ModuleRouter.tsx](file://src/components/routing/ModuleRouter.tsx)
-- [ModernLayout.tsx](file://src/components/ModernLayout.tsx)
-- [ModernSidebar.tsx](file://src/components/ModernSidebar.tsx)
+- [main.tsx](file://src/main.tsx) - *Updated with enhanced error boundary and safe loading*
+- [App.tsx](file://src/App.tsx) - *Redesigned with professional dashboard and navigation*
+- [index.css](file://src/index.css) - *Global styles with responsive design*
+- [vite.config.ts](file://vite.config.ts) - *Vite configuration with build optimizations*
+- [ModuleRouter.tsx](file://src/components/routing/ModuleRouter.tsx) - *Dynamic module routing system*
+- [ModernLayout.tsx](file://src/components/ModernLayout.tsx) - *Layout wrapper with sidebar*
+- [ModernSidebar.tsx](file://src/components/ModernSidebar.tsx) - *Professional navigation sidebar*
+- [WorkflowController.ts](file://src/core/WorkflowController.ts) - *Workflow management system*
+- [NotificationManager.ts](file://src/core/NotificationManager.ts) - *Notification system*
+- [ProjectManager.ts](file://src/core/ProjectManager.ts) - *Project management system*
 </cite>
+
+## Update Summary
+**Changes Made**
+- Completely redesigned the application entry point with a professional dashboard and navigation system
+- Updated the App component to use a workflow-driven architecture with state management
+- Enhanced error handling with a comprehensive error boundary system
+- Added safe loading mechanism for application components
+- Integrated core management systems for workflow, notifications, and projects
+- Updated conditional rendering to support multiple professional views
+- Added comprehensive source tracking for all referenced files
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -25,108 +38,140 @@
 ## Introduction
 This document provides comprehensive documentation for the application entry points of APP-STRUKTUR-BLACKBOX, a structural analysis system with educational capabilities. The documentation focuses on the initialization process, component hierarchy, routing mechanism, and build configuration that enable the application to function as a unified platform for structural engineering analysis and education. The system leverages React for its user interface, Vite for development and build processes, and a modular architecture to organize its extensive feature set.
 
+The application has been redesigned with a professional dashboard and navigation system, featuring a workflow-driven architecture that guides users through the structural analysis process. The entry point now includes enhanced error handling and safe loading mechanisms to ensure reliability. Core management systems handle workflow progression, notifications, and project management, providing a comprehensive enterprise-grade solution for structural analysis.
+
 **Section sources**
 - [main.tsx](file://src/main.tsx)
 - [App.tsx](file://src/App.tsx)
 
 ## Main Entry Point: main.tsx
 
-The `main.tsx` file serves as the primary entry point for the React application, responsible for initializing the React rendering process and mounting the application to the DOM. This file contains the essential bootstrap code that starts the application.
+The `main.tsx` file serves as the primary entry point for the React application, responsible for initializing the React rendering process and mounting the application to the DOM. This file contains the essential bootstrap code that starts the application with enhanced error handling and reliability features.
 
-The entry point imports the core React and ReactDOM libraries, the root App component, and the global CSS styles. It uses `ReactDOM.createRoot` to create a root container for the application, targeting the DOM element with the ID 'root' from the index.html file. The application is rendered within React's StrictMode, which helps identify potential problems in the application by running additional checks and warnings during development.
+The entry point imports the core React and ReactDOM libraries, the root App component, and the global CSS styles. It implements a comprehensive error boundary system to catch and handle errors that occur during rendering. The error boundary displays a professional error page with options to reload the application or navigate to a test page.
 
-The initialization process is straightforward and follows React 18 conventions, using the modern `createRoot` API instead of the legacy `render` method. This approach provides better performance and supports new React features like concurrent rendering. The entry point does not contain any conditional logic or environment-specific code, ensuring a consistent initialization process across development and production environments.
+A SafeApp wrapper component provides additional error handling during component loading, displaying a safe mode interface if the main App component fails to load. This dual-layer error handling ensures maximum application reliability.
+
+The application is rendered within React's StrictMode, which helps identify potential problems in the application by running additional checks and warnings during development. The entry point uses `ReactDOM.createRoot` to create a root container for the application, targeting the DOM element with the ID 'root' from the index.html file.
 
 ```mermaid
 flowchart TD
-A["Import Dependencies\n(React, ReactDOM, App, CSS)"] --> B["Create Root Container\nReactDOM.createRoot()"]
-B --> C["Render Application\n<React.StrictMode><App /></React.StrictMode>"]
-C --> D["Mount to DOM\n#root element"]
+A["Import Dependencies\n(React, ReactDOM, App, CSS)"] --> B["Create Error Boundary"]
+B --> C["Create SafeApp Wrapper"]
+C --> D["Create Root Container\nReactDOM.createRoot()"]
+D --> E["Render Application\n<React.StrictMode><ErrorBoundary><SafeApp /></ErrorBoundary></React.StrictMode>"]
+E --> F["Mount to DOM\n#root element"]
 ```
 
 **Diagram sources**
-- [main.tsx](file://src/main.tsx#L1-L10)
+- [main.tsx](file://src/main.tsx#L1-L148)
 
 **Section sources**
-- [main.tsx](file://src/main.tsx#L1-L10)
+- [main.tsx](file://src/main.tsx#L1-L148)
 
 ## Root Component: App.tsx
 
-The `App.tsx` component serves as the root component of the application, orchestrating the overall structure and routing between different system modules. It maintains the application state, particularly the current view, and provides navigation capabilities throughout the system.
+The `App.tsx` component serves as the root component of the application, orchestrating the overall structure and workflow of the structural analysis system. It manages application state through core controllers for workflow, notifications, and projects, providing a comprehensive enterprise-grade solution.
 
-The component uses React's `useState` hook to manage the `currentView` state, which determines which module or view is currently displayed. The initial view is set to 'dashboard', providing a consistent starting point for users. The `handleNavigate` function updates this state when users navigate between different parts of the application.
+The component uses React's `useState` and `useEffect` hooks to manage state and subscribe to changes in the core management systems. It initializes three key controllers:
+- `WorkflowController`: Manages the analysis workflow with validation gates and stage progression
+- `NotificationManager`: Handles system notifications and alerts
+- `ProjectManager`: Manages project metadata, team members, and activities
 
-The App component acts as a container that either renders specialized dashboard components directly or wraps other modules with the `ModernLayout` component for consistent presentation. This dual rendering approach allows certain core views to have a simplified presentation while other modules benefit from the full layout with sidebar navigation.
+The App component maintains the `activeView` state to determine which module or view is currently displayed. The initial view is set to 'overview', providing a consistent starting point for users. The component subscribes to changes in all management systems, updating the local state when changes occur.
 
-The component imports and initializes the `MarketplaceEngine`, which appears to be a core service for managing marketplace functionality within the application. This engine is passed down to the `ModuleRouter` component when rendering non-dashboard views, suggesting it provides essential services for various modules.
+The App component renders different professional views based on the active view state, including workspace, integration, project, team, and analytics dashboards. Each view provides specialized functionality for different aspects of structural analysis and project management.
 
 ```mermaid
 classDiagram
 class App {
-+currentView : ModuleKey
-+marketplaceEngine : MarketplaceEngine
-+handleNavigate(view : string) : void
-+renderCurrentView() : ReactNode
++activeView : string
++workflowController : WorkflowController
++notificationManager : NotificationManager
++projectManager : ProjectManager
++workflowState : AnalysisState
++progressReport : ProgressReport
++notifications : Notification[]
++currentProject : ProjectMetadata
++projectReport : ProjectReport
++renderContent() : ReactNode
 }
-class MarketplaceEngine {
-+initialize() : void
-+getTemplates() : Template[]
-+installPlugin(plugin : Plugin) : void
+class WorkflowController {
++currentStage : string
++progress : number
++validationGates : ValidationGates
++advanceToNextStage() : Promise<void>
++setData(key : string, data : any) : void
++subscribe(listener : (state : AnalysisState) => void) : () => void
 }
-class ModuleRouter {
-+currentModule : ModuleKey
-+onNavigate : (view : string) => void
-+marketplaceEngine : MarketplaceEngine
+class NotificationManager {
++notifications : Notification[]
++addNotification(notification : Notification) : string
++removeNotification(id : string) : void
++subscribe(listener : (notifications : Notification[]) => void) : () => void
 }
-App --> MarketplaceEngine : "initializes"
-App --> ModuleRouter : "passes engine and navigation"
-App --> ModernLayout : "uses for non-dashboard views"
+class ProjectManager {
++currentProject : ProjectMetadata
++members : ProjectMember[]
++activities : ProjectActivity[]
++getProjectProgress() : ProjectProgress
++getBudgetStatus() : BudgetStatus
++getComplianceStatus() : ComplianceStatus
++subscribe(listener : (project : ProjectMetadata) => void) : () => void
+}
+App --> WorkflowController : "manages"
+App --> NotificationManager : "manages"
+App --> ProjectManager : "manages"
+App --> "Professional Views" : "renders"
 ```
 
 **Diagram sources**
-- [App.tsx](file://src/App.tsx#L1-L80)
+- [App.tsx](file://src/App.tsx#L1-L999)
+- [WorkflowController.ts](file://src/core/WorkflowController.ts#L1-L399)
+- [NotificationManager.ts](file://src/core/NotificationManager.ts#L1-L246)
+- [ProjectManager.ts](file://src/core/ProjectManager.ts#L1-L485)
 
 **Section sources**
-- [App.tsx](file://src/App.tsx#L1-L80)
+- [App.tsx](file://src/App.tsx#L1-L999)
+- [WorkflowController.ts](file://src/core/WorkflowController.ts#L1-L399)
+- [NotificationManager.ts](file://src/core/NotificationManager.ts#L1-L246)
+- [ProjectManager.ts](file://src/core/ProjectManager.ts#L1-L485)
 
 ## Conditional Rendering Logic
 
 The application implements a sophisticated conditional rendering system that determines which components to display based on the current view state. This logic is contained within the `App.tsx` component and follows a hierarchical decision-making process.
 
-The rendering logic first checks if the `currentView` matches one of the special dashboard views ('dashboard', 'workspace', 'smart-integration', 'performance-analytics', or 'material-library'). If it does, the corresponding specialized component is rendered directly without the sidebar layout. This approach provides a cleaner interface for these primary workspaces.
+The rendering logic uses a switch statement to determine which professional view to display based on the `activeView` state. The application supports multiple specialized views:
 
-For all other views, the application uses a more complex rendering strategy. It wraps the content with the `ModernLayout` component, which provides the sidebar navigation and consistent layout. Within this layout, it calls the `renderCurrentView` function to determine the specific component to display.
+- **Workspace View**: Professional workspace with analysis tools, 3D viewer, and material library
+- **Integration View**: Smart integration dashboard with AI analysis and export options
+- **Project View**: Comprehensive project overview with timeline, budget, compliance, and risk assessment
+- **Team View**: Team management with member details and collaboration tools
+- **Analytics View**: Performance analytics with AI insights and system health monitoring
+- **Default View**: Professional dashboard with workflow progress, SNI compliance, and AI recommendations
 
-The `renderCurrentView` function implements a cascading conditional structure that returns different components based on the `currentView` value:
-- Dashboard views render the `CleanDashboard`
-- Workspace views render the `ProfessionalWorkspace`
-- Smart integration views render the `SmartIntegrationDashboard`
-- Performance analytics views render the `PerformanceAnalyticsDashboard`
-- Material library views render the `AdvancedMaterialLibrary`
-- All other views are handled by the `ModuleRouter`
+Each view is designed as a self-contained component with specialized functionality for its domain. The workspace view provides access to analysis tools and 3D visualization, while the integration view focuses on AI-powered analysis and export capabilities.
 
-This conditional rendering system enables the application to maintain a consistent user experience while allowing different modules to have specialized interfaces when needed. The logic ensures that core functional areas have direct access and simplified interfaces, while other modules benefit from the full navigation context.
+The project view offers comprehensive project management features, including timeline tracking, budget monitoring, compliance verification, and risk assessment. The team view manages team members and collaboration tools, while the analytics view provides performance insights and system health monitoring.
+
+The default view serves as the main dashboard, displaying workflow progress with validation gates, SNI compliance status, and AI-powered recommendations for optimization.
 
 ```mermaid
 flowchart TD
-A["Current View State"] --> B{"Is special dashboard view?"}
-B --> |Yes| C["Render specialized component directly"]
-B --> |No| D["Wrap with ModernLayout"]
-D --> E["Call renderCurrentView()"]
-E --> F{"View Type?"}
-F --> |"dashboard"| G["CleanDashboard"]
-F --> |"workspace"| H["ProfessionalWorkspace"]
-F --> |"smart-integration"| I["SmartIntegrationDashboard"]
-F --> |"performance-analytics"| J["PerformanceAnalyticsDashboard"]
-F --> |"material-library"| K["AdvancedMaterialLibrary"]
-F --> |"other"| L["ModuleRouter"]
+A["Active View State"] --> B{"View Type?"}
+B --> |"workspace"| C["Professional Workspace\nAnalysis tools, 3D viewer, material library"]
+B --> |"integration"| D["Smart Integration\nAI analysis, export options"]
+B --> |"project"| E["Project Overview\nTimeline, budget, compliance, risks"]
+B --> |"team"| F["Team Management\nMember details, collaboration tools"]
+B --> |"analytics"| G["Performance Analytics\nAI insights, system health"]
+B --> |"other"| H["Professional Dashboard\nWorkflow progress, SNI compliance, AI recommendations"]
 ```
 
 **Diagram sources**
-- [App.tsx](file://src/App.tsx#L14-L77)
+- [App.tsx](file://src/App.tsx#L14-L999)
 
 **Section sources**
-- [App.tsx](file://src/App.tsx#L14-L77)
+- [App.tsx](file://src/App.tsx#L14-L999)
 
 ## Vite Integration
 
@@ -168,10 +213,10 @@ D --> U["IS_PRODUCTION: mode flag"]
 ```
 
 **Diagram sources**
-- [vite.config.ts](file://vite.config.ts#L1-L73)
+- [vite.config.ts](file://vite.config.ts#L1-L74)
 
 **Section sources**
-- [vite.config.ts](file://vite.config.ts#L1-L73)
+- [vite.config.ts](file://vite.config.ts#L1-L74)
 
 ## Global Styles and Environment
 
@@ -198,8 +243,8 @@ A --> E["Component Styles"]
 A --> F["Accessibility"]
 A --> G["Print Styles"]
 B --> H["@tailwind base"]
-B --> I["@tailwind components"]
-B --> J["@tailwind utilities"]
+B --> I("@tailwind components")
+B --> J("@tailwind utilities")
 C --> K["Body typography and spacing"]
 C --> L["Code font family"]
 D --> M["Mobile-first approach"]
@@ -224,9 +269,11 @@ G --> V["Page break controls"]
 
 The application follows a modular architecture with a clear separation of concerns between the entry point, root component, routing system, and individual modules. This architecture enables the application to manage its complex feature set while maintaining a consistent user experience.
 
-The entry point (`main.tsx`) is minimal and focused solely on initializing the React application and mounting it to the DOM. This separation of concerns ensures that the bootstrap process is reliable and unaffected by changes to the application's business logic.
+The entry point (`main.tsx`) includes a comprehensive error handling system with an ErrorBoundary and SafeApp wrapper to ensure application reliability. This dual-layer error handling provides a professional error interface and safe loading mechanism.
 
-The root component (`App.tsx`) serves as the central orchestrator, managing application state and routing between different modules. It implements a hybrid navigation approach, using direct rendering for core dashboards and a layout wrapper for other modules. This design provides flexibility in user interface presentation while maintaining consistency where needed.
+The root component (`App.tsx`) serves as the central orchestrator, managing application state through core controllers for workflow, notifications, and projects. It implements a workflow-driven architecture that guides users through the structural analysis process with validation gates and stage progression.
+
+The application uses a professional dashboard system with multiple specialized views for different aspects of structural analysis and project management. The conditional rendering system selects the appropriate view based on the active view state, providing a tailored interface for each domain.
 
 The routing system is implemented through the `ModuleRouter` component, which uses React's lazy loading and Suspense features for code splitting and performance optimization. The router defines a comprehensive set of modules across various categories including analysis, design, 3D visualization, tools, and utilities.
 
@@ -237,47 +284,23 @@ The architecture supports both development and production environments through V
 ```mermaid
 graph TD
 A["main.tsx\nEntry Point"] --> B["App.tsx\nRoot Component"]
-B --> C["ModernLayout.tsx\nLayout Wrapper"]
-B --> D["CleanDashboard.tsx\nSpecialized Views"]
-B --> E["ProfessionalWorkspace.tsx\nSpecialized Views"]
-C --> F["ModernSidebar.tsx\nNavigation"]
-C --> G["ModuleRouter.tsx\nDynamic Routing"]
-G --> H["Lazy-loaded Modules"]
-H --> I["Analysis Systems"]
-H --> J["3D Visualization"]
-H --> K["Design Modules"]
-H --> L["BIM Integration"]
-H --> M["AI Analysis"]
-N["Vite Configuration"] --> A
-O["Global Styles"] --> A
-P["Environment Variables"] --> N
+B --> C["ErrorBoundary\nError Handling"]
+B --> D["SafeApp\nSafe Loading"]
+B --> E["WorkflowController\nWorkflow Management"]
+B --> F["NotificationManager\nNotification System"]
+B --> G["ProjectManager\nProject Management"]
+B --> H["Professional Views\nSpecialized Dashboards"]
+H --> I["Workspace View"]
+H --> J["Integration View"]
+H --> K["Project View"]
+H --> L["Team View"]
+H --> M["Analytics View"]
+H --> N["Dashboard View"]
+O["Vite Configuration"] --> A
+P["Global Styles"] --> A
+Q["Environment Variables"] --> O
 style A fill:#4A90E2,stroke:#357ABD,stroke-width:2px
 style B fill:#4A90E2,stroke:#357ABD,stroke-width:2px
 style C fill:#50E3C2,stroke:#3CB5A1,stroke-width:2px
 style D fill:#50E3C2,stroke:#3CB5A1,stroke-width:2px
-style E fill:#50E3C2,stroke:#3CB5A1,stroke-width:2px
-style F fill:#50E3C2,stroke:#3CB5A1,stroke-width:2px
-style G fill:#50E3C2,stroke:#3CB5A1,stroke-width:2px
-style H fill:#F5A623,stroke:#D58600,stroke-width:2px
-style I fill:#F5A623,stroke:#D58600,stroke-width:2px
-style J fill:#F5A623,stroke:#D58600,stroke-width:2px
-style K fill:#F5A623,stroke:#D58600,stroke-width:2px
-style L fill:#F5A623,stroke:#D58600,stroke-width:2px
-style M fill:#F5A623,stroke:#D58600,stroke-width:2px
-style N fill:#BD10E0,stroke:#9A0DB1,stroke-width:2px
-style O fill:#BD10E0,stroke:#9A0DB1,stroke-width:2px
-style P fill:#BD10E0,stroke:#9A0DB1,stroke-width:2px
-```
-
-**Diagram sources**
-- [main.tsx](file://src/main.tsx#L1-L10)
-- [App.tsx](file://src/App.tsx#L1-L80)
-- [ModernLayout.tsx](file://src/components/ModernLayout.tsx#L1-L35)
-- [ModuleRouter.tsx](file://src/components/routing/ModuleRouter.tsx#L1-L410)
-- [vite.config.ts](file://vite.config.ts#L1-L73)
-- [index.css](file://src/index.css#L1-L437)
-
-**Section sources**
-- [main.tsx](file://src/main.tsx#L1-L10)
-- [App.tsx](file://src/App.tsx#L1-L80)
-- [ModernLayout.tsx](file://src
+style E fill:#50E3

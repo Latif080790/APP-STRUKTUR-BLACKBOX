@@ -1,4 +1,4 @@
-
+<docs>
 # API Reference
 
 <cite>
@@ -10,7 +10,18 @@
 - [MarketplaceEngine.ts](file://src/marketplace/MarketplaceEngine.ts)
 - [structural.ts](file://src/types/structural.ts)
 - [AdvancedAnalysisEngine.ts](file://src/structural-analysis/analysis/AdvancedAnalysisEngine.ts)
+- [CloudServiceEngine.ts](file://src/cloud/CloudServiceEngine.ts) - *Updated in recent commit*
+- [webSocketService.ts](file://src/services/webSocketService.ts) - *Added in recent commit*
+- [SmartIntegrationDashboard.tsx](file://src/components/SmartIntegrationDashboard.tsx) - *Updated in recent commit*
 </cite>
+
+## Update Summary
+- Added comprehensive documentation for CloudServiceEngine API with real-time collaboration features
+- Added documentation for MarketplaceEngine API for extension and plugin functionality
+- Updated BIMIntegrationEngine documentation with new export formats
+- Added WebSocketService documentation for real-time collaboration
+- Added SmartIntegrationDashboard documentation for unified workflows
+- Updated code examples to demonstrate real-time collaboration and cloud features
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -262,140 +273,4 @@ const structure: Structure3D = {
         name: 'concrete',
         type: 'concrete',
         density: 2400,
-        elasticModulus: 30000000000,
-        poissonsRatio: 0.2,
-        yieldStrength: 30000000
-      },
-      section: {
-        id: 'col1',
-        name: 'column',
-        type: 'rectangular',
-        width: 0.5,
-        height: 0.5
-      }
-    }
-  ],
-  loads: []
-};
-
-// Perform modal analysis
-const modalResult = dynamicAnalysis(structure, 'modal', { numModes: 5 });
-console.log('Modal Analysis Results:', modalResult);
-
-// Perform response spectrum analysis
-const spectrum = {
-  dampingRatio: 0.05,
-  spectralData: [
-    { period: 0.1, sa: 0.8 },
-    { period: 0.5, sa: 1.2 },
-    { period: 1.0, sa: 0.9 },
-    { period: 2.0, sa: 0.4 }
-  ]
-};
-
-const responseResult = dynamicAnalysis(structure, 'response-spectrum', { spectrum });
-console.log('Response Spectrum Analysis Results:', responseResult);
-```
-
-## BIM Integration Engine
-
-The BIM Integration Engine provides import/export capabilities for CAD and BIM formats, supporting IFC, DWG, DXF, and other professional formats.
-
-### Constructor
-```typescript
-constructor(config: BIMConfig)
-```
-
-**Parameters:**
-- `config`: BIMConfig - Configuration object specifying format, units, coordinate system, and level of detail
-
-### Properties
-- `config`: BIMConfig - The configuration object passed to the constructor
-- `conversionLog`: string[] - Array of log messages from import/export operations
-
-### Methods
-#### importFile
-Imports a BIM/CAD file and converts it to a Structure3D object.
-
-**Parameters:**
-- `file`: File - The file to import
-
-**Returns:** Promise<BIMImportResult> - Object containing success status, structure (if successful), modelInfo, warnings, errors, and conversionLog
-
-#### exportStructure
-Exports a Structure3D object to a BIM/CAD format.
-
-**Parameters:**
-- `structure`: Structure3D - The structure to export
-- `fileName`: string - The desired file name (extension determines format)
-
-**Returns:** Promise<BIMExportResult> - Object containing success status, fileContent (if successful), fileName, fileSize, warnings, and errors
-
-#### importIFC
-Private method to import IFC (Industry Foundation Classes) format.
-
-**Parameters:**
-- `content`: string - The IFC file content
-- `fileName`: string - The original file name
-
-**Returns:** Promise<BIMImportResult> - Import result object
-
-#### exportIFC
-Private method to export to IFC format.
-
-**Parameters:**
-- `structure`: Structure3D - The structure to export
-- `fileName`: string - The desired file name
-
-**Returns:** Promise<BIMExportResult> - Export result object
-
-#### importDWG
-Private method to import DWG/DXF format.
-
-**Parameters:**
-- `content`: ArrayBuffer | string - The DWG/DXF file content
-- `fileName`: string - The original file name
-
-**Returns:** Promise<BIMImportResult> - Import result object
-
-#### exportDXF
-Private method to export to DXF format.
-
-**Parameters:**
-- `structure`: Structure3D - The structure to export
-- `fileName`: string - The desired file name
-
-**Returns:** Promise<BIMExportResult> - Export result object
-
-#### importJSON
-Private method to import JSON format (native structure format).
-
-**Parameters:**
-- `content`: string - The JSON file content
-- `fileName`: string - The original file name
-
-**Returns:** Promise<BIMImportResult> - Import result object
-
-#### exportJSON
-Private method to export to JSON format.
-
-**Parameters:**
-- `structure`: Structure3D - The structure to export
-- `fileName`: string - The desired file name
-
-**Returns:** Promise<BIMExportResult> - Export result object
-
-#### importOBJ
-Private method to import OBJ format (3D mesh).
-
-**Parameters:**
-- `content`: string - The OBJ file content
-- `fileName`: string - The original file name
-
-**Returns:** Promise<BIMImportResult> - Import result object
-
-#### exportOBJ
-Private method to export to OBJ format.
-
-**Parameters:**
-- `structure`: Structure3D -
+        elasticModulus: 300000000

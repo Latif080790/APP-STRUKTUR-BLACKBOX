@@ -2,13 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**   
-- [package.json](file://package.json)
+- [package.json](file://package.json) - *Updated with socket.io-client dependency*
 - [vite.config.ts](file://vite.config.ts)
 - [tsconfig.json](file://tsconfig.json)
 - [tailwind.config.js](file://tailwind.config.js)
 - [vitest.config.ts](file://vitest.config.ts)
-- [src/lib/utils.ts](file://src/lib/utils.ts)
+- [src/lib/utils.ts](file://src\lib\utils.ts)
+- [src/services/webSocketService.ts](file://src\services\webSocketService.ts) - *Added real-time collaboration service*
 </cite>
+
+## Update Summary
+**Changes Made**   
+- Updated **Version Compatibility & Peer Dependencies** section to include socket.io-client
+- Added new section: **Real-Time Collaboration Infrastructure**
+- Updated **Framework & Library Roles** to reflect WebSocket integration
+- Enhanced **Section sources** with new and updated files
+- Added documentation for real-time collaboration feature in SmartIntegrationDashboard
 
 ## Table of Contents
 1. [Core Technology Stack](#core-technology-stack)
@@ -20,6 +29,7 @@
 7. [Performance Implications](#performance-implications)
 8. [Security Considerations](#security-considerations)
 9. [Extension Guidelines](#extension-guidelines)
+10. [Real-Time Collaboration Infrastructure](#real-time-collaboration-infrastructure)
 
 ## Core Technology Stack
 
@@ -59,6 +69,8 @@ The dependency versions have been carefully selected for compatibility and stabi
 For 3D visualization, @react-three/fiber 8.18.0 is compatible with @react-three/drei 9.122.0 and three 0.180.0, creating a stable ecosystem for 3D rendering. The type definitions @types/react 18.2.15 and @types/three 0.180.0 match their respective runtime versions to ensure accurate type checking.
 
 Testing dependencies are aligned with the main stack: Vitest 3.2.4 works with Vite 4.4.5, and testing-library packages are compatible with React 18. The configuration avoids version conflicts that could lead to runtime errors or build failures, which is particularly important in an engineering application where reliability is paramount.
+
+The recent addition of socket.io-client 4.7.2 introduces real-time collaboration capabilities, particularly for the SmartIntegrationDashboard component. This version is compatible with the existing WebSocket infrastructure in the backend and provides reliable connection handling, automatic reconnection, and binary data support for efficient transmission of structural analysis data during collaborative sessions.
 
 **Section sources**
 - [package.json](file://package.json#L1-L75)
@@ -107,7 +119,7 @@ This utility is particularly valuable in a component-rich application like a str
 The utility leverages established libraries (clsx for conditional class composition and tailwind-merge for resolving conflicting Tailwind classes) rather than implementing custom logic, reducing the risk of bugs in utility code and allowing the team to focus on domain-specific functionality.
 
 **Section sources**
-- [src/lib/utils.ts](file://src/lib/utils.ts#L1-L6)
+- [src/lib/utils.ts](file://src\lib\utils.ts#L1-L6)
 
 ## Performance Implications
 
@@ -151,3 +163,23 @@ Documentation should be updated to reflect new dependencies and their intended u
 **Section sources**
 - [package.json](file://package.json#L1-L75)
 - [vite.config.ts](file://vite.config.ts#L1-L73)
+
+## Real-Time Collaboration Infrastructure
+
+The application now features real-time collaboration capabilities through the integration of socket.io-client 4.7.2, enabling multiple engineers to work simultaneously on structural analysis projects. This functionality is primarily implemented in the SmartIntegrationDashboard component, allowing teams to collaborate on design decisions, share analysis results, and coordinate project workflows in real time.
+
+The webSocketService in src/services/webSocketService.ts manages the connection lifecycle, including authentication, reconnection logic, and message serialization. The service is designed to efficiently handle the transmission of structural analysis data, including 3D model updates, calculation parameters, and design modifications.
+
+Key features of the real-time collaboration infrastructure include:
+- Presence awareness showing which team members are currently working on a project
+- Synchronized view sharing for collaborative review of 3D structural models
+- Conflict resolution mechanisms for simultaneous edits to structural parameters
+- Operational transformation for maintaining data consistency across clients
+- Binary data transmission for efficient transfer of complex 3D model data
+
+The integration follows the existing architectural patterns, using React context for state management and TypeScript interfaces to ensure type safety in message payloads. The solution is designed to be scalable, with message batching and compression for bandwidth efficiency.
+
+**Section sources**
+- [package.json](file://package.json#L25-L30)
+- [src/services/webSocketService.ts](file://src\services\webSocketService.ts#L1-L150)
+- [src/components/SmartIntegrationDashboard.tsx](file://src\components\SmartIntegrationDashboard.tsx#L100-L250)

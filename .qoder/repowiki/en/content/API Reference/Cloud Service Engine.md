@@ -3,6 +3,8 @@
 <cite>
 **Referenced Files in This Document**   
 - [CloudServiceEngine.ts](file://src/cloud/CloudServiceEngine.ts)
+- [SmartIntegrationDashboard.tsx](file://src/components/SmartIntegrationDashboard.tsx) - *Updated in recent commit*
+- [webSocketService.ts](file://src/services/webSocketService.ts) - *Added in recent commit*
 </cite>
 
 ## Table of Contents
