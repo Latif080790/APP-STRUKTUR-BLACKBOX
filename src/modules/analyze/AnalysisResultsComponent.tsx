@@ -9,7 +9,7 @@ import {
   Grid, List, Maximize2, X, Calculator, BookOpen,
   Code, FileDown, Printer
 } from 'lucide-react';
-import Interactive3DViewer from '../viewer/Interactive3DViewer';
+import Enhanced3DStructuralViewerReactThreeFiber from '../viewer/Enhanced3DStructuralViewerReactThreeFiber';
 
 interface AnalysisResult {
   id: string;
@@ -544,11 +544,30 @@ const AnalysisResultsComponent: React.FC<AnalysisResultsComponentProps> = ({
               
               <div className="h-[600px] relative">
                 {selectedResult ? (
-                  <Interactive3DViewer 
-                    showControls={true}
-                    height="600px"
-                    onElementSelect={(elementId) => console.log('Selected element:', elementId)}
-                    onNodeSelect={(nodeId) => console.log('Selected node:', nodeId)}
+                  <Enhanced3DStructuralViewerReactThreeFiber
+                    geometry={{
+                      type: 'office',
+                      stories: 5,
+                      dimensions: {
+                        length: 30,
+                        width: 20,
+                        height: 15,
+                        storyHeight: 3
+                      },
+                      grid: {
+                        xSpacing: 5,
+                        ySpacing: 5,
+                        xBays: 6,
+                        yBays: 4
+                      },
+                      structural: {
+                        frameType: 'moment',
+                        foundation: 'strip'
+                      }
+                    }}
+                    selectedMaterials={['concrete-k30', 'steel-bj50']}
+                    analysisResults={selectedResult}
+                    onClose={() => setSelectedResult(null)}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full bg-gray-50">
@@ -844,11 +863,30 @@ const AnalysisResultsComponent: React.FC<AnalysisResultsComponentProps> = ({
               </button>
             </div>
             <div className="p-6 overflow-y-auto h-full">
-              <Interactive3DViewer 
-                showControls={true}
-                height="500px"
-                onElementSelect={(elementId) => console.log('Selected element:', elementId)}
-                onNodeSelect={(nodeId) => console.log('Selected node:', nodeId)}
+              <Enhanced3DStructuralViewerReactThreeFiber
+                geometry={{
+                  type: 'office',
+                  stories: 5,
+                  dimensions: {
+                    length: 30,
+                    width: 20,
+                    height: 15,
+                    storyHeight: 3
+                  },
+                  grid: {
+                    xSpacing: 5,
+                    ySpacing: 5,
+                    xBays: 6,
+                    yBays: 4
+                  },
+                  structural: {
+                    frameType: 'moment',
+                    foundation: 'strip'
+                  }
+                }}
+                selectedMaterials={['concrete-k30', 'steel-bj50']}
+                analysisResults={selectedResult}
+                onClose={() => setShow3DViewer(false)}
               />
               
               {/* Analysis Results Integration */}

@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import { structuralEngine, AnalysisResults as EngineAnalysisResults, ProjectData } from '../../engines/FunctionalStructuralEngine';
 import MaterialPropertiesManager from '../materials/MaterialPropertiesManager';
+import EnhancedMaterialPropertiesManager from '../materials/EnhancedMaterialPropertiesManager';
 import Enhanced3DStructuralViewerReactThreeFiber from '../viewer/Enhanced3DStructuralViewerReactThreeFiber';
+import EnhancedGridSystemManager from '../grid/EnhancedGridSystemManager';
 import AnalysisSettingsManager from '../settings/AnalysisSettingsManager';
 import LoadCombinationsComponent from './LoadCombinationsComponent';
 import AnalysisResultsComponent from './AnalysisResultsComponent';
@@ -55,116 +57,545 @@ interface BuildingGeometry {
   };
 }
 
-// Info Tips System
-interface InfoTip {
-  id: string;
-  title: string;
-  content: string;
-  type: 'info' | 'warning' | 'education' | 'standard';
-  category: 'geometry' | 'material' | 'load' | 'analysis';
-  standard?: string;
-  position: 'top' | 'bottom' | 'left' | 'right';
+// Comprehensive Guide Content with SNI Standards Documentation
+const comprehensiveGuideContent = {
+  overview: {
+    title: 'Structural Analysis Overview',
+    icon: BookOpen,
+    sections: [
+      {
+        title: 'Introduction to Structural Analysis',
+        content: `Structural analysis is the determination of the effects of loads on physical structures and their components. This module follows Indonesian National Standards (SNI) for comprehensive structural design and analysis.
+        
+Key Analysis Types:
+        • Static Analysis: For permanent and variable loads
+        • Dynamic Analysis: For time-varying loads and vibrations
+        • Seismic Analysis: For earthquake resistance (SNI 1726:2019)
+        • Wind Analysis: For wind load effects (SNI 1727:2020)
+        • Linear/Non-linear: Based on material behavior`,
+        interactive: true,
+        codeExample: `// Analysis Workflow
+1. Define Building Geometry
+2. Select SNI-Compliant Materials
+3. Configure Load Combinations
+4. Run Analysis
+5. Review Results & Compliance`
+      },
+      {
+        title: 'SNI Standards Integration',
+        content: `This system integrates multiple Indonesian National Standards:
+        
+        SNI 1726:2019 - Seismic Design Procedures
+        SNI 1727:2020 - Minimum Design Loads
+        SNI 2847:2019 - Structural Concrete Requirements
+        SNI 1729:2020 - Structural Steel Specifications
+        
+        All calculations and design checks automatically comply with these standards.`,
+        standard: 'SNI Integration',
+        compliance: true
+      }
+    ]
+  },
+  
+  analysisTypes: {
+    title: 'Analysis Types & Methods',
+    icon: Calculator,
+    sections: [
+      {
+        title: 'Static Analysis',
+        content: `Static analysis determines structural response under constant loads. Essential for all building designs.
+        
+        Applications:
+        • Dead load analysis
+        • Live load analysis
+        • Basic structural sizing
+        • Initial design verification`,
+        interactive: true,
+        codeExample: `// Static Analysis Setup
+AnalysisType: Static Linear
+Load Cases: Dead + Live
+Solver: Direct Stiffness Method
+Compliance: SNI 1727:2020`
+      },
+      {
+        title: 'Dynamic Analysis',
+        content: `Dynamic analysis considers time-varying loads and structural vibrations. Required for tall buildings and sensitive structures.
+        
+        Methods:
+        • Modal Analysis (natural frequencies)
+        • Response Spectrum Analysis
+        • Time History Analysis
+        • Harmonic Analysis`,
+        interactive: true,
+        codeExample: `// Dynamic Analysis Parameters
+Modes: First 12 modes
+Damping: 5% (typical)
+Frequency Range: 0.1-33 Hz
+Mass Participation: >90%`
+      },
+      {
+        title: 'Seismic Analysis (SNI 1726:2019)',
+        content: `Seismic analysis ensures earthquake resistance per Indonesian seismic design standards.
+        
+        Requirements:
+        • Site classification (SA, SB, SC, SD, SE, SF)
+        • Design response spectrum
+        • Seismic design category
+        • Structural system factors (R, Cd, Ω0)`,
+        standard: 'SNI 1726:2019',
+        compliance: true,
+        codeExample: `// Seismic Parameters
+Site Class: SC (typical)
+Ss: 0.6g (Jakarta area)
+S1: 0.3g (Jakarta area)
+R-Factor: 8 (SMRF)
+Importance Factor: 1.0`
+      },
+      {
+        title: 'Wind Analysis (SNI 1727:2020)',
+        content: `Wind analysis determines wind load effects on structures per Indonesian wind load standards.
+        
+        Parameters:
+        • Basic wind speed (V)
+        • Exposure category (B, C, D)
+        • Building height and shape
+        • Topographic factors`,
+        standard: 'SNI 1727:2020',
+        compliance: true,
+        codeExample: `// Wind Load Parameters
+Basic Speed: 25 m/s (Jakarta)
+Exposure: Category B (urban)
+Gust Factor: 0.85
+Pressure Coefficients: Per SNI`
+      }
+    ]
+  },
+  
+  materials: {
+    title: 'SNI Material Standards',
+    icon: Database,
+    sections: [
+      {
+        title: 'Concrete Standards (SNI 2847:2019)',
+        content: `Indonesian concrete material standards and properties.
+        
+        Standard Grades:
+        • K-25: fc' = 25 MPa (general construction)
+        • K-30: fc' = 30 MPa (typical buildings)
+        • K-35: fc' = 35 MPa (high-rise buildings)
+        • K-40: fc' = 40 MPa (special structures)
+        
+        Properties:
+        • Density: 2400 kg/m³
+        • Elastic Modulus: E = 4700√fc' MPa
+        • Poisson's Ratio: 0.2
+        • Minimum Cover: 40mm (columns), 25mm (beams)`,
+        standard: 'SNI 2847:2019',
+        compliance: true,
+        interactive: true,
+        codeExample: `// Concrete Properties
+Grade: K-30
+fc' = 30 MPa
+E = 4700 × √30 = 25,742 MPa
+Density = 2400 kg/m³
+Cover = 40mm (columns)`
+      },
+      {
+        title: 'Steel Standards (SNI 1729:2020)',
+        content: `Indonesian structural steel material standards and properties.
+        
+        Standard Grades:
+        • BJ-37: fy = 240 MPa (mild steel)
+        • BJ-50: fy = 410 MPa (high strength)
+        • BJ-55: fy = 550 MPa (very high strength)
+        
+        Properties:
+        • Density: 7850 kg/m³
+        • Elastic Modulus: E = 200,000 MPa
+        • Poisson's Ratio: 0.3
+        • Ultimate Strength: fu = 1.2-1.6 × fy`,
+        standard: 'SNI 1729:2020',
+        compliance: true,
+        interactive: true,
+        codeExample: `// Steel Properties
+Grade: BJ-50
+fy = 410 MPa
+fu = 550 MPa
+E = 200,000 MPa
+Density = 7850 kg/m³`
+      },
+      {
+        title: 'Material Selection Guide',
+        content: `Guidelines for selecting appropriate materials based on structural requirements.
+        
+        Selection Criteria:
+        • Building height and importance
+        • Load requirements
+        • Environmental conditions
+        • Cost considerations
+        • Availability
+        
+        Recommendations:
+        • Low-rise (≤4 stories): K-25 concrete, BJ-37 steel
+        • Mid-rise (5-10 stories): K-30 concrete, BJ-50 steel
+        • High-rise (>10 stories): K-35+ concrete, BJ-50+ steel`,
+        interactive: true
+      }
+    ]
+  },
+  
+  standards: {
+    title: 'Indonesian Standards (SNI)',
+    icon: Shield,
+    sections: [
+      {
+        title: 'SNI 1726:2019 - Seismic Design',
+        content: `Comprehensive seismic design procedures for building structures.
+        
+        Key Requirements:
+        • Site-specific seismic hazard analysis
+        • Response spectrum procedures
+        • Seismic design categories (A through F)
+        • Structural system selection
+        • Detailing requirements
+        
+        Design Philosophy:
+        • Life safety protection
+        • Collapse prevention
+        • Damage limitation
+        • Performance-based design`,
+        standard: 'SNI 1726:2019',
+        compliance: true,
+        codeExample: `// Seismic Design Check
+SDS = 2/3 × SMS
+SD1 = 2/3 × SM1
+Seismic Design Category
+Base Shear: V = Cs × W
+Cs = SDS / (R/I)`
+      },
+      {
+        title: 'SNI 1727:2020 - Design Loads',
+        content: `Minimum design loads for buildings and other structures.
+        
+        Load Types:
+        • Dead loads (permanent)
+        • Live loads (occupancy)
+        • Wind loads (environmental)
+        • Snow loads (where applicable)
+        • Earthquake loads (seismic)
+        
+        Load Combinations:
+        • Ultimate: 1.2D + 1.6L + 0.5(Lr or S or R)
+        • Service: D + L + (W or 0.7E)
+        • Seismic: 1.2D + L + E`,
+        standard: 'SNI 1727:2020',
+        compliance: true,
+        codeExample: `// Load Combinations
+Ultimate Limit State:
+1.4D
+1.2D + 1.6L
+1.2D + 1.0L + 1.0E
+
+Service Limit State:
+1.0D + 1.0L
+1.0D + 0.75L + 0.75(W or E)`
+      },
+      {
+        title: 'SNI 2847:2019 - Concrete Design',
+        content: `Building code requirements for structural concrete.
+        
+        Design Principles:
+        • Strength design method (LRFD)
+        • Serviceability requirements
+        • Durability provisions
+        • Constructability considerations
+        
+        Key Requirements:
+        • Minimum reinforcement ratios
+        • Maximum spacing limits
+        • Development length requirements
+        • Crack control provisions`,
+        standard: 'SNI 2847:2019',
+        compliance: true,
+        codeExample: `// Concrete Design
+φMn ≥ Mu (Strength)
+ρmin = 1.4/fy (Minimum steel)
+ρmax = 0.75ρb (Maximum steel)
+Development length per SNI`
+      },
+      {
+        title: 'SNI 1729:2020 - Steel Design',
+        content: `Specification for structural steel buildings.
+        
+        Design Methods:
+        • Load and Resistance Factor Design (LRFD)
+        • Allowable Stress Design (ASD)
+        • Limit states design philosophy
+        
+        Key Provisions:
+        • Member design (tension, compression, flexure)
+        • Connection design
+        • Stability requirements
+        • Serviceability limits`,
+        standard: 'SNI 1729:2020',
+        compliance: true,
+        codeExample: `// Steel Design
+φPn ≥ Pu (Compression)
+φMn ≥ Mu (Flexure)
+φVn ≥ Vu (Shear)
+L/r ≤ 200 (Slenderness)`
+      }
+    ]
+  },
+  
+  results: {
+    title: 'Analysis Results & Interpretation',
+    icon: BarChart3,
+    sections: [
+      {
+        title: 'Understanding Results',
+        content: `Comprehensive guide to interpreting structural analysis results.
+        
+        Key Result Types:
+        • Displacements and rotations
+        • Internal forces (moments, shears, axial)
+        • Stresses and strains
+        • Reactions at supports
+        • Modal properties (frequencies, mode shapes)
+        
+        Acceptance Criteria:
+        • Strength: φRn ≥ Ru
+        • Serviceability: Δ ≤ Δallowable
+        • Stability: Adequate lateral support`,
+        interactive: true,
+        codeExample: `// Result Verification
+Strength Check: OK/NG
+Deflection: L/240 (typical)
+Drift: H/400 (seismic)
+Frequency: >0.5 Hz (comfort)`
+      },
+      {
+        title: 'SNI Compliance Checking',
+        content: `Automated compliance verification against Indonesian standards.
+        
+        Compliance Areas:
+        • Material properties verification
+        • Load combination adequacy
+        • Member capacity checks
+        • Serviceability limits
+        • Detailing requirements
+        
+        Reporting:
+        • Automatic compliance status
+        • Detailed check summaries
+        • Non-compliance alerts
+        • Design recommendations`,
+        standard: 'Multi-SNI',
+        compliance: true,
+        interactive: true
+      },
+      {
+        title: 'Report Generation',
+        content: `Professional structural analysis reports with SNI compliance documentation.
+        
+        Report Sections:
+        • Executive summary
+        • Analysis methodology
+        • Material properties
+        • Load definitions
+        • Analysis results
+        • SNI compliance verification
+        • Design recommendations`,
+        interactive: true,
+        codeExample: `// Report Components
+1. Project Information
+2. Structural Model
+3. Analysis Parameters
+4. Results Summary
+5. SNI Compliance
+6. Recommendations`
+      }
+    ]
+  },
+  
+  troubleshooting: {
+    title: 'Troubleshooting & Best Practices',
+    icon: AlertTriangle,
+    sections: [
+      {
+        title: 'Common Issues & Solutions',
+        content: `Solutions to frequently encountered problems in structural analysis.
+        
+        Convergence Issues:
+        • Check model stability
+        • Verify boundary conditions
+        • Adjust solver tolerances
+        • Review load magnitudes
+        
+        Material Issues:
+        • Ensure SNI-compliant properties
+        • Check material assignments
+        • Verify section properties
+        
+        Load Issues:
+        • Verify load combinations
+        • Check load directions
+        • Ensure proper load paths`,
+        interactive: true,
+        codeExample: `// Troubleshooting Checklist
+□ Model geometry verified
+□ Materials assigned correctly
+□ Boundary conditions proper
+□ Loads applied correctly
+□ Analysis settings appropriate`
+      },
+      {
+        title: 'Performance Optimization',
+        content: `Best practices for efficient structural analysis.
+        
+        Model Optimization:
+        • Use appropriate mesh density
+        • Minimize unnecessary details
+        • Optimize element types
+        • Efficient numbering schemes
+        
+        Analysis Optimization:
+        • Select appropriate solvers
+        • Use iterative methods for large models
+        • Parallel processing when available
+        • Memory management`,
+        interactive: true
+      },
+      {
+        title: 'Quality Assurance',
+        content: `Ensuring accuracy and reliability of analysis results.
+        
+        Verification Steps:
+        • Hand calculations for simple cases
+        • Comparison with other software
+        • Sensitivity analysis
+        • Engineering judgment
+        
+        Documentation:
+        • Analysis assumptions
+        • Modeling decisions
+        • Result interpretation
+        • Design recommendations`,
+        interactive: true,
+        codeExample: `// QA Process
+1. Independent verification
+2. Peer review
+3. Sensitivity studies
+4. Documentation review
+5. Final approval`
+      }
+    ]
+  }
+};
+
+// Enhanced Material Properties with SNI Standards
+const enhancedMaterialProperties = {
+  concrete: {
+    grades: [
+      { name: 'K-20', fc: 20, density: 2400, elasticModulus: 21019, poissonRatio: 0.2, description: 'Low strength concrete', applications: ['Non-structural', 'Foundations'] },
+      { name: 'K-25', fc: 25, density: 2400, elasticModulus: 23452, poissonRatio: 0.2, description: 'General construction', applications: ['Residential', 'Light commercial'] },
+      { name: 'K-30', fc: 30, density: 2400, elasticModulus: 25742, poissonRatio: 0.2, description: 'Standard buildings', applications: ['Commercial', 'Institutional'] },
+      { name: 'K-35', fc: 35, density: 2400, elasticModulus: 27805, poissonRatio: 0.2, description: 'High-rise buildings', applications: ['High-rise', 'Industrial'] },
+      { name: 'K-40', fc: 40, density: 2400, elasticModulus: 29733, poissonRatio: 0.2, description: 'Special structures', applications: ['Bridges', 'Special structures'] },
+      { name: 'K-45', fc: 45, density: 2400, elasticModulus: 31543, poissonRatio: 0.2, description: 'Ultra high strength', applications: ['Prestressed', 'Long spans'] }
+    ],
+    additionalProperties: {
+      thermaConductivity: 1.4, // W/m·K
+      thermalExpansion: 10e-6, // /°C
+      specificHeat: 880, // J/kg·K
+      compressiveStrength: 'fc', // MPa
+      tensileStrength: '0.1*fc', // MPa (approximate)
+      shearModulus: 'E/(2*(1+ν))', // MPa
+      minimumCover: { columns: 40, beams: 25, slabs: 20 } // mm
+    }
+  },
+  steel: {
+    grades: [
+      { name: 'BJ-34', fy: 210, fu: 340, density: 7850, elasticModulus: 200000, poissonRatio: 0.3, description: 'Mild steel', applications: ['Secondary members', 'Connections'] },
+      { name: 'BJ-37', fy: 240, fu: 370, density: 7850, elasticModulus: 200000, poissonRatio: 0.3, description: 'Standard structural steel', applications: ['General construction', 'Frames'] },
+      { name: 'BJ-41', fy: 250, fu: 410, density: 7850, elasticModulus: 200000, poissonRatio: 0.3, description: 'Medium strength steel', applications: ['Building frames', 'Industrial'] },
+      { name: 'BJ-50', fy: 410, fu: 550, density: 7850, elasticModulus: 200000, poissonRatio: 0.3, description: 'High strength steel', applications: ['High-rise', 'Heavy construction'] },
+      { name: 'BJ-55', fy: 550, fu: 700, density: 7850, elasticModulus: 200000, poissonRatio: 0.3, description: 'Very high strength', applications: ['Special structures', 'Long spans'] }
+    ],
+    additionalProperties: {
+      thermalConductivity: 50, // W/m·K
+      thermalExpansion: 12e-6, // /°C
+      specificHeat: 460, // J/kg·K
+      shearModulus: 80000, // MPa
+      fatigueLimit: '0.5*fy', // MPa
+      ultimateStrain: 0.20, // typical
+      yieldStrain: 'fy/E' // calculated
+    }
+  },
+  reinforcement: {
+    grades: [
+      { name: 'BJTP-24', fy: 240, fu: 380, diameter: [6, 8, 10, 12], description: 'Plain bars', applications: ['Light reinforcement', 'Distribution'] },
+      { name: 'BJTS-40', fy: 400, fu: 600, diameter: [10, 12, 16, 19, 22, 25, 29, 32], description: 'Deformed bars', applications: ['Main reinforcement', 'Structural'] },
+      { name: 'BJTS-50', fy: 500, fu: 650, diameter: [10, 12, 16, 19, 22, 25, 29, 32, 36], description: 'High strength deformed', applications: ['High-rise', 'Heavy loads'] }
+    ]
+  }
+};
+
+// Enhanced Grid System with Automatic Generation
+const generateGridSystem = (dimensions: any, xSpacing: number, ySpacing: number) => {
+  const { length, width } = dimensions;
+  const xBays = Math.ceil(length / xSpacing);
+  const yBays = Math.ceil(width / ySpacing);
+  
+  const xLines = Array.from({ length: xBays + 1 }, (_, i) => ({
+    id: `X${i + 1}`,
+    position: i * xSpacing,
+    label: `X${i + 1}`,
+    coordinate: i * xSpacing
+  }));
+  
+  const yLines = Array.from({ length: yBays + 1 }, (_, i) => ({
+    id: `Y${String.fromCharCode(65 + i)}`,
+    position: i * ySpacing,
+    label: `Y${String.fromCharCode(65 + i)}`,
+    coordinate: i * ySpacing
+  }));
+  
+  return {
+    xSpacing,
+    ySpacing,
+    xBays,
+    yBays,
+    totalGridX: xBays + 1,
+    totalGridY: yBays + 1,
+    gridLines: { xLines, yLines },
+    totalArea: length * width,
+    typicalBayArea: xSpacing * ySpacing
+  };
+};
+
+// Enhanced Analysis Progress Tracking
+interface AnalysisProgress {
+  stage: string;
+  progress: number;
+  timeElapsed: number;
+  estimatedTimeRemaining: number;
+  currentOperation: string;
+  detailedStatus: {
+    preprocessing: { completed: boolean; duration: number };
+    assembly: { completed: boolean; duration: number; matrixSize?: number };
+    solving: { completed: boolean; duration: number; iterations?: number };
+    postprocessing: { completed: boolean; duration: number };
+  };
+  memoryUsage: number;
+  convergenceData?: {
+    iteration: number;
+    residualNorm: number;
+    energyNorm: number;
+  }[];
 }
 
-// SNI Education Content with Material Standards
-const sniEducationTips: InfoTip[] = [
-  {
-    id: 'analysis-workflow',
-    title: 'Analysis Workflow Guide',
-    content: 'Follow these steps: 1) Set building geometry and type, 2) Select SNI-compliant materials, 3) Configure load combinations, 4) Run analysis. Each step must be completed for accurate results.',
-    type: 'info',
-    category: 'analysis',
-    position: 'bottom'
-  },
-  {
-    id: 'sni1726-seismic',
-    title: 'SNI 1726:2019 - Seismic Design',
-    content: 'Indonesian seismic design standard requires site classification, response spectrum analysis, and proper detailing for earthquake resistance. Ensure your building type and location are correctly specified.',
-    type: 'education',
-    category: 'analysis',
-    standard: 'SNI 1726:2019',
-    position: 'top'
-  },
-  {
-    id: 'building-geometry',
-    title: 'Building Geometry Setup',
-    content: 'Start with building type selection, then set dimensions. Structural system choice affects analysis method and SNI compliance requirements. Plan dimensions and story height directly impact structural design.',
-    type: 'info',
-    category: 'geometry',
-    position: 'right'
-  },
-  {
-    id: 'material-selection',
-    title: 'SNI Material Requirements',
-    content: 'Select SNI-compliant materials first. Concrete grades (K-25, K-30, K-35) and steel grades (BJ-37, BJ-50, BJ-55) must meet Indonesian standards. Material properties affect structural capacity.',
-    type: 'warning',
-    category: 'material',
-    standard: 'SNI 2847:2019',
-    position: 'left'
-  },
-  {
-    id: 'load-combinations',
-    title: 'SNI Load Combinations',
-    content: 'Use SNI load combinations: 1.4D (Ultimate limit state), 1.2D+1.6L (Service + live), 1.2D+1.0L+1.0E (Seismic combination). Load factors are specified in SNI 1727:2020.',
-    type: 'education',
-    category: 'load',
-    standard: 'SNI 1727:2020',
-    position: 'bottom'
-  },
-  {
-    id: 'structural-system',
-    title: 'Structural System Selection',
-    content: 'Moment frames provide ductility, braced frames offer strength, shear walls resist lateral loads. Foundation type depends on soil conditions and building loads.',
-    type: 'info',
-    category: 'geometry',
-    position: 'top'
-  },
-  {
-    id: 'analysis-settings',
-    title: 'Analysis Configuration',
-    content: 'Configure solver settings, convergence criteria, and output precision. Settings affect analysis accuracy and computation time. Use SNI-recommended values.',
-    type: 'info',
-    category: 'analysis',
-    position: 'left'
-  },
-  {
-    id: 'concrete-standards',
-    title: 'SNI 2847:2019 - Concrete Material Standards',
-    content: 'Indonesian concrete standards: K-25 (fc = 25 MPa), K-30 (fc = 30 MPa), K-35 (fc = 35 MPa). Minimum concrete cover: 40mm for columns, 25mm for beams. Use Portland cement Type I for general construction.',
-    type: 'education',
-    category: 'material',
-    standard: 'SNI 2847:2019',
-    position: 'top'
-  },
-  {
-    id: 'steel-standards',
-    title: 'SNI 1729:2020 - Steel Material Standards',
-    content: 'Indonesian steel standards: BJ-37 (fy = 240 MPa), BJ-50 (fy = 410 MPa), BJ-55 (fy = 550 MPa). Use hot-rolled steel for structural members. Welding electrodes must match base metal properties.',
-    type: 'education',
-    category: 'material',
-    standard: 'SNI 1729:2020',
-    position: 'top'
-  },
-  {
-    id: 'load-factors',
-    title: 'SNI 1727:2020 - Load Factors & Combinations',
-    content: 'Ultimate Limit State: 1.4D (Dead only), 1.2D+1.6L (Dead+Live), 1.2D+1.0L+1.0E (Seismic). Service Limit State: 1.0D+1.0L. Wind Load Factor: 1.0W. These factors ensure structural safety per Indonesian standards.',
-    type: 'education',
-    category: 'load',
-    standard: 'SNI 1727:2020',
-    position: 'bottom'
-  },
-  {
-    id: 'material-properties',
-    title: 'Material Property Guidelines',
-    content: 'Concrete: Density 2400 kg/m³, E = 4700√fc MPa. Steel: Density 7850 kg/m³, E = 200,000 MPa. Poisson ratio: 0.2 (concrete), 0.3 (steel). These values are standard for Indonesian construction.',
-    type: 'info',
-    category: 'material',
-    standard: 'SNI 2847:2019 & SNI 1729:2020',
-    position: 'right'
-  }
-];
-
+// Analysis Configuration Interface
 interface AnalysisConfig {
   type: 'static' | 'dynamic' | 'linear' | 'nonlinear' | 'seismic' | 'wind';
   loadCombinations: string[];
@@ -881,16 +1312,45 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
     }
   };
 
-  // INFO TIPS COMPONENT - ENHANCED VERSION
+  // INFO TIPS COMPONENT - ENHANCED VERSION WITH COMPREHENSIVE GUIDE
   const InfoTipComponent: React.FC<{ tipId: string; children: React.ReactNode }> = ({ tipId, children }) => {
-    const tip = sniEducationTips.find(t => t.id === tipId);
+    // Legacy tip support - redirect to guide system
+    const legacyTips = {
+      'building-geometry': {
+        title: 'Building Geometry Setup',
+        content: 'Start with building type selection, then set dimensions. Structural system choice affects analysis method and SNI compliance requirements.',
+        type: 'info' as const,
+        category: 'geometry' as const,
+        position: 'right' as const
+      },
+      'material-selection': {
+        title: 'SNI Material Requirements',
+        content: 'Select SNI-compliant materials first. Access comprehensive material database through the Material Properties panel.',
+        type: 'warning' as const,
+        category: 'material' as const,
+        position: 'left' as const,
+        standard: 'SNI 2847:2019'
+      },
+      'load-combinations': {
+        title: 'SNI Load Combinations',
+        content: 'Use SNI load combinations: 1.4D, 1.2D+1.6L, 1.2D+1.0L+1.0E. Access full guide for detailed combinations.',
+        type: 'education' as const,
+        category: 'load' as const,
+        position: 'bottom' as const,
+        standard: 'SNI 1727:2020'
+      }
+    };
+    
+    const tip = legacyTips[tipId as keyof typeof legacyTips];
     if (!tip || !infoTipsEnabled) return <>{children}</>;
     
     return (
       <div className="relative group">
         {children}
         <button
-          onClick={() => setActiveInfoTip(activeInfoTip === tipId ? null : tipId)}
+          onClick={() => {
+            setActiveInfoTip(activeInfoTip === tipId ? null : tipId);
+          }}
           className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-xs hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-110 shadow-lg z-10"
           title="Click for SNI guidance"
         >
@@ -922,7 +1382,6 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
                   }`}>
                     {tip.type === 'education' ? <GraduationCap className="w-4 h-4 text-purple-600" /> :
                      tip.type === 'warning' ? <AlertTriangle className="w-4 h-4 text-orange-600" /> :
-                     tip.type === 'standard' ? <Shield className="w-4 h-4 text-green-600" /> :
                      <Info className="w-4 h-4 text-blue-600" />}
                   </div>
                   <div>
@@ -942,22 +1401,27 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               
               <p className="text-sm text-gray-700 leading-relaxed mb-4">{tip.content}</p>
               
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    setShowGuide(true);
+                    setActiveGuideCategory('overview');
+                    setActiveInfoTip(null);
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs flex items-center space-x-1"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  <span>Open Full Guide</span>
+                </button>
+              </div>
+              
               {tip.standard && tip.type === 'education' && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 mt-3">
                   <div className="flex items-center space-x-2 mb-1">
                     <BookOpen className="w-4 h-4 text-blue-600" />
                     <span className="text-xs font-semibold text-blue-800">Standard Reference</span>
                   </div>
                   <p className="text-xs text-blue-700">{tip.standard}</p>
-                </div>
-              )}
-              
-              {tip.type === 'warning' && (
-                <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="w-4 h-4 text-orange-600" />
-                    <span className="text-xs font-semibold text-orange-800">Important Notice</span>
-                  </div>
                 </div>
               )}
             </div>
@@ -3760,7 +4224,7 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
                     disabled={completedGuideSteps.includes(activeGuideCategory)}
                   >
                     {completedGuideSteps.includes(activeGuideCategory) ? (
-                      <>\u2713 Section Completed</>
+                      <>✓ Section Completed</>
                     ) : (
                       'Mark as Complete'
                     )}
