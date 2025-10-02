@@ -1,6 +1,6 @@
 /**
  * Main Structure Application
- * Template utama yang mengintegrasikan semua modul dengan hierarki navigasi lengkap
+ * Main template that integrates all modules with complete navigation hierarchy
  */
 
 import React, { useState } from 'react';
@@ -16,7 +16,7 @@ import ReportsModule from './modules/reports/ReportsModule';
 import StandardsValidation from './modules/validation/StandardsValidation';
 import { NotificationProvider, ErrorBoundary } from './components/ErrorHandling';
 
-// Import existing components untuk modul lainnya
+// Import existing components for other modules
 import ProfessionalStructuralDashboard from './components/ProfessionalStructuralDashboard';
 
 const StructureApp: React.FC = () => {
@@ -33,7 +33,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Statistics & Metrics</h2>
-            <p className="text-gray-600">Detailed statistics and performance metrics akan ditampilkan di sini.</p>
+            <p className="text-gray-600">Detailed statistics and performance metrics will be displayed here.</p>
           </div>
         );
       
@@ -41,7 +41,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Activities</h2>
-            <p className="text-gray-600">Comprehensive activity log dan project timeline.</p>
+            <p className="text-gray-600">Comprehensive activity log and project timeline.</p>
           </div>
         );
       
@@ -49,7 +49,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Storage Capacity Monitor</h2>
-            <p className="text-gray-600">Detailed storage usage dan management tools.</p>
+            <p className="text-gray-600">Detailed storage usage and management tools.</p>
           </div>
         );
 
@@ -62,7 +62,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Project</h2>
-            <p className="text-gray-600">Project creation wizard dengan template selection.</p>
+            <p className="text-gray-600">Project creation wizard with template selection.</p>
           </div>
         );
       
@@ -70,7 +70,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Shared Projects</h2>
-            <p className="text-gray-600">Collaborative projects dan team management.</p>
+            <p className="text-gray-600">Collaborative projects and team management.</p>
           </div>
         );
       
@@ -78,7 +78,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Archived Projects</h2>
-            <p className="text-gray-600">Archived project management dan restoration.</p>
+            <p className="text-gray-600">Archived project management and restoration.</p>
           </div>
         );
       
@@ -86,21 +86,31 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Project Templates</h2>
-            <p className="text-gray-600">Pre-configured project templates untuk berbagai jenis bangunan.</p>
+            <p className="text-gray-600">Pre-configured project templates for various building types.</p>
           </div>
         );
 
       // Analyze Structure Core Module ⭐
       case 'analyze':
+        // Automatically redirect to Static Analysis when accessing main analyze module
+        setCurrentModule('static-analysis');
+        return <AnalyzeStructureCore initialAnalysisType="static" />;
       case 'static-analysis':
+        return <AnalyzeStructureCore initialAnalysisType="static" />;
       case 'dynamic-analysis':
+        return <AnalyzeStructureCore initialAnalysisType="dynamic" />;
       case 'linear-analysis':
+        return <AnalyzeStructureCore initialAnalysisType="linear" />;
       case 'nonlinear-analysis':
+        return <AnalyzeStructureCore initialAnalysisType="nonlinear" />;
       case 'seismic-analysis':
+        return <AnalyzeStructureCore initialAnalysisType="seismic" />;
       case 'wind-load':
+        return <AnalyzeStructureCore initialAnalysisType="wind" />;
       case 'load-combinations':
+        return <AnalyzeStructureCore initialAnalysisType="combinations" />;
       case 'analysis-results':
-        return <AnalyzeStructureCore />;
+        return <AnalyzeStructureCore initialAnalysisType="results" />;
 
       // Design Module
       case 'design':
@@ -179,7 +189,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">User Profile</h2>
-            <p className="text-gray-600">User account settings dan preferences.</p>
+            <p className="text-gray-600">User account settings and preferences.</p>
           </div>
         );
       
@@ -187,7 +197,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Team Management</h2>
-            <p className="text-gray-600">Team collaboration dan permission management.</p>
+            <p className="text-gray-600">Team collaboration and permission management.</p>
           </div>
         );
       
@@ -195,7 +205,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Units & Formats</h2>
-            <p className="text-gray-600">Unit system dan display format settings.</p>
+            <p className="text-gray-600">Unit system and display format settings.</p>
           </div>
         );
       
@@ -203,7 +213,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Material Database</h2>
-            <p className="text-gray-600">Material database management dan custom materials.</p>
+            <p className="text-gray-600">Material database management and custom materials.</p>
           </div>
         );
       
@@ -211,7 +221,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Load Patterns Library</h2>
-            <p className="text-gray-600">Pre-defined load patterns dan custom definitions.</p>
+            <p className="text-gray-600">Pre-defined load patterns and custom definitions.</p>
           </div>
         );
       
@@ -219,7 +229,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Integration Settings</h2>
-            <p className="text-gray-600">CAD/BIM integration dan API configurations.</p>
+            <p className="text-gray-600">CAD/BIM integration and API configurations.</p>
           </div>
         );
       
@@ -227,7 +237,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Notifications</h2>
-            <p className="text-gray-600">Notification preferences dan alert settings.</p>
+            <p className="text-gray-600">Notification preferences and alert settings.</p>
           </div>
         );
       
@@ -235,7 +245,7 @@ const StructureApp: React.FC = () => {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Subscription & Billing</h2>
-            <p className="text-gray-600">Subscription management dan billing information.</p>
+            <p className="text-gray-600">Subscription management and billing information.</p>
           </div>
         );
 

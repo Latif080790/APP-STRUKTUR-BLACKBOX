@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, Edit3, Trash2, Save, X, Check, AlertCircle,
   Database, Search, Filter, Download, Upload, Copy,
-  Beaker, Calculator, Info, BookOpen, Settings
+  Beaker, Calculator, Info, BookOpen, Settings, Shield
 } from 'lucide-react';
 
 // SNI-compliant material interface
@@ -151,17 +151,58 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showSNITooltip, setShowSNITooltip] = useState<string | null>(null);
+
+  // SNI Material Info Tips Database
+  const sniMaterialTips = {
+    'concrete-k25': {
+      title: 'Concrete K-25 SNI Standards',
+      values: 'fc = 25 MPa, Ec = 25,000 MPa',
+      applications: 'General construction, low-rise buildings',
+      cover: 'Min cover: 25mm (beams), 40mm (columns)',
+      notes: 'β1 = 0.85, fr = 0.62√fc = 3.1 MPa'
+    },
+    'concrete-k30': {
+      title: 'Concrete K-30 SNI Standards',
+      values: 'fc = 30 MPa, Ec = 27,000 MPa',
+      applications: 'Structural members, mid-rise buildings',
+      cover: 'Min cover: 25mm (beams), 40mm (columns)',
+      notes: 'β1 = 0.85, fr = 0.62√fc = 3.4 MPa'
+    },
+    'steel-bj37': {
+      title: 'Steel BJ-37 SNI Standards',
+      values: 'fy = 240 MPa, fu = 370 MPa',
+      applications: 'Secondary members, light construction',
+      welding: 'Good weldability, no preheating required',
+      notes: 'Carbon content ≤ 0.25%, ductile behavior'
+    },
+    'steel-bj50': {
+      title: 'Steel BJ-50 SNI Standards',
+      values: 'fy = 410 MPa, fu = 500 MPa',
+      applications: 'Primary beams, columns, heavy construction',
+      welding: 'Good with preheating, proper electrodes',
+      notes: 'Carbon content ≤ 0.30%, high strength'
+    }
+  };
 
   // Load materials from localStorage on component mount
   useEffect(() => {
     const savedMaterials = localStorage.getItem('structuralMaterials');
     if (savedMaterials) {
       try {
-        const parsed = JSON.parse(savedMaterials);
+        const parsed = JSON.parse(savedMaterials).map((material: any) => ({
+          ...material,
+          lastUsed: material.lastUsed ? new Date(material.lastUsed) : new Date(),
+          createdDate: material.createdDate ? new Date(material.createdDate) : new Date(),
+          certificationDate: material.certificationDate ? new Date(material.certificationDate) : undefined
+        }));
         setMaterials([...standardMaterials, ...parsed]);
       } catch (error) {
         console.error('Error loading materials:', error);
+        setMaterials(standardMaterials);
       }
+    } else {
+      setMaterials(standardMaterials);
     }
   }, []);
 
@@ -249,111 +290,193 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
   const MaterialCard: React.FC<{ material: MaterialProperties }> = ({ material }) => {
     const derivedProps = calculateDerivedProperties(material);
     const isSelected = selectedMaterials.includes(material.id);
+    const sniTip = sniMaterialTips[material.id as keyof typeof sniMaterialTips];
     
     return (
-      <div className={`bg-white rounded-xl p-6 shadow-sm border-2 transition-all ${
+      <div className={`bg-white rounded-xl shadow-sm border-2 transition-all h-96 flex flex-col relative ${
         isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
       }`}>
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${
-              material.type === 'concrete' ? 'bg-gray-400' :
-              material.type === 'steel' ? 'bg-blue-500' :
-              material.type === 'timber' ? 'bg-green-500' : 'bg-purple-500'
-            }`}></div>
-            <div>
-              <h4 className="font-semibold text-gray-900">{material.name}</h4>
-              <p className="text-sm text-gray-500">{material.grade} • {material.sniStandard}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-1">
-            {material.certified && (
-              <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                Certified
+        {/* SNI Info Tooltip Trigger */}
+        {sniTip && (
+          <button
+            onClick={() => setShowSNITooltip(showSNITooltip === material.id ? null : material.id)}
+            className="absolute top-2 right-2 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-green-600 transition-colors z-10"
+            title="SNI Standard Information"
+          >
+            <Info className="w-3 h-3" />
+          </button>
+        )}
+        
+        {/* SNI Tooltip */}
+        {showSNITooltip === material.id && sniTip && (
+          <div className="absolute top-10 right-2 w-80 p-4 bg-white rounded-lg shadow-xl border-2 border-green-200 z-50">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-green-600" />
+                <h4 className="font-semibold text-gray-900 text-sm">{sniTip.title}</h4>
               </div>
-            )}
+              <button
+                onClick={() => setShowSNITooltip(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
             
-            {mode === 'manage' && (
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => {
-                    setEditingMaterial(material);
-                    setIsEditing(true);
-                  }}
-                  className="p-1 text-gray-400 hover:text-blue-600 rounded"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                
-                {!standardMaterials.find(s => s.id === material.id) && (
-                  <button
-                    onClick={() => deleteMaterial(material.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 rounded"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+            <div className="space-y-2 text-sm">
+              <div>
+                <p className="font-medium text-green-700">Standard Values:</p>
+                <p className="text-gray-700">{sniTip.values}</p>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Material Properties Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-xs text-gray-500">Density</p>
-            <p className="font-medium">{material.density.toLocaleString()} kg/m³</p>
-          </div>
-          
-          <div>
-            <p className="text-xs text-gray-500">Elastic Modulus</p>
-            <p className="font-medium">{material.elasticModulus.toLocaleString()} MPa</p>
-          </div>
-          
-          {material.compressiveStrength && (
-            <div>
-              <p className="text-xs text-gray-500">f'c</p>
-              <p className="font-medium">{material.compressiveStrength} MPa</p>
-            </div>
-          )}
-          
-          {material.yieldStrength && (
-            <div>
-              <p className="text-xs text-gray-500">fy</p>
-              <p className="font-medium">{material.yieldStrength} MPa</p>
-            </div>
-          )}
-        </div>
-
-        {/* Derived Properties */}
-        {Object.keys(derivedProps).length > 0 && (
-          <div className="border-t border-gray-100 pt-3 mb-4">
-            <p className="text-xs text-gray-500 mb-2">Calculated Properties</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {Object.entries(derivedProps).map(([key, value]) => (
-                <div key={key}>
-                  <span className="text-gray-600">{key}:</span>
-                  <span className="ml-1 font-medium">{value.toFixed(1)}</span>
+              
+              <div>
+                <p className="font-medium text-green-700">Applications:</p>
+                <p className="text-gray-700">{sniTip.applications}</p>
+              </div>
+              
+              {'cover' in sniTip && (
+                <div>
+                  <p className="font-medium text-green-700">Cover Requirements:</p>
+                  <p className="text-gray-700">{(sniTip as any).cover}</p>
                 </div>
-              ))}
+              )}
+              
+              {'welding' in sniTip && (
+                <div>
+                  <p className="font-medium text-green-700">Welding:</p>
+                  <p className="text-gray-700">{(sniTip as any).welding}</p>
+                </div>
+              )}
+              
+              <div className="bg-green-50 rounded p-2">
+                <p className="text-xs text-green-700 font-medium">Design Notes:</p>
+                <p className="text-xs text-green-600">{sniTip.notes}</p>
+              </div>
             </div>
           </div>
         )}
-
-        {/* Usage Stats */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Used {material.usageCount} times</span>
-          <span>Last: {material.lastUsed.toLocaleDateString()}</span>
+        {/* Header - Fixed Height */}
+        <div className="p-4 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                material.type === 'concrete' ? 'bg-gray-400' :
+                material.type === 'steel' ? 'bg-blue-500' :
+                material.type === 'timber' ? 'bg-green-500' : 'bg-purple-500'
+              }`}></div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-semibold text-gray-900 text-sm truncate">{material.name}</h4>
+                <p className="text-xs text-gray-500 truncate">{material.grade} • {material.sniStandard}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {material.certified && (
+                <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                  ✓
+                </div>
+              )}
+              
+              {mode === 'manage' && (
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => {
+                      setEditingMaterial(material);
+                      setIsEditing(true);
+                    }}
+                    className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                    title="Edit Material"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </button>
+                  
+                  {!standardMaterials.find(s => s.id === material.id) && (
+                    <button
+                      onClick={() => deleteMaterial(material.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 rounded"
+                      title="Delete Material"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={() => useMaterial(material)}
-          className="w-full mt-3 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-        >
-          {mode === 'select' ? 'Select Material' : 'Use Material'}
-        </button>
+        {/* Content - Scrollable */}
+        <div className="p-4 flex-1 overflow-y-auto">
+          {/* Basic Properties Grid - Fixed Layout */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-xs text-gray-500 mb-1">Density</p>
+              <p className="font-medium text-sm truncate">{material.density.toLocaleString()} kg/m³</p>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-xs text-gray-500 mb-1">Elastic Modulus</p>
+              <p className="font-medium text-sm truncate">{material.elasticModulus.toLocaleString()} MPa</p>
+            </div>
+            
+            {material.compressiveStrength && (
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xs text-gray-500 mb-1">f'c</p>
+                <p className="font-medium text-sm">{material.compressiveStrength} MPa</p>
+              </div>
+            )}
+            
+            {material.yieldStrength && (
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xs text-gray-500 mb-1">fy</p>
+                <p className="font-medium text-sm">{material.yieldStrength} MPa</p>
+              </div>
+            )}
+            
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-xs text-gray-500 mb-1">Poisson's Ratio</p>
+              <p className="font-medium text-sm">{material.poissonsRatio}</p>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-xs text-gray-500 mb-1">Thermal Exp.</p>
+              <p className="font-medium text-sm">{(material.thermalExpansion * 1000000).toFixed(1)} μ/°C</p>
+            </div>
+          </div>
+
+          {/* Derived Properties - Compact */}
+          {Object.keys(derivedProps).length > 0 && (
+            <div className="border-t border-gray-100 pt-3 mb-3">
+              <p className="text-xs text-gray-500 mb-2 font-medium">Calculated Properties</p>
+              <div className="space-y-1">
+                {Object.entries(derivedProps).slice(0, 2).map(([key, value]) => (
+                  <div key={key} className="flex justify-between text-xs">
+                    <span className="text-gray-600 truncate">{key}:</span>
+                    <span className="font-medium ml-2">{value.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Usage Stats - Compact */}
+          <div className="border-t border-gray-100 pt-2">
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Used {material.usageCount}x</span>
+              <span>{new Date(material.lastUsed).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer - Fixed Height */}
+        <div className="p-4 border-t border-gray-100 flex-shrink-0">
+          <button
+            onClick={() => useMaterial(material)}
+            className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            {mode === 'select' ? 'Select Material' : 'Use Material'}
+          </button>
+        </div>
       </div>
     );
   };
@@ -405,8 +528,8 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
         </select>
       </div>
 
-      {/* Materials Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Materials Grid - Consistent Card Dimensions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredMaterials.map((material) => (
           <MaterialCard key={material.id} material={material} />
         ))}
@@ -424,6 +547,199 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
           >
             Add New Material
           </button>
+        </div>
+      )}
+
+      {/* Add Material Form Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Add New Material</h3>
+                <button
+                  onClick={() => setShowAddForm(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const newMaterial = {
+                name: formData.get('name') as string,
+                type: formData.get('type') as 'concrete' | 'steel' | 'timber' | 'masonry' | 'composite',
+                grade: formData.get('grade') as string,
+                density: parseFloat(formData.get('density') as string),
+                elasticModulus: parseFloat(formData.get('elasticModulus') as string),
+                poissonsRatio: parseFloat(formData.get('poissonsRatio') as string),
+                thermalExpansion: parseFloat(formData.get('thermalExpansion') as string),
+                compressiveStrength: formData.get('compressiveStrength') ? parseFloat(formData.get('compressiveStrength') as string) : undefined,
+                yieldStrength: formData.get('yieldStrength') ? parseFloat(formData.get('yieldStrength') as string) : undefined,
+                sniStandard: formData.get('sniStandard') as 'SNI-2847' | 'SNI-1729' | 'SNI-7973' | 'SNI-1728',
+                certified: formData.get('certified') === 'on',
+                certificationDate: formData.get('certificationDate') ? new Date(formData.get('certificationDate') as string) : undefined
+              };
+              addMaterial(newMaterial);
+            }} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Material Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Concrete K-35"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Material Type</label>
+                  <select
+                    name="type"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="concrete">Concrete</option>
+                    <option value="steel">Steel</option>
+                    <option value="timber">Timber</option>
+                    <option value="masonry">Masonry</option>
+                    <option value="composite">Composite</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                  <input
+                    type="text"
+                    name="grade"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., K-35, BJ-50"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">SNI Standard</label>
+                  <select
+                    name="sniStandard"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="SNI-2847">SNI-2847 (Concrete)</option>
+                    <option value="SNI-1729">SNI-1729 (Steel)</option>
+                    <option value="SNI-7973">SNI-7973 (Timber)</option>
+                    <option value="SNI-1728">SNI-1728 (Masonry)</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Density (kg/m³)</label>
+                  <input
+                    type="number"
+                    name="density"
+                    required
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="2400"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Elastic Modulus (MPa)</label>
+                  <input
+                    type="number"
+                    name="elasticModulus"
+                    required
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="25000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Poisson's Ratio</label>
+                  <input
+                    type="number"
+                    name="poissonsRatio"
+                    required
+                    step="0.01"
+                    min="0"
+                    max="0.5"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.2"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Thermal Expansion (/°C)</label>
+                  <input
+                    type="number"
+                    name="thermalExpansion"
+                    required
+                    step="0.000001"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00001"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Compressive Strength (MPa)</label>
+                  <input
+                    type="number"
+                    name="compressiveStrength"
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="25 (for concrete)"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Yield Strength (MPa)</label>
+                  <input
+                    type="number"
+                    name="yieldStrength"
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="240 (for steel)"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="certified"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">SNI Certified Material</span>
+                </label>
+              </div>
+              
+              <div className="mt-6 flex items-center space-x-3">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Material</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

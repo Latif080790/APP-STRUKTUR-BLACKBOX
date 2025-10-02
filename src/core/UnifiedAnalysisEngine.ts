@@ -235,8 +235,8 @@ class AdvancedStiffnessCalculator {
   }
   
   private static calculateRectangularSectionProperties(section: any) {
-    const b = section.width;
-    const h = section.height;
+    const b = Math.max(section.width || 0.3, 0.01); // Minimum 10mm
+    const h = Math.max(section.height || 0.5, 0.01); // Minimum 10mm
     
     const area = b * h;
     const Iy = (b * h*h*h) / 12;
@@ -249,22 +249,26 @@ class AdvancedStiffnessCalculator {
     const Ay = ky * area;
     const Az = kz * area;
     
+    // Ensure minimum values
+    const minArea = 1e-6;
+    const minMoment = 1e-12;
+    
     return {
-      area,
-      momentOfInertiaY: Iy,
-      momentOfInertiaZ: Iz,
-      torsionalConstant: J,
-      shearAreaY: Ay,
-      shearAreaZ: Az,
-      sectionModulusY: Iy / (h/2),
-      sectionModulusZ: Iz / (b/2),
-      radiusOfGyrationY: Math.sqrt(Iy / area),
-      radiusOfGyrationZ: Math.sqrt(Iz / area)
+      area: Math.max(area, minArea),
+      momentOfInertiaY: Math.max(Iy, minMoment),
+      momentOfInertiaZ: Math.max(Iz, minMoment),
+      torsionalConstant: Math.max(J, minMoment),
+      shearAreaY: Math.max(Ay, minArea),
+      shearAreaZ: Math.max(Az, minArea),
+      sectionModulusY: Math.max(Iy / (h/2), minMoment),
+      sectionModulusZ: Math.max(Iz / (b/2), minMoment),
+      radiusOfGyrationY: Math.sqrt(Math.max(Iy, minMoment) / Math.max(area, minArea)),
+      radiusOfGyrationZ: Math.sqrt(Math.max(Iz, minMoment) / Math.max(area, minArea))
     };
   }
   
   private static calculateCircularSectionProperties(section: any) {
-    const d = section.width; // diameter
+    const d = Math.max(section.width || 0.3, 0.01); // diameter, minimum 10mm
     const r = d / 2;
     
     const area = Math.PI * r * r;
@@ -275,15 +279,19 @@ class AdvancedStiffnessCalculator {
     const k = 9/10; // Shear correction factor for circular
     const As = k * area;
     
+    // Ensure minimum values
+    const minArea = 1e-6;
+    const minMoment = 1e-12;
+    
     return {
-      area,
-      momentOfInertiaY: I,
-      momentOfInertiaZ: I,
-      torsionalConstant: J,
-      shearAreaY: As,
-      shearAreaZ: As,
-      sectionModulusY: I / r,
-      sectionModulusZ: I / r,
+      area: Math.max(area, minArea),
+      momentOfInertiaY: Math.max(I, minMoment),
+      momentOfInertiaZ: Math.max(I, minMoment),
+      torsionalConstant: Math.max(J, minMoment),
+      shearAreaY: Math.max(As, minArea),
+      shearAreaZ: Math.max(As, minArea),
+      sectionModulusY: Math.max(I / r, minMoment),
+      sectionModulusZ: Math.max(I / r, minMoment),
       radiusOfGyrationY: r / 2,
       radiusOfGyrationZ: r / 2
     };
@@ -400,22 +408,28 @@ class AdvancedStiffnessCalculator {
   
   private static calculateGenericSectionProperties(section: any) {
     // Fallback untuk section yang tidak standar
-    const area = section.area || (section.width * section.height);
-    const Iy = section.momentOfInertiaY || (section.width * Math.pow(section.height, 3)) / 12;
-    const Iz = section.momentOfInertiaZ || (section.height * Math.pow(section.width, 3)) / 12;
+    const width = section.width || 0.3; // Default 300mm
+    const height = section.height || 0.5; // Default 500mm
+    const area = section.area || (width * height);
+    const Iy = section.momentOfInertiaY || (width * Math.pow(height, 3)) / 12;
+    const Iz = section.momentOfInertiaZ || (height * Math.pow(width, 3)) / 12;
     const J = section.torsionalConstant || Iy * 0.1;
     
+    // Ensure minimum values to prevent division by zero
+    const minArea = 1e-6; // 1 mm²
+    const minMoment = 1e-12; // 1 mm⁴
+    
     return {
-      area,
-      momentOfInertiaY: Iy,
-      momentOfInertiaZ: Iz,
-      torsionalConstant: J,
-      shearAreaY: area * 0.8,
-      shearAreaZ: area * 0.8,
-      sectionModulusY: Iy / (section.height / 2),
-      sectionModulusZ: Iz / (section.width / 2),
-      radiusOfGyrationY: Math.sqrt(Iy / area),
-      radiusOfGyrationZ: Math.sqrt(Iz / area)
+      area: Math.max(area, minArea),
+      momentOfInertiaY: Math.max(Iy, minMoment),
+      momentOfInertiaZ: Math.max(Iz, minMoment),
+      torsionalConstant: Math.max(J, minMoment),
+      shearAreaY: Math.max(area * 0.8, minArea),
+      shearAreaZ: Math.max(area * 0.8, minArea),
+      sectionModulusY: Math.max(Iy / (height / 2), minMoment),
+      sectionModulusZ: Math.max(Iz / (width / 2), minMoment),
+      radiusOfGyrationY: Math.sqrt(Math.max(Iy, minMoment) / Math.max(area, minArea)),
+      radiusOfGyrationZ: Math.sqrt(Math.max(Iz, minMoment) / Math.max(area, minArea))
     };
   }
   
@@ -1090,9 +1104,10 @@ export class UnifiedAnalysisEngine {
           loadCombination: 'combination1'
         },
         maxStress: {
-          value: Math.max(...stresses.map(s => 
-            Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress))
-          )),
+          value: stresses.length > 0 ? Math.max(...stresses.map(s => {
+            const maxStress = Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress));
+            return isFinite(maxStress) ? maxStress : 0; // Ensure finite values only
+          })) : 0,
           elementId: 'element1',
           type: 'vonMises' as const,
           loadCombination: 'combination1'
@@ -1139,9 +1154,10 @@ export class UnifiedAnalysisEngine {
           loadCombination: 'combination1'
         },
         maxStress: {
-          value: Math.max(...stresses.map(s => 
-            Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress))
-          )),
+          value: stresses.length > 0 ? Math.max(...stresses.map(s => {
+            const maxStress = Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress));
+            return isFinite(maxStress) ? maxStress : 0; // Ensure finite values only
+          })) : 0,
           elementId: structure.elements[0]?.id || 'element1',
           type: 'vonMises' as const,
           loadCombination: 'combination1'
@@ -1473,11 +1489,13 @@ export class UnifiedAnalysisEngine {
       
       // Calculate stress from forces
       const sectionProps = AdvancedStiffnessCalculator.calculateAdvancedSectionProperties(element);
-      const axialStress = nx / sectionProps.area;
-      const shearStress = Math.sqrt(vy*vy + vz*vz) / sectionProps.shearAreaY;
+      
+      // Prevent division by zero - use safe division with fallback values
+      const axialStress = sectionProps.area > 0 ? nx / sectionProps.area : 0;
+      const shearStress = sectionProps.shearAreaY > 0 ? Math.sqrt(vy*vy + vz*vz) / sectionProps.shearAreaY : 0;
       const bendingStress = Math.max(
-        Math.abs(my) / sectionProps.sectionModulusY,
-        Math.abs(mz) / sectionProps.sectionModulusZ
+        sectionProps.sectionModulusY > 0 ? Math.abs(my) / sectionProps.sectionModulusY : 0,
+        sectionProps.sectionModulusZ > 0 ? Math.abs(mz) / sectionProps.sectionModulusZ : 0
       );
       
       stresses.push({

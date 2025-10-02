@@ -169,7 +169,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   onModuleChange 
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>(['dashboard']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['dashboard', 'analyze']);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleExpanded = (itemId: string) => {
@@ -183,6 +183,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const handleItemClick = (itemId: string, hasChildren: boolean) => {
     if (hasChildren) {
       toggleExpanded(itemId);
+      // Special handling for Analyze Structure - auto navigate to Static Analysis
+      if (itemId === 'analyze') {
+        onModuleChange('static-analysis');
+      }
     } else {
       onModuleChange(itemId);
     }
@@ -238,6 +242,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             const isExpanded = expandedItems.includes(item.id);
             const hasChildren = item.children && item.children.length > 0;
             
+            // Check if current module matches this item or any of its children
+            const isActive = currentModule === item.id || 
+              (hasChildren && item.children?.some(child => child.id === currentModule));
+            
             return (
               <div key={item.id}>
                 <button
@@ -245,7 +253,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   className={`
                     w-full flex items-center justify-between px-3 py-2 rounded-lg text-left
                     transition-colors duration-150 group
-                    ${currentModule === item.id 
+                    ${isActive
                       ? 'bg-blue-600 text-white' 
                       : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                     }

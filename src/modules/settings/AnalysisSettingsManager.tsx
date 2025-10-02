@@ -742,6 +742,903 @@ export const AnalysisSettingsManager: React.FC<AnalysisSettingsManagerProps> = (
     </div>
   );
 
+  const renderStandardsSettings = () => (
+    <div className="space-y-6">
+      {/* Primary Standard */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Design Standards</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Primary Standard</label>
+            <select
+              value={settings.standards.primary}
+              onChange={(e) => updateSettings({
+                ...settings,
+                standards: {
+                  ...settings.standards,
+                  primary: e.target.value as 'SNI' | 'ACI' | 'AISC' | 'Eurocode' | 'BS' | 'AS'
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="SNI">SNI (Indonesian National Standard)</option>
+              <option value="ACI">ACI (American Concrete Institute)</option>
+              <option value="AISC">AISC (American Institute of Steel Construction)</option>
+              <option value="Eurocode">Eurocode</option>
+              <option value="BS">BS (British Standard)</option>
+              <option value="AS">AS (Australian Standard)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Standard Versions */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Standard Versions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Object.entries(settings.standards.versions).map(([key, value]) => (
+            <div key={key}>
+              <label className="block text-sm font-medium text-gray-700 mb-1 uppercase">
+                {key.replace('sni', 'SNI ')}
+              </label>
+              <select
+                value={value}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  standards: {
+                    ...settings.standards,
+                    versions: {
+                      ...settings.standards.versions,
+                      [key]: e.target.value
+                    }
+                  }
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              >
+                {key === 'sni1726' && (
+                  <>
+                    <option value="2019">2019</option>
+                    <option value="2012">2012</option>
+                  </>
+                )}
+                {key === 'sni1727' && (
+                  <>
+                    <option value="2020">2020</option>
+                    <option value="2013">2013</option>
+                  </>
+                )}
+                {key === 'sni2847' && (
+                  <>
+                    <option value="2019">2019</option>
+                    <option value="2013">2013</option>
+                  </>
+                )}
+                {key === 'sni1729' && (
+                  <>
+                    <option value="2020">2020</option>
+                    <option value="2015">2015</option>
+                  </>
+                )}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Safety Factors */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Safety Factors</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {Object.entries(settings.standards.safetyFactors).map(([key, value]) => (
+            <div key={key}>
+              <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                {key}
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="3.0"
+                value={value}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  standards: {
+                    ...settings.standards,
+                    safetyFactors: {
+                      ...settings.standards.safetyFactors,
+                      [key]: parseFloat(e.target.value)
+                    }
+                  }
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Design Criteria */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Design Criteria</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Object.entries(settings.standards.designCriteria).map(([key, value]) => (
+            <div key={key}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {key.replace(/([A-Z])/g, ' $1').trim().replace(/^./, str => str.toUpperCase())}
+              </label>
+              <input
+                type="number"
+                step={key === 'deflectionLimit' ? '10' : '0.1'}
+                value={value}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  standards: {
+                    ...settings.standards,
+                    designCriteria: {
+                      ...settings.standards.designCriteria,
+                      [key]: parseFloat(e.target.value)
+                    }
+                  }
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderMaterialsSettings = () => (
+    <div className="space-y-6">
+      {/* Material Database */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Material Database</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Database Source</label>
+            <select
+              value={settings.materials.database}
+              onChange={(e) => updateSettings({
+                ...settings,
+                materials: {
+                  ...settings.materials,
+                  database: e.target.value as 'SNI' | 'international' | 'custom'
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="SNI">SNI Standard Materials</option>
+              <option value="international">International Standards</option>
+              <option value="custom">Custom Database</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Material Grades */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Grades</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Concrete Grades</label>
+            <div className="space-y-2">
+              {settings.materials.concreteGrades.map((grade, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={grade}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Steel Grades</label>
+            <div className="space-y-2">
+              {settings.materials.steelGrades.map((grade, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={grade}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Material Options */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Material Options</h3>
+        <div className="space-y-3">
+          {[
+            { key: 'allowCustom', label: 'Allow Custom Materials' },
+            { key: 'autoValidate', label: 'Auto-validate Material Properties' },
+            { key: 'temperatureEffects', label: 'Include Temperature Effects' },
+            { key: 'creepAndShrinkage', label: 'Include Creep and Shrinkage' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.materials[key as keyof typeof settings.materials] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  materials: {
+                    ...settings.materials,
+                    [key]: e.target.checked
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderVisualizationSettings = () => (
+    <div className="space-y-6">
+      {/* Rendering Quality */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Rendering Quality</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Quality Level</label>
+            <select
+              value={settings.visualization.rendering.quality}
+              onChange={(e) => updateSettings({
+                ...settings,
+                visualization: {
+                  ...settings.visualization,
+                  rendering: {
+                    ...settings.visualization.rendering,
+                    quality: e.target.value as 'low' | 'medium' | 'high' | 'ultra'
+                  }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="low">Low (Performance)</option>
+              <option value="medium">Medium (Balanced)</option>
+              <option value="high">High (Quality)</option>
+              <option value="ultra">Ultra (Best Quality)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {[
+            { key: 'antialiasing', label: 'Anti-aliasing' },
+            { key: 'shadows', label: 'Shadows' },
+            { key: 'reflections', label: 'Reflections' },
+            { key: 'animation', label: 'Animation' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.visualization.rendering[key as keyof typeof settings.visualization.rendering] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  visualization: {
+                    ...settings.visualization,
+                    rendering: {
+                      ...settings.visualization.rendering,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Display Options */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Display Options</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[
+            { key: 'showGrid', label: 'Show Grid' },
+            { key: 'showAxes', label: 'Show Axes' },
+            { key: 'showLabels', label: 'Show Labels' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.visualization.display[key as keyof typeof settings.visualization.display] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  visualization: {
+                    ...settings.visualization,
+                    display: {
+                      ...settings.visualization.display,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Color Scheme</label>
+            <select
+              value={settings.visualization.display.colorScheme}
+              onChange={(e) => updateSettings({
+                ...settings,
+                visualization: {
+                  ...settings.visualization,
+                  display: {
+                    ...settings.visualization.display,
+                    colorScheme: e.target.value as 'default' | 'stress' | 'utilization' | 'material'
+                  }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="default">Default</option>
+              <option value="stress">Stress-based</option>
+              <option value="utilization">Utilization-based</option>
+              <option value="material">Material-based</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Transparency ({Math.round(settings.visualization.display.transparency * 100)}%)
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={settings.visualization.display.transparency}
+              onChange={(e) => updateSettings({
+                ...settings,
+                visualization: {
+                  ...settings.visualization,
+                  display: {
+                    ...settings.visualization.display,
+                    transparency: parseFloat(e.target.value)
+                  }
+                }
+              })}
+              className="w-full"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPerformanceSettings = () => (
+    <div className="space-y-6">
+      {/* Memory Management */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Memory Management</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Max Memory Usage ({settings.performance.memory.maxUsage} MB)
+            </label>
+            <input
+              type="range"
+              min="512"
+              max="8192"
+              step="256"
+              value={settings.performance.memory.maxUsage}
+              onChange={(e) => updateSettings({
+                ...settings,
+                performance: {
+                  ...settings.performance,
+                  memory: {
+                    ...settings.performance.memory,
+                    maxUsage: parseInt(e.target.value)
+                  }
+                }
+              })}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+          {[
+            { key: 'autoCleanup', label: 'Auto Cleanup' },
+            { key: 'cachingEnabled', label: 'Enable Caching' },
+            { key: 'preloadResults', label: 'Preload Results' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.performance.memory[key as keyof typeof settings.performance.memory] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  performance: {
+                    ...settings.performance,
+                    memory: {
+                      ...settings.performance.memory,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Computing Options */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Computing Options</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Max CPU Cores ({settings.performance.computing.maxCores})
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="16"
+              step="1"
+              value={settings.performance.computing.maxCores}
+              onChange={(e) => updateSettings({
+                ...settings,
+                performance: {
+                  ...settings.performance,
+                  computing: {
+                    ...settings.performance.computing,
+                    maxCores: parseInt(e.target.value)
+                  }
+                }
+              })}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+          {[
+            { key: 'multiThreading', label: 'Multi-threading' },
+            { key: 'gpuAcceleration', label: 'GPU Acceleration' },
+            { key: 'parallelSolvers', label: 'Parallel Solvers' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.performance.computing[key as keyof typeof settings.performance.computing] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  performance: {
+                    ...settings.performance,
+                    computing: {
+                      ...settings.performance.computing,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Storage Settings */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Storage Settings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Auto-save Interval ({settings.performance.storage.saveInterval} min)
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="30"
+              step="1"
+              value={settings.performance.storage.saveInterval}
+              onChange={(e) => updateSettings({
+                ...settings,
+                performance: {
+                  ...settings.performance,
+                  storage: {
+                    ...settings.performance.storage,
+                    saveInterval: parseInt(e.target.value)
+                  }
+                }
+              })}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Max Backups ({settings.performance.storage.maxBackups})
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="50"
+              step="1"
+              value={settings.performance.storage.maxBackups}
+              onChange={(e) => updateSettings({
+                ...settings,
+                performance: {
+                  ...settings.performance,
+                  storage: {
+                    ...settings.performance.storage,
+                    maxBackups: parseInt(e.target.value)
+                  }
+                }
+              })}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          {[
+            { key: 'autoSave', label: 'Auto-save' },
+            { key: 'compression', label: 'File Compression' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.performance.storage[key as keyof typeof settings.performance.storage] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  performance: {
+                    ...settings.performance,
+                    storage: {
+                      ...settings.performance.storage,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCollaborationSettings = () => (
+    <div className="space-y-6">
+      {/* Sharing Options */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Sharing & Collaboration</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Default Permissions</label>
+            <select
+              value={settings.collaboration.sharing.permissions}
+              onChange={(e) => updateSettings({
+                ...settings,
+                collaboration: {
+                  ...settings.collaboration,
+                  sharing: {
+                    ...settings.collaboration.sharing,
+                    permissions: e.target.value as 'read' | 'edit' | 'admin'
+                  }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="read">Read Only</option>
+              <option value="edit">Edit</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+          {[
+            { key: 'enabled', label: 'Enable Sharing' },
+            { key: 'notifications', label: 'Notifications' },
+            { key: 'realTimeSync', label: 'Real-time Sync' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.collaboration.sharing[key as keyof typeof settings.collaboration.sharing] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  collaboration: {
+                    ...settings.collaboration,
+                    sharing: {
+                      ...settings.collaboration.sharing,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Version Control */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Version Control</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { key: 'tracking', label: 'Version Tracking' },
+            { key: 'autoCommit', label: 'Auto Commit' },
+            { key: 'commentRequired', label: 'Require Comments' },
+            { key: 'branchingEnabled', label: 'Enable Branching' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.collaboration.version[key as keyof typeof settings.collaboration.version] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  collaboration: {
+                    ...settings.collaboration,
+                    version: {
+                      ...settings.collaboration.version,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSecuritySettings = () => (
+    <div className="space-y-6">
+      {/* Encryption */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Encryption</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Encryption Algorithm</label>
+            <select
+              value={settings.security.encryption.algorithm}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  encryption: {
+                    ...settings.security.encryption,
+                    algorithm: e.target.value as 'AES-256' | 'RSA-2048'
+                  }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="AES-256">AES-256</option>
+              <option value="RSA-2048">RSA-2048</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Key Management</label>
+            <select
+              value={settings.security.encryption.keyManagement}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  encryption: {
+                    ...settings.security.encryption,
+                    keyManagement: e.target.value as 'local' | 'cloud'
+                  }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="local">Local Storage</option>
+              <option value="cloud">Cloud-based</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={settings.security.encryption.enabled}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  encryption: {
+                    ...settings.security.encryption,
+                    enabled: e.target.checked
+                  }
+                }
+              })}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-900">Enable Data Encryption</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Access Control */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Access Control</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password Policy</label>
+            <select
+              value={settings.security.access.passwordPolicy}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  access: {
+                    ...settings.security.access,
+                    passwordPolicy: e.target.value as 'basic' | 'strong' | 'enterprise'
+                  }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="basic">Basic</option>
+              <option value="strong">Strong</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Session Timeout ({settings.security.access.sessionTimeout} min)
+            </label>
+            <input
+              type="range"
+              min="15"
+              max="480"
+              step="15"
+              value={settings.security.access.sessionTimeout}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  access: {
+                    ...settings.security.access,
+                    sessionTimeout: parseInt(e.target.value)
+                  }
+                }
+              })}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          {[
+            { key: 'authentication', label: 'Require Authentication' },
+            { key: 'twoFactor', label: 'Two-Factor Authentication' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.security.access[key as keyof typeof settings.security.access] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  security: {
+                    ...settings.security,
+                    access: {
+                      ...settings.security.access,
+                      [key]: e.target.checked
+                    }
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Audit Logging */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Audit Logging</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Log Level</label>
+            <select
+              value={settings.security.audit.logLevel}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  audit: {
+                    ...settings.security.audit,
+                    logLevel: e.target.value as 'basic' | 'detailed' | 'verbose'
+                  }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="basic">Basic</option>
+              <option value="detailed">Detailed</option>
+              <option value="verbose">Verbose</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Retention Period ({settings.security.audit.retention} days)
+            </label>
+            <input
+              type="range"
+              min="7"
+              max="365"
+              step="7"
+              value={settings.security.audit.retention}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  audit: {
+                    ...settings.security.audit,
+                    retention: parseInt(e.target.value)
+                  }
+                }
+              })}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={settings.security.audit.enabled}
+              onChange={(e) => updateSettings({
+                ...settings,
+                security: {
+                  ...settings.security,
+                  audit: {
+                    ...settings.security.audit,
+                    enabled: e.target.checked
+                  }
+                }
+              })}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-900">Enable Audit Logging</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
@@ -833,7 +1730,12 @@ export const AnalysisSettingsManager: React.FC<AnalysisSettingsManagerProps> = (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {activeTab === 'general' && renderGeneralSettings()}
         {activeTab === 'analysis' && renderAnalysisSettings()}
-        {/* Add other tab renderers here */}
+        {activeTab === 'standards' && renderStandardsSettings()}
+        {activeTab === 'materials' && renderMaterialsSettings()}
+        {activeTab === 'visualization' && renderVisualizationSettings()}
+        {activeTab === 'performance' && renderPerformanceSettings()}
+        {activeTab === 'collaboration' && renderCollaborationSettings()}
+        {activeTab === 'security' && renderSecuritySettings()}
       </div>
 
       {/* Advanced Toggle */}
