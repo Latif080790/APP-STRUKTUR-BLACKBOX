@@ -8,7 +8,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home,
   Building2,
-  Box,
   FileText,
   Settings,
   Search,
@@ -50,8 +49,6 @@ const ModernSidebar: React.FC<{ currentView: string; onNavigate: (view: string) 
   const sidebarItems = [
     { id: 'dashboard', icon: Home, label: 'Dashboard', active: currentView === 'dashboard' },
     { id: 'structural-analysis', icon: Building2, label: 'Analysis', active: currentView === 'structural-analysis' },
-    { id: '3d-viewer', icon: Box, label: '3D Viewer', active: false },
-    { id: 'calculator', icon: Calculator, label: 'Calculator', active: false },
     { id: 'reports', icon: FileText, label: 'Reports', active: false },
     { id: 'settings', icon: Settings, label: 'Settings', active: false }
   ];
@@ -145,7 +142,7 @@ const ProjectPreview: React.FC = () => (
     {/* 3D Preview Area */}
     <div className="bg-gray-100 rounded-xl h-80 flex items-center justify-center mb-4 relative overflow-hidden">
       <div className="text-center">
-        <Box className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 font-medium">3D Structural Model</p>
         <p className="text-sm text-gray-400 mt-1">Click to load preview</p>
       </div>

@@ -112,10 +112,10 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
           {/* Component Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {[
-              { id: 'beam', name: 'Balok', icon: '—', desc: 'Lentur & geser' },
-              { id: 'column', name: 'Kolom', icon: '|', desc: 'Aksial & kombinasi' },
-              { id: 'connection', name: 'Sambungan', icon: '⚡', desc: 'Baut & las' },
-              { id: 'foundation', name: 'Pondasi', icon: '⬜', desc: 'Daya dukung' }
+              { id: 'beam', name: 'Beam', icon: '—', desc: 'Flexure & shear' },
+              { id: 'column', name: 'Column', icon: '|', desc: 'Axial & combined' },
+              { id: 'connection', name: 'Connection', icon: '⚡', desc: 'Bolted & welded' },
+              { id: 'foundation', name: 'Foundation', icon: '⬜', desc: 'Bearing capacity' }
             ].map(component => (
               <button
                 key={component.id}

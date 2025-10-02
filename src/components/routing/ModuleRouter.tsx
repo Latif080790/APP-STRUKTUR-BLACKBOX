@@ -20,11 +20,6 @@ const CompleteStructuralAnalysisSystem = lazy(() => import('../../structural-ana
 const SimpleStructuralAnalysisSystem = lazy(() => import('../../structural-analysis/SimpleStructuralAnalysisSystem'));
 const WorkingBasicStructuralAnalysisSystem = lazy(() => import('../../structural-analysis/WorkingBasicStructuralAnalysisSystem'));
 
-// Advanced 3D Modules
-const Advanced3DViewer = lazy(() => import('../../structural-analysis/advanced-3d/Advanced3DViewer'));
-const Enhanced3DViewer = lazy(() => import('../../structural-analysis/advanced-3d/Enhanced3DViewer'));
-const Optimized3DViewer = lazy(() => import('../../structural-analysis/advanced-3d/Optimized3DViewer'));
-const Simple3DViewer = lazy(() => import('../../structural-analysis/advanced-3d/Simple3DViewer'));
 
 // Visualization Modules
 const AdvancedVisualizationInterface = lazy(() => import('../../structural-analysis/visualization/AdvancedVisualizationInterface'));
@@ -78,10 +73,7 @@ export type ModuleKey =
   | 'complete-analysis'
   | 'simple-analysis'
   | 'working-analysis'
-  | 'advanced-3d'
-  | 'enhanced-3d'
-  | 'optimized-3d'
-  | 'simple-3d'
+
   | 'visualization'
   | 'beam-design'
   | 'column-design'
@@ -104,7 +96,7 @@ export interface ModuleDefinition {
   title: string;
   description: string;
   icon: string;
-  category: 'analysis' | 'design' | '3d' | 'visualization' | 'tools' | 'utilities' | 'system';
+  category: 'analysis' | 'design' | 'visualization' | 'tools' | 'utilities' | 'system';
   component: React.ComponentType<any>;
   props?: any;
 }
@@ -134,7 +126,7 @@ export const moduleDefinitions: ModuleDefinition[] = [
   {
     key: 'material-library',
     title: 'Advanced Material Library',
-    description: 'Comprehensive material database dengan testing data dan multi-standard compliance',
+    description: 'Comprehensive material database with testing data and multi-standard compliance',
     icon: '🧱',
     category: 'tools',
     component: AdvancedMaterialLibrary,
@@ -144,13 +136,13 @@ export const moduleDefinitions: ModuleDefinition[] = [
   // {
   //   key: 'unified-analysis',
   //   title: 'Unified Analysis System',
-  //   description: 'Comprehensive structural analysis dengan Matrix Method, Multi-Standards Compliance, dan Engineering-Grade Accuracy',
+  //   description: 'Comprehensive structural analysis with Matrix Method, Multi-Standards Compliance, and Engineering-Grade Accuracy',
   //   icon: '🚀',
   //   category: 'analysis',
   //   component: UnifiedStructuralAnalysisSystem,
   // },
   
-  // LEGACY: Analysis Modules (untuk comparison)
+  // LEGACY: Analysis Modules (for comparison)
   {
     key: 'structural-analysis',
     title: 'Legacy: Structural Analysis',
@@ -192,39 +184,6 @@ export const moduleDefinitions: ModuleDefinition[] = [
     component: WorkingBasicStructuralAnalysisSystem,
   },
 
-  // 3D Visualization Modules
-  {
-    key: 'advanced-3d',
-    title: 'Advanced 3D Viewer',
-    description: 'Advanced 3D visualization with full controls',
-    icon: '🎯',
-    category: '3d',
-    component: Advanced3DViewer,
-  },
-  {
-    key: 'enhanced-3d',
-    title: 'Enhanced 3D Viewer',
-    description: 'Enhanced 3D viewer with modern features',
-    icon: '🌟',
-    category: '3d',
-    component: Enhanced3DViewer,
-  },
-  {
-    key: 'optimized-3d',
-    title: 'Optimized 3D Viewer',
-    description: 'Performance-optimized 3D visualization',
-    icon: '⚡',
-    category: '3d',
-    component: Optimized3DViewer,
-  },
-  {
-    key: 'simple-3d',
-    title: 'Simple 3D Viewer',
-    description: 'Simple and lightweight 3D viewer',
-    icon: '📦',
-    category: '3d',
-    component: Simple3DViewer,
-  },
 
   // Design Modules
   {

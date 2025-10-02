@@ -419,12 +419,15 @@ const AnalysisResultsComponent: React.FC<AnalysisResultsComponentProps> = ({
             </button>
             <button
               onClick={() => setViewMode('3d-viewer')}
-              className={`p-1.5 rounded transition-colors ${
-                viewMode === '3d-viewer' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`px-4 py-2 rounded-lg transition-all font-semibold text-sm border-2 ${
+                viewMode === '3d-viewer' 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-green-400 shadow-lg transform scale-105' 
+                  : 'text-gray-600 hover:bg-gray-100 border-gray-300 hover:border-green-300 hover:text-green-600'
+              } flex items-center space-x-2`}
               title="3D Model Viewer"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-5 h-5" />
+              <span>3D Viewer</span>
             </button>
           </div>
         </div>
@@ -515,10 +518,10 @@ const AnalysisResultsComponent: React.FC<AnalysisResultsComponentProps> = ({
                     </button>
                     <button 
                       onClick={() => setShow3DViewer(true)}
-                      className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                      className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all text-sm font-bold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-green-400 flex items-center justify-center space-x-2"
                     >
-                      <Maximize2 className="w-4 h-4 mr-2 inline" />
-                      Fullscreen 3D
+                      <Maximize2 className="w-5 h-5" />
+                      <span>Fullscreen 3D Viewer</span>
                     </button>
                   </div>
                 </div>
@@ -679,10 +682,10 @@ const AnalysisResultsComponent: React.FC<AnalysisResultsComponentProps> = ({
                 <div className="flex items-center justify-between">
                   <button 
                     onClick={() => handleView3D(result)}
-                    className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors flex items-center space-x-1"
+                    className="px-3 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg text-sm hover:from-blue-600 hover:to-indigo-700 transition-all flex items-center space-x-2 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
                   >
-                    <Eye className="w-3 h-3" />
-                    <span>3D</span>
+                    <Eye className="w-4 h-4" />
+                    <span>3D Model</span>
                   </button>
                   <div className="flex space-x-1">
                     <button 
@@ -777,11 +780,11 @@ const AnalysisResultsComponent: React.FC<AnalysisResultsComponentProps> = ({
                           {/* Prominent 3D Viewer Button in List View */}
                           <button 
                             onClick={() => handleView3D(result)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm flex items-center space-x-1"
+                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                             title="View 3D Model"
                           >
-                            <Eye className="w-4 h-4" />
-                            <span>3D View</span>
+                            <Eye className="w-5 h-5" />
+                            <span>View 3D Model</span>
                           </button>
                           <button 
                             onClick={() => handleDownloadReport(result)}

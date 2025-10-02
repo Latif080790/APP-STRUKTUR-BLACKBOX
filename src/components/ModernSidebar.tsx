@@ -21,7 +21,6 @@ import {
   Calendar,
   FileText,
   Database,
-  Box,
   Layers,
   Target,
   Gauge,
@@ -51,7 +50,6 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
   const categoryIcons: Record<string, React.ReactNode> = {
     analysis: <Building2 className="w-4 h-4" />,
     design: <Ruler className="w-4 h-4" />,
-    '3d': <Box className="w-4 h-4" />,
     visualization: <Eye className="w-4 h-4" />,
     tools: <Settings className="w-4 h-4" />,
     utilities: <Zap className="w-4 h-4" />,
@@ -77,7 +75,7 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
     },
     {
       id: 'structural-analysis',
-      label: 'Analisis Utama',
+      label: 'Main Analysis',
       icon: <Building2 className="w-4 h-4" />,
       isActive: currentView === 'structural-analysis',
       onClick: () => onNavigate('structural-analysis')
@@ -91,7 +89,7 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
     },
     {
       id: 'educational',
-      label: 'Pembelajaran',
+      label: 'Learning',
       icon: <GraduationCap className="w-4 h-4" />,
       isActive: currentView === 'educational',
       onClick: () => onNavigate('educational')
@@ -133,7 +131,7 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
                 </div>
                 <div>
                   <h2 className="text-white font-bold text-sm">StructureAI Platform</h2>
-                  <p className="text-blue-300 text-xs">Sistem Analisis Struktur</p>
+                  <p className="text-blue-300 text-xs">Structural Analysis System</p>
                 </div>
               </div>
             )}
@@ -159,7 +157,7 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
           <div className="px-3 mb-6">
             {!isCollapsed && (
               <h3 className="text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3 px-3">
-                Akses Cepat
+                Quick Access
               </h3>
             )}
             <div className="space-y-1">
@@ -179,12 +177,12 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
           {!isCollapsed && (
             <div className="px-3">
               <h3 className="text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3 px-3">
-                Modul Sistem
+                System Modules
               </h3>
               
               {Object.entries(modulesByCategory).map(([category, modules]) => {
                 const isExpanded = expandedCategories.includes(category);
-                const categoryIcon = categoryIcons[category] || <Box className="w-4 h-4" />;
+                const categoryIcon = categoryIcons[category] || <Settings className="w-4 h-4" />;
                 
                 return (
                   <div key={category} className="mb-4">
@@ -196,7 +194,7 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
                       <div className="flex items-center space-x-2">
                         {categoryIcon}
                         <span className="text-sm font-medium capitalize">
-                          {category === '3d' ? '3D Visualization' : category}
+                          {category}
                         </span>
                         <span 
                           className="text-xs px-2 py-0.5 rounded-full"
@@ -239,7 +237,7 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
           {isCollapsed && (
             <div className="px-3 space-y-1">
               {Object.entries(modulesByCategory).slice(0, 6).map(([category, modules]) => {
-                const categoryIcon = categoryIcons[category] || <Box className="w-4 h-4" />;
+                const categoryIcon = categoryIcons[category] || <Settings className="w-4 h-4" />;
                 const hasActiveModule = modules.some(m => m.key === currentView);
                 
                 return (
@@ -275,13 +273,13 @@ export const ModernSidebar: React.FC<SidebarProps> = ({ currentView, onNavigate 
           <div className="space-y-1 mb-4">
             <NavigationItem
               icon={<Settings className="w-4 h-4" />}
-              label={isCollapsed ? '' : 'Pengaturan'}
+              label={isCollapsed ? '' : 'Settings'}
               isActive={currentView === 'settings'}
               onClick={() => onNavigate('settings')}
             />
             <NavigationItem
               icon={<HelpCircle className="w-4 h-4" />}
-              label={isCollapsed ? '' : 'Bantuan'}
+              label={isCollapsed ? '' : 'Help'}
               isActive={currentView === 'help'}
               onClick={() => onNavigate('help')}
             />

@@ -1,6 +1,6 @@
 /**
  * Analyze Structure Core Module - FULLY FUNCTIONAL
- * Semua jenis analisis struktural dengan SNI compliance dan real calculations
+ * All types of structural analysis with SNI compliance and real calculations
  */
 import React, { useState, useEffect } from 'react';
 import {
@@ -18,6 +18,8 @@ import AnalysisSettingsManager from '../settings/AnalysisSettingsManager';
 import LoadCombinationsComponent from './LoadCombinationsComponent';
 import AnalysisResultsComponent from './AnalysisResultsComponent';
 import SNIComplianceChecker from './SNIComplianceChecker';
+import SystemIntegrationStatus from '../../components/SystemIntegrationStatus';
+import { workflowController } from '../../controllers/UnifiedWorkflowController';
 
 // Shared Building Geometry Interface with Enhanced Grid System
 interface BuildingGeometry {
@@ -1408,10 +1410,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
                     setActiveGuideCategory('overview');
                     setActiveInfoTip(null);
                   }}
-                  className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs flex items-center space-x-1"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                 >
-                  <BookOpen className="w-3 h-3" />
-                  <span>Open Full Guide</span>
+                  <BookOpen className="w-4 h-4" />
+                  <span>Complete Help Guide</span>
                 </button>
               </div>
               
@@ -1444,10 +1446,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
           </div>
           <button 
             onClick={() => setShow3DViewer(true)}
-            className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center space-x-1"
+            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-green-400 flex items-center space-x-2"
           >
-            <Eye className="w-4 h-4" />
-            <span>View 3D</span>
+            <Eye className="w-5 h-5" />
+            <span>View 3D Model</span>
           </button>
         </div>
         
@@ -1815,10 +1817,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               <InfoTipComponent tipId="analysis-workflow">
                 <button 
                   onClick={() => setShowGuide(true)}
-                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  <span>Guide</span>
+                  <Lightbulb className="w-5 h-5" />
+                  <span>Help & Guide</span>
                 </button>
               </InfoTipComponent>
               <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
@@ -2010,6 +2012,12 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
         return renderLinearAnalysis();
       case 'nonlinear':
         return renderNonLinearAnalysis();
+      case 'load-combinations':
+        return renderLoadCombinationsSubmenu();
+      case 'analysis-execution':
+        return renderAnalysisExecutionSubmenu();
+      case 'analysis-reports':
+        return renderAnalysisReportsSubmenu();
       case 'combinations':
         return <LoadCombinationsComponent 
           onCombinationsChange={handleLoadCombinationsChange}
@@ -2027,9 +2035,173 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
     }
   };
 
+  // NEW SEPARATE SUBMENUS AS PER PROJECT SPECIFICATION
+  const renderLoadCombinationsSubmenu = () => (
+    <div className="space-y-6">
+      {/* System Integration Status */}
+      <SystemIntegrationStatus />
+      
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Layers className="w-4 h-4 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">Load Combinations Management</h2>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowGuide(true)}
+              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>Complete Guide</span>
+            </button>
+          </div>
+        </div>
+        
+        <LoadCombinationsComponent 
+          onCombinationsChange={handleLoadCombinationsChange}
+          selectedCombinations={analysisConfig.activeCombinations}
+        />
+      </div>
+    </div>
+  );
+
+  const renderAnalysisExecutionSubmenu = () => (
+    <div className="space-y-6">
+      {/* System Integration Status */}
+      <SystemIntegrationStatus />
+      
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <Play className="w-4 h-4 text-green-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">Analysis Execution Control</h2>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowGuide(true)}
+              className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-green-400 flex items-center space-x-2"
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>Complete Guide</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Analysis Execution Interface */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Analysis Queue</h3>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="space-y-3">
+                {['Static Analysis', 'Dynamic Analysis', 'Seismic Analysis'].map((type, index) => (
+                  <div key={type} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        index === 0 ? 'bg-green-500' : index === 1 ? 'bg-yellow-500' : 'bg-gray-300'
+                      }`}></div>
+                      <span className="font-medium">{type}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      {index === 0 ? 'Completed' : index === 1 ? 'Running' : 'Queued'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Execution Controls</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button className="p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
+                <Play className="w-4 h-4" />
+                <span>Start Analysis</span>
+              </button>
+              <button className="p-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center space-x-2">
+                <Pause className="w-4 h-4" />
+                <span>Pause</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAnalysisReportsSubmenu = () => (
+    <div className="space-y-6">
+      {/* System Integration Status */}
+      <SystemIntegrationStatus />
+      
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-4 h-4 text-purple-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">Analysis Reports & Documentation</h2>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowGuide(true)}
+              className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm flex items-center space-x-1"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>Guide</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Enhanced Analysis Results with Reporting Features */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-blue-900 mb-2">Standard Reports</h4>
+              <p className="text-sm text-blue-700 mb-3">SNI-compliant analysis reports</p>
+              <button className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                Generate Report
+              </button>
+            </div>
+            
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-green-900 mb-2">Compliance Reports</h4>
+              <p className="text-sm text-green-700 mb-3">Detailed SNI compliance documentation</p>
+              <button className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                Generate Report
+              </button>
+            </div>
+            
+            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+              <h4 className="font-semibold text-orange-900 mb-2">Custom Reports</h4>
+              <p className="text-sm text-orange-700 mb-3">Customizable analysis documentation</p>
+              <button className="w-full px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm">
+                Create Custom
+              </button>
+            </div>
+          </div>
+          
+          <AnalysisResultsComponent 
+            analysisResults={analysisHistory}
+            onClearResults={handleClearResults}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   // DEDICATED INTERFACES FOR EACH ANALYSIS TYPE - WITH SHARED GEOMETRY
   const renderStaticAnalysis = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* System Integration Status - Enhanced Workflow Monitoring */}
+      <div className="mb-6">
+        <SystemIntegrationStatus />
+      </div>
+      
       {/* Compact Header with Info Tips */}
       <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
@@ -2047,10 +2219,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               <InfoTipComponent tipId="analysis-workflow">
                 <button 
                   onClick={() => setShowGuide(true)}
-                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  <span>Guide</span>
+                  <Lightbulb className="w-5 h-5" />
+                  <span>Help & Guide</span>
                 </button>
               </InfoTipComponent>
               <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
@@ -2060,8 +2232,8 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               <button onClick={() => setShowMaterialManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
-              <button onClick={() => setShow3DViewer(true)} className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm">
-                <Eye className="w-4 h-4 mr-1 inline" />3D Model
+              <button onClick={() => setShow3DViewer(true)} className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-green-400">
+                <Eye className="w-5 h-5 mr-2 inline" />View 3D Model
               </button>
             </div>
           </div>
@@ -2299,10 +2471,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               <InfoTipComponent tipId="analysis-workflow">
                 <button 
                   onClick={() => setShowGuide(true)}
-                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  <span>Guide</span>
+                  <Lightbulb className="w-5 h-5" />
+                  <span>Help & Guide</span>
                 </button>
               </InfoTipComponent>
               <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
@@ -2528,10 +2700,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               <InfoTipComponent tipId="analysis-workflow">
                 <button 
                   onClick={() => setShowGuide(true)}
-                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  <span>Guide</span>
+                  <Lightbulb className="w-5 h-5" />
+                  <span>Help & Guide</span>
                 </button>
               </InfoTipComponent>
               <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
@@ -2717,10 +2889,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               <InfoTipComponent tipId="analysis-workflow">
                 <button 
                   onClick={() => setShowGuide(true)}
-                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  <span>Guide</span>
+                  <Lightbulb className="w-5 h-5" />
+                  <span>Help & Guide</span>
                 </button>
               </InfoTipComponent>
               <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
@@ -2941,10 +3113,10 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
               <InfoTipComponent tipId="analysis-workflow">
                 <button 
                   onClick={() => setShowGuide(true)}
-                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-blue-400 flex items-center space-x-2"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  <span>Guide</span>
+                  <Lightbulb className="w-5 h-5" />
+                  <span>Help & Guide</span>
                 </button>
               </InfoTipComponent>
               <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">

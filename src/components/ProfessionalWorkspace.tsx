@@ -8,10 +8,8 @@ import React, { useState } from 'react';
 import { 
   Home,
   Building2,
-  Box,
   Settings,
   FileText,
-  Calculator,
   User,
   Search,
   Bell,
@@ -44,8 +42,6 @@ const MinimalSidebar: React.FC<{
   const sidebarItems = [
     { id: 'home', icon: Home, active: currentView === 'home' },
     { id: 'analysis', icon: Building2, active: currentView === 'analysis' },
-    { id: '3d', icon: Box, active: false },
-    { id: 'calculator', icon: Calculator, active: false },
     { id: 'reports', icon: FileText, active: false },
     { id: 'settings', icon: Settings, active: false }
   ];
@@ -89,7 +85,7 @@ const MinimalSidebar: React.FC<{
   );
 };
 
-// Komponen Header dengan Search dan Controls
+// Header Component with Search and Controls
 const WorkspaceHeader: React.FC<{
   title: string;
   searchQuery: string;
@@ -139,7 +135,7 @@ const StructuralViewer3D: React.FC = () => {
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       {/* Viewer Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Deformasi Struktur 3D</h3>
+        <h3 className="text-lg font-semibold text-gray-900">3D Structural Deformation</h3>
         <div className="flex items-center space-x-2">
           <button 
             onClick={() => setIsPlaying(!isPlaying)}
@@ -161,9 +157,9 @@ const StructuralViewer3D: React.FC = () => {
         {/* Placeholder untuk 3D Model */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <Box className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 font-medium">Model Struktur 3D</p>
-            <p className="text-sm text-gray-400 mt-1">Visualisasi deformasi dan stress</p>
+            <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 font-medium">3D Structural Model</p>
+            <p className="text-sm text-gray-400 mt-1">Deformation and stress visualization</p>
           </div>
         </div>
         
@@ -194,7 +190,7 @@ const StructuralViewer3D: React.FC = () => {
               viewMode === '3d' ? 'bg-blue-500 text-white' : 'bg-white hover:bg-gray-100'
             }`}
           >
-            <Box className="w-4 h-4" />
+            <Building2 className="w-4 h-4" />
           </button>
           <button 
             onClick={() => setViewMode('grid')}
@@ -215,7 +211,7 @@ const LayerControlPanel: React.FC = () => {
   const [layers, setLayers] = useState([
     { name: 'Structural Steel', enabled: true, icon: Building2, color: 'text-green-500' },
     { name: 'Concrete Floors', enabled: false, icon: Layers, color: 'text-gray-400' },
-    { name: 'HVAC System', enabled: false, icon: Box, color: 'text-gray-400' },
+    { name: 'HVAC System', enabled: false, icon: Building2, color: 'text-gray-400' },
     { name: 'Electrical', enabled: true, icon: Building2, color: 'text-green-500' }
   ]);
 
@@ -228,7 +224,7 @@ const LayerControlPanel: React.FC = () => {
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Panel Kontrol Layer</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Layer Control Panel</h3>
       
       <div className="space-y-3">
         {layers.map((layer, index) => {
@@ -297,15 +293,15 @@ export const ProfessionalWorkspace: React.FC<ProfessionalWorkspaceProps> = ({ on
             {/* Additional Info Cards */}
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div className="bg-white rounded-xl p-4 shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-2">Status Analisis</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">Analysis Status</h4>
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-gray-600">Perhitungan selesai</span>
+                  <span className="text-sm text-gray-600">Calculation complete</span>
                 </div>
               </div>
               
               <div className="bg-white rounded-xl p-4 shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-2">Akurasi Model</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">Model Accuracy</h4>
                 <div className="flex items-center space-x-2">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div className="bg-blue-500 h-2 rounded-full" style={{width: '94%'}}></div>
@@ -322,7 +318,7 @@ export const ProfessionalWorkspace: React.FC<ProfessionalWorkspaceProps> = ({ on
             
             {/* Material Properties Card */}
             <div className="mt-6 bg-white rounded-2xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Properti Material</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Material Properties</h3>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

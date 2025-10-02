@@ -72,21 +72,7 @@ const navigationItems = [
       { id: 'reinforcement', label: 'Reinforcement Detailing' }
     ]
   },
-  {
-    id: '3d-viewer',
-    label: '3D View Structure',
-    icon: Building2,
-    children: [
-      { id: '3d-model', label: '3D Model Viewer' },
-      { id: 'deformation', label: 'Deformation Visualization' },
-      { id: 'stress-view', label: 'Stress Analysis View' },
-      { id: 'layer-management', label: 'Layer Management' },
-      { id: 'section-views', label: 'Section Views' },
-      { id: 'animation', label: 'Animation & Simulation' },
-      { id: 'rendering', label: 'Rendering Options' },
-      { id: 'model-comparison', label: 'Model Comparison' }
-    ]
-  },
+
   {
     id: 'education',
     label: 'Learning Education',

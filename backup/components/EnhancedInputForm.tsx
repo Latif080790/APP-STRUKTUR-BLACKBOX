@@ -264,10 +264,10 @@ const EnhancedInputForm: React.FC<EnhancedInputFormProps> = ({
   // Tab navigation component
   const TabNavigation = () => {
     const tabs = [
-      { id: 'geometry', label: 'Geometri', errors: validationErrors.geometry.length },
+      { id: 'geometry', label: 'Geometry', errors: validationErrors.geometry.length },
       { id: 'material', label: 'Material', errors: validationErrors.material.length },
-      { id: 'seismic', label: 'Seismik', errors: validationErrors.seismic.length },
-      { id: 'options', label: 'Opsi', errors: validationErrors.options.length }
+      { id: 'seismic', label: 'Seismic', errors: validationErrors.seismic.length },
+      { id: 'options', label: 'Options', errors: validationErrors.options.length }
     ];
 
     return (

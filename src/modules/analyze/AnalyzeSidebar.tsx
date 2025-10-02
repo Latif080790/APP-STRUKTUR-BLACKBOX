@@ -1,11 +1,12 @@
 /**
- * Analyze Structure Sidebar - Navigasi untuk semua jenis analisis
+ * Analyze Structure Sidebar - Navigation for all analysis types
+ * Implements separate submenus per project specification
  */
 
 import React from 'react';
 import {
   Target, Activity, BarChart3, TrendingUp, Zap, Wind, 
-  Layers, FileText
+  Layers, FileText, Play, Settings
 } from 'lucide-react';
 
 interface AnalyzeSidebarProps {
@@ -17,7 +18,8 @@ const AnalyzeSidebar: React.FC<AnalyzeSidebarProps> = ({
   currentAnalysisType,
   onAnalysisTypeChange
 }) => {
-  const sidebarItems = [
+  // Analysis Types Section
+  const analysisTypes = [
     {
       id: 'static',
       name: 'Static Analysis',
@@ -53,20 +55,61 @@ const AnalyzeSidebar: React.FC<AnalyzeSidebarProps> = ({
       name: 'Wind Load Analysis',
       icon: Wind,
       description: 'Wind load analysis per SNI 1727'
-    },
-    {
-      id: 'combinations',
-      name: 'Load Combinations',
-      icon: Layers,
-      description: 'Load combinations per standards'
-    },
-    {
-      id: 'results',
-      name: 'Analysis Results',
-      icon: FileText,
-      description: 'Results display and reports'
     }
   ];
+
+  // Separate Submenus as per project specification
+  const separateSubmenus = [
+    {
+      id: 'load-combinations',
+      name: 'Load Combinations',
+      icon: Layers,
+      description: 'Manage load combinations per standards',
+      category: 'Load Management'
+    },
+    {
+      id: 'analysis-execution',
+      name: 'Analysis Execution',
+      icon: Play,
+      description: 'Run and monitor analysis processes',
+      category: 'Execution Control'
+    },
+    {
+      id: 'analysis-reports',
+      name: 'Analysis Reports',
+      icon: FileText,
+      description: 'Generate and view analysis reports',
+      category: 'Results & Reports'
+    }
+  ];
+
+  const renderMenuItem = (item: any, isSubmenu = false) => {
+    const IconComponent = item.icon;
+    const isActive = currentAnalysisType === item.id || (currentAnalysisType === '' && item.id === 'static');
+    
+    return (
+      <button
+        key={item.id}
+        onClick={() => onAnalysisTypeChange(item.id)}
+        className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
+          isActive 
+            ? 'bg-blue-600 text-white shadow-lg' 
+            : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+        } ${isSubmenu ? 'ml-2 border-l-2 border-slate-600' : ''}`}
+      >
+        <div className="flex items-center space-x-3">
+          <IconComponent className="w-5 h-5" />
+          <div className="flex-1">
+            <p className="font-medium">{item.name}</p>
+            <p className="text-xs opacity-75 mt-1">{item.description}</p>
+            {item.category && (
+              <p className="text-xs opacity-60 mt-1 italic">{item.category}</p>
+            )}
+          </div>
+        </div>
+      </button>
+    );
+  };
 
   return (
     <div className="w-80 bg-slate-800 text-white h-full overflow-y-auto">
@@ -86,42 +129,36 @@ const AnalyzeSidebar: React.FC<AnalyzeSidebarProps> = ({
         </div>
       </div>
 
-      {/* Navigation Items */}
-      <div className="p-4 space-y-2">
-        {sidebarItems.map((item) => {
-          const IconComponent = item.icon;
-          // IMPROVED ACTIVE STATE LOGIC - DEFAULT TO STATIC IF EMPTY
-          const isActive = currentAnalysisType === item.id || (currentAnalysisType === '' && item.id === 'static');
-          
-          return (
-            <button
-              key={item.id}
-              onClick={() => onAnalysisTypeChange(item.id)}
-              className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                isActive 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <IconComponent className="w-5 h-5" />
-                <div className="flex-1">
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-xs opacity-75 mt-1">{item.description}</p>
-                </div>
-              </div>
-            </button>
-          );
-        })}
+      {/* Analysis Types Section */}
+      <div className="p-4">
+        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
+          Analysis Types
+        </h3>
+        <div className="space-y-2">
+          {analysisTypes.map((item) => renderMenuItem(item))}
+        </div>
       </div>
 
-      {/* Footer Info */}
-      <div className="p-4 mt-8 border-t border-slate-700">
+      {/* Separate Submenus Section */}
+      <div className="p-4 border-t border-slate-700">
+        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
+          Analysis Workflow
+        </h3>
+        <div className="space-y-2">
+          {separateSubmenus.map((item) => renderMenuItem(item, true))}
+        </div>
+      </div>
+
+      {/* System Integration Status */}
+      <div className="p-4 mt-4 border-t border-slate-700">
         <div className="text-xs text-slate-400">
-          <p className="font-medium mb-2">System Status</p>
+          <p className="font-medium mb-2 flex items-center">
+            <Settings className="w-3 h-3 mr-2" />
+            System Status
+          </p>
           <div className="space-y-1">
             <div className="flex justify-between">
-              <span>Engine</span>
+              <span>Analysis Engine</span>
               <span className="text-green-400">Active</span>
             </div>
             <div className="flex justify-between">
@@ -129,8 +166,12 @@ const AnalyzeSidebar: React.FC<AnalyzeSidebarProps> = ({
               <span className="text-green-400">Current</span>
             </div>
             <div className="flex justify-between">
-              <span>License</span>
-              <span className="text-blue-400">Professional</span>
+              <span>Professional Mode</span>
+              <span className="text-blue-400">Enabled</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Workflow Integration</span>
+              <span className="text-purple-400">Enhanced</span>
             </div>
           </div>
         </div>

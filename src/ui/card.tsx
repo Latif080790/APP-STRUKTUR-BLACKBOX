@@ -1,6 +1,6 @@
 /**
- * Komponen Card untuk UI
- * Card components yang fleksibel untuk layout
+ * Card Component for UI
+ * Flexible card components for layout
  */
 
 import React, { forwardRef, HTMLAttributes } from 'react';

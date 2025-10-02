@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { 
-  Home, Building2, Box, FileText, Settings, Calculator, Database, Eye,
+  Home, Building2, FileText, Settings, Database, Eye,
   Layers, Target, Activity, Zap, Maximize2, RotateCcw, ZoomIn, ZoomOut, Move,
   CheckCircle, Square, Triangle, User, Ruler, Calendar, Search
 } from 'lucide-react';
@@ -20,12 +20,11 @@ const ProfessionalSidebar: React.FC<{ currentView: string; onNavigate: (view: st
   currentView, onNavigate 
 }) => {
   const sidebarItems = [
-    { id: 'dashboard', icon: Home, label: 'Beranda' },
-    { id: '3d-viewer', icon: Box, label: '3D Viewer' },
-    { id: 'analysis', icon: Calculator, label: 'Analisis' },
-    { id: 'materials', icon: Database, label: 'Material' },
-    { id: 'reports', icon: FileText, label: 'Laporan' },
-    { id: 'settings', icon: Settings, label: 'Pengaturan' }
+    { id: 'dashboard', icon: Home, label: 'Dashboard' },
+    { id: 'analysis', icon: Building2, label: 'Analysis' },
+    { id: 'materials', icon: Database, label: 'Materials' },
+    { id: 'reports', icon: FileText, label: 'Reports' },
+    { id: 'settings', icon: Settings, label: 'Settings' }
   ];
 
   return (
@@ -71,7 +70,7 @@ const Professional3DViewer: React.FC = () => {
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Box className="w-4 h-4 text-gray-600" />
+            <Building2 className="w-4 h-4 text-gray-600" />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">3D Structural Deformation</h3>

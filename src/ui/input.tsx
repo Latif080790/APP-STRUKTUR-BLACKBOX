@@ -1,6 +1,6 @@
 /**
- * Komponen Input untuk UI
- * Input components yang fleksibel untuk forms
+ * Input Component for UI
+ * Flexible input components for forms
  */
 
 import React, { InputHTMLAttributes, forwardRef } from 'react';

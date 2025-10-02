@@ -69,15 +69,6 @@ export const ModernDashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       onClick: () => setSelectedCategory('analysis')
     },
     {
-      title: '3D Visualization',
-      value: modulesByCategory['3d']?.length || 0,
-      change: '+4 enhanced',
-      trend: 'up' as const,
-      icon: '🎯',
-      gradient: 'primary' as keyof typeof theme.gradients,
-      onClick: () => setSelectedCategory('3d')
-    },
-    {
       title: 'Design Tools',
       value: modulesByCategory.design?.length || 0,
       change: 'Updated',
@@ -132,11 +123,11 @@ export const ModernDashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">StructureAI Platform</h1>
-              <p className="text-blue-200 text-lg">Sistem Analisis Struktur Profesional</p>
+              <p className="text-blue-200 text-lg">Professional Structural Analysis System</p>
               <div className="flex items-center space-x-2 mt-1">
                 <Clock className="w-4 h-4 text-blue-300" />
                 <span className="text-blue-300 text-sm">
-                  {currentTime.toLocaleTimeString('id-ID')}
+                  {currentTime.toLocaleTimeString('en-US')}
                 </span>
               </div>
             </div>
@@ -149,7 +140,7 @@ export const ModernDashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Cari modul, fitur, atau fungsi..."
+                  placeholder="Search modules, features, or functions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full lg:w-80 bg-transparent border-0 pl-10 pr-4 py-3 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-xl"
@@ -189,7 +180,7 @@ export const ModernDashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               onClick={() => setSelectedCategory(null)}
               size="sm"
             >
-              Semua Modul ({moduleDefinitions.length})
+              All Modules ({moduleDefinitions.length})
             </ModernButton>
             {Object.entries(modulesByCategory).map(([category, modules]) => (
               <ModernButton
@@ -249,7 +240,7 @@ export const ModernDashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 {/* Action Button */}
                 <div className="mt-4 pt-4 border-t border-white/10">
                   <div className="flex items-center justify-between">
-                    <span className="text-blue-300 text-xs font-medium">Klik untuk membuka</span>
+                    <span className="text-blue-300 text-xs font-medium">Click to open</span>
                     <ArrowUpRight className="w-4 h-4 text-blue-300 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" />
                   </div>
                 </div>
@@ -262,19 +253,19 @@ export const ModernDashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <div className="mt-12 pt-8 border-t border-white/10">
           <GlassCard>
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-2">🎯 Platform Analisis Struktur Terpadu</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">🎯 Integrated Structural Analysis Platform</h3>
               <p className="text-blue-200 max-w-2xl mx-auto">
-                Sistem komprehensif untuk analisis struktural, desain, visualisasi 3D, dan optimasi AI. 
-                Dirancang untuk meningkatkan efisiensi dan akurasi dalam pengolahan data teknik sipil.
+                Comprehensive system for structural analysis, design, 3D visualization, and AI optimization. 
+                Designed to improve efficiency and accuracy in civil engineering data processing.
               </p>
               <div className="flex items-center justify-center space-x-6 mt-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">{moduleDefinitions.length}</div>
-                  <div className="text-blue-200 text-sm">Total Modul</div>
+                  <div className="text-blue-200 text-sm">Total Modules</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">24/7</div>
-                  <div className="text-blue-200 text-sm">Akses</div>
+                  <div className="text-blue-200 text-sm">Access</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">Pro</div>

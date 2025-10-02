@@ -37,7 +37,7 @@ class ErrorBoundary extends React.Component<
         }}>
           <div>
             <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️ Terjadi Kesalahan</h1>
-            <p style={{ marginBottom: '1rem', opacity: 0.8 }}>Aplikasi mengalami error saat memuat komponen.</p>
+            <p style={{ marginBottom: '1rem', opacity: 0.8 }}>Application encountered an error while loading components.</p>
             <p style={{ marginBottom: '2rem', fontSize: '0.9rem', opacity: 0.6 }}>Error: {this.state.error?.message}</p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
               <button 
@@ -51,7 +51,7 @@ class ErrorBoundary extends React.Component<
                   cursor: 'pointer'
                 }}
               >
-                Muat Ulang Halaman
+                Reload Page
               </button>
               <button 
                 onClick={() => window.location.href = '/test.html'}
@@ -64,7 +64,7 @@ class ErrorBoundary extends React.Component<
                   cursor: 'pointer'
                 }}
               >
-                Halaman Test
+                Test Page
               </button>
             </div>
           </div>
