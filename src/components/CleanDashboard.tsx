@@ -23,13 +23,8 @@ import {
   Eye,
   Zap,
   ArrowRight,
-  Plus,
-  Filter,
-  Download,
-  Upload,
-  Play,
-  Maximize2,
-  Grid3X3,
+  Plus, Edit3, Trash2, Save, X, Check, AlertCircle,
+  Filter, Download, Upload, Play, Maximize2, Grid3X3,
   Calendar,
   Clock,
   ChevronRight,
@@ -53,12 +48,12 @@ const ModernSidebar: React.FC<{ currentView: string; onNavigate: (view: string) 
   onNavigate 
 }) => {
   const sidebarItems = [
-    { id: 'dashboard', icon: Home, label: 'Beranda', active: currentView === 'dashboard' },
-    { id: 'structural-analysis', icon: Building2, label: 'Analisis', active: currentView === 'structural-analysis' },
-    { id: '3d-viewer', icon: Box, label: 'Viewer 3D', active: false },
-    { id: 'calculator', icon: Calculator, label: 'Kalkulator', active: false },
-    { id: 'reports', icon: FileText, label: 'Laporan', active: false },
-    { id: 'settings', icon: Settings, label: 'Pengaturan', active: false }
+    { id: 'dashboard', icon: Home, label: 'Dashboard', active: currentView === 'dashboard' },
+    { id: 'structural-analysis', icon: Building2, label: 'Analysis', active: currentView === 'structural-analysis' },
+    { id: '3d-viewer', icon: Box, label: '3D Viewer', active: false },
+    { id: 'calculator', icon: Calculator, label: 'Calculator', active: false },
+    { id: 'reports', icon: FileText, label: 'Reports', active: false },
+    { id: 'settings', icon: Settings, label: 'Settings', active: false }
   ];
 
   return (
@@ -136,7 +131,7 @@ const AnalysisModuleCard: React.FC<{
 const ProjectPreview: React.FC = () => (
   <div className="bg-white rounded-2xl p-6 shadow-sm">
     <div className="flex items-center justify-between mb-6">
-      <h2 className="text-xl font-semibold text-gray-900">Preview Proyek</h2>
+      <h2 className="text-xl font-semibold text-gray-900">Project Preview</h2>
       <div className="flex space-x-2">
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <Plus className="w-5 h-5 text-gray-600" />
@@ -151,8 +146,8 @@ const ProjectPreview: React.FC = () => (
     <div className="bg-gray-100 rounded-xl h-80 flex items-center justify-center mb-4 relative overflow-hidden">
       <div className="text-center">
         <Box className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 font-medium">Model Struktur 3D</p>
-        <p className="text-sm text-gray-400 mt-1">Klik untuk memuat preview</p>
+        <p className="text-gray-500 font-medium">3D Structural Model</p>
+        <p className="text-sm text-gray-400 mt-1">Click to load preview</p>
       </div>
       
       {/* Control Buttons */}
@@ -195,7 +190,7 @@ const LayerControlPanel: React.FC = () => {
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Panel Kontrol Layer</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Layer Control Panel</h3>
       
       <div className="space-y-3">
         {layers.map((layer, index) => (
@@ -228,42 +223,141 @@ const LayerControlPanel: React.FC = () => {
   );
 };
 
-// Komponen Material Properties
+// Enhanced Material Properties with real functionality
 const MaterialProperties: React.FC = () => {
-  const materials = [
-    { name: 'Concrete', strength: '40 MPa', type: 'C40', color: 'bg-gray-100' },
-    { name: 'Steel (A992)', strength: '345 MPa', type: 'ASTM A992', color: 'bg-blue-100' },
-    { name: 'Glass U-Value', strength: '1.2 W/m²K', type: 'Thermal', color: 'bg-green-100' }
-  ];
+  const [materials, setMaterials] = useState([
+    { id: 1, name: 'Concrete C30/37', strength: '30 MPa', type: 'SNI-2847', color: 'bg-gray-100', density: 2400, elasticModulus: 30000 },
+    { id: 2, name: 'Steel BJ-50', strength: '290 MPa', type: 'SNI-1729', color: 'bg-blue-100', density: 7850, elasticModulus: 200000 },
+    { id: 3, name: 'Timber Class II', strength: '40 MPa', type: 'SNI-7973', color: 'bg-green-100', density: 600, elasticModulus: 12000 }
+  ]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const handleMaterialEdit = (material: any) => {
+    setSelectedMaterial(material);
+    setIsEditing(true);
+  };
+
+  const handleMaterialSave = (updatedMaterial: any) => {
+    setMaterials(prev => 
+      prev.map(m => m.id === updatedMaterial.id ? updatedMaterial : m)
+    );
+    setIsEditing(false);
+    setSelectedMaterial(null);
+  };
+
+  const handleAddMaterial = () => {
+    const newMaterial = {
+      id: materials.length + 1,
+      name: 'New Material',
+      strength: '25 MPa',
+      type: 'Custom',
+      color: 'bg-purple-100',
+      density: 2000,
+      elasticModulus: 20000
+    };
+    setMaterials(prev => [...prev, newMaterial]);
+    setShowAddForm(false);
+  };
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Properti Material</h3>
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <Settings className="w-4 h-4 text-gray-600" />
-        </button>
+        <h3 className="text-lg font-semibold text-gray-900">Material Properties</h3>
+        <div className="flex space-x-2">
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-green-600"
+            title="Add Material"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4 text-gray-600" />
+          </button>
+        </div>
       </div>
       
       <div className="space-y-4">
-        {materials.map((material, index) => (
-          <div key={index} className={`p-4 rounded-xl ${material.color} border border-gray-200`}>
+        {materials.map((material) => (
+          <div key={material.id} className={`p-4 rounded-xl ${material.color} border border-gray-200 hover:shadow-md transition-shadow`}>
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-medium text-gray-900">{material.name}</h4>
-              <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-md">
-                {material.type}
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-md">
+                  {material.type}
+                </span>
+                <button
+                  onClick={() => handleMaterialEdit(material)}
+                  className="p-1 hover:bg-white rounded transition-colors"
+                >
+                  <Edit3 className="w-3 h-3 text-gray-600" />
+                </button>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
-              Kekuatan = {material.strength}
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+              <div>Strength: {material.strength}</div>
+              <div>Density: {material.density} kg/m³</div>
+              <div>E: {material.elasticModulus} MPa</div>
+              <div className="text-green-600 font-medium">✓ Active</div>
             </div>
           </div>
         ))}
       </div>
       
-      <button className="w-full mt-4 p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors">
-        + Tambah Material
+      <button 
+        onClick={handleAddMaterial}
+        className="w-full mt-4 p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
+      >
+        + Add New Material
       </button>
+
+      {/* Material Edit Modal */}
+      {isEditing && selectedMaterial && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Edit Material</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={selectedMaterial.name}
+                  onChange={(e) => setSelectedMaterial({...selectedMaterial, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Strength</label>
+                <input
+                  type="text"
+                  value={selectedMaterial.strength}
+                  onChange={(e) => setSelectedMaterial({...selectedMaterial, strength: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => handleMaterialSave(selectedMaterial)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -272,16 +366,16 @@ const MaterialProperties: React.FC = () => {
 const StorageCapacity: React.FC = () => (
   <div className="bg-white rounded-2xl p-6 shadow-sm">
     <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold text-gray-900">Kapasitas Penyimpanan</h3>
+      <h3 className="text-lg font-semibold text-gray-900">Storage Capacity</h3>
       <button className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors">
-        Kirim File
+        Upload File
       </button>
     </div>
     
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
         <span className="text-2xl font-bold text-gray-900">87 / 512 GB</span>
-        <span className="text-sm text-gray-500">2% tersisa</span>
+        <span className="text-sm text-gray-500">2% remaining</span>
       </div>
       
       {/* Progress Bar */}
@@ -298,7 +392,7 @@ const StorageCapacity: React.FC = () => (
         </div>
         <div>
           <div className="font-medium text-gray-900">128 GB</div>
-          <div className="text-xs text-gray-500">Dokumen • 1220 file</div>
+          <div className="text-xs text-gray-500">Documents • 1220 files</div>
         </div>
       </div>
       
@@ -308,7 +402,7 @@ const StorageCapacity: React.FC = () => (
         </div>
         <div>
           <div className="font-medium text-gray-900">50 GB</div>
-          <div className="text-xs text-gray-500">Video • Laporan</div>
+          <div className="text-xs text-gray-500">Video • Reports</div>
         </div>
       </div>
     </div>
@@ -318,7 +412,7 @@ const StorageCapacity: React.FC = () => (
 // Komponen Project Timeline
 const ProjectTimeline: React.FC = () => (
   <div className="bg-white rounded-2xl p-6 shadow-sm">
-    <h3 className="text-lg font-semibold text-gray-900 mb-4">Timeline Proyek</h3>
+    <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Timeline</h3>
     
     <div className="space-y-4">
       {/* Timeline Item 1 */}
@@ -329,7 +423,7 @@ const ProjectTimeline: React.FC = () => (
         <div className="ml-4 flex-1">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-900">Project Initiated</span>
-            <span className="text-xs text-gray-500">Selesai</span>
+            <span className="text-xs text-gray-500">Complete</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
             <div className="bg-blue-500 h-1 rounded-full w-full"></div>
@@ -345,7 +439,7 @@ const ProjectTimeline: React.FC = () => (
         <div className="ml-4 flex-1">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-900">Design Phase</span>
-            <span className="text-xs text-gray-500">Berlangsung</span>
+            <span className="text-xs text-gray-500">In Progress</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
             <div className="bg-yellow-500 h-1 rounded-full w-3/4"></div>
@@ -361,7 +455,7 @@ const ProjectTimeline: React.FC = () => (
         <div className="ml-4 flex-1">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-900">Analysis Complete</span>
-            <span className="text-xs text-gray-500">Menunggu</span>
+            <span className="text-xs text-gray-500">Pending</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
             <div className="bg-gray-300 h-1 rounded-full w-1/4"></div>
@@ -459,7 +553,7 @@ export const CleanDashboard: React.FC<CleanDashboardProps> = ({ onNavigate }) =>
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Structural Hub</h1>
-            <p className="text-gray-600 mt-1">Platform analisis struktur terpadu</p>
+            <p className="text-gray-600 mt-1">Integrated structural analysis platform</p>
           </div>
           
           {/* Search dan Notifikasi */}
@@ -495,7 +589,7 @@ export const CleanDashboard: React.FC<CleanDashboardProps> = ({ onNavigate }) =>
           {/* Middle Column - Analysis Modules */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Modul Analisis</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Analysis Modules</h2>
               <div className="grid grid-cols-2 gap-4">
                 {analysisModules.map((module, index) => (
                   <AnalysisModuleCard
@@ -527,3 +621,5 @@ export const CleanDashboard: React.FC<CleanDashboardProps> = ({ onNavigate }) =>
     </div>
   );
 };
+
+export default CleanDashboard;

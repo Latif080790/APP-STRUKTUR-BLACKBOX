@@ -8,7 +8,8 @@ import WorkflowController from '../core/WorkflowController';
 import NotificationManager from '../core/NotificationManager';
 import ProjectManager from '../core/ProjectManager';
 import HierarchicalWorkflowEngine from '../core/HierarchicalWorkflowEngine';
-import { Structure3D, Node, Element, Load } from '../types/structural';
+import { Structure3D, Node, Element, Load, AnalysisResult } from '../types/structural';
+import { UnifiedAnalysisResult } from '../core/UnifiedAnalysisEngine';
 
 export class SystemIntegrationTest {
   private workflowController: WorkflowController;
@@ -220,7 +221,16 @@ export class SystemIntegrationTest {
               height: 0.4,
               area: 0.12,
               momentOfInertiaY: 0.0016,
-              momentOfInertiaZ: 0.00090
+              momentOfInertiaZ: 0.00090,
+              torsionalConstant: 0.0008,
+              sectionModulusY: 0.008,
+              sectionModulusZ: 0.0045,
+              radiusOfGyrationY: 0.116,
+              radiusOfGyrationZ: 0.087,
+              centroidY: 0.0,
+              centroidZ: 0.0,
+              shearCenterY: 0.0,
+              shearCenterZ: 0.0
             },
             material: {
               id: 'concrete-1',
@@ -228,7 +238,14 @@ export class SystemIntegrationTest {
               type: 'concrete',
               elasticModulus: 25000000000,
               yieldStrength: 25000000,
-              density: 2400
+              density: 2400,
+              poissonsRatio: 0.2,
+              thermalExpansion: 0.00001,
+              sniCompliance: {
+                standard: 'SNI-2847',
+                grade: 'K-25',
+                certified: true
+              }
             }
           },
           {
@@ -243,7 +260,16 @@ export class SystemIntegrationTest {
               height: 0.4,
               area: 0.12,
               momentOfInertiaY: 0.0016,
-              momentOfInertiaZ: 0.00090
+              momentOfInertiaZ: 0.00090,
+              torsionalConstant: 0.0008,
+              sectionModulusY: 0.008,
+              sectionModulusZ: 0.0045,
+              radiusOfGyrationY: 0.116,
+              radiusOfGyrationZ: 0.087,
+              centroidY: 0.0,
+              centroidZ: 0.0,
+              shearCenterY: 0.0,
+              shearCenterZ: 0.0
             },
             material: {
               id: 'concrete-2',
@@ -251,7 +277,14 @@ export class SystemIntegrationTest {
               type: 'concrete',
               elasticModulus: 25000000000,
               yieldStrength: 25000000,
-              density: 2400
+              density: 2400,
+              poissonsRatio: 0.2,
+              thermalExpansion: 0.00001,
+              sniCompliance: {
+                standard: 'SNI-2847',
+                grade: 'K-25',
+                certified: true
+              }
             }
           },
           {
@@ -266,7 +299,16 @@ export class SystemIntegrationTest {
               height: 0.6,
               area: 0.24,
               momentOfInertiaY: 0.0072,
-              momentOfInertiaZ: 0.0032
+              momentOfInertiaZ: 0.0032,
+              torsionalConstant: 0.0024,
+              sectionModulusY: 0.024,
+              sectionModulusZ: 0.016,
+              radiusOfGyrationY: 0.173,
+              radiusOfGyrationZ: 0.115,
+              centroidY: 0.0,
+              centroidZ: 0.0,
+              shearCenterY: 0.0,
+              shearCenterZ: 0.0
             },
             material: {
               id: 'concrete-3',
@@ -274,26 +316,69 @@ export class SystemIntegrationTest {
               type: 'concrete',
               elasticModulus: 25000000000,
               yieldStrength: 25000000,
-              density: 2400
+              density: 2400,
+              poissonsRatio: 0.2,
+              thermalExpansion: 0.00001,
+              sniCompliance: {
+                standard: 'SNI-2847',
+                grade: 'K-25',
+                certified: true
+              }
             }
           }
         ],
         loads: [
           {
             id: 'load1',
+            name: 'Point Load 1',
             type: 'point',
+            category: 'live',
             nodeId: '3',
-            direction: 'z',
+            direction: { z: -1 },
             magnitude: -50000
           },
           {
             id: 'load2',
+            name: 'Point Load 2',
             type: 'point',
+            category: 'live',
             nodeId: '4',
-            direction: 'z',
+            direction: { z: -1 },
             magnitude: -50000
           }
-        ]
+        ],
+        materials: [],
+        sections: [],
+        loadCombinations: [
+          {
+            id: 'combo1',
+            name: '1.2D + 1.6L',
+            type: 'strength',
+            factors: { dead: 1.2, live: 1.6 },
+            active: true
+          }
+        ],
+        analysisSettings: {
+          type: 'static',
+          solver: 'direct',
+          convergence: {
+            tolerance: 1e-6,
+            maxIterations: 100
+          }
+        },
+        modelInfo: {
+          name: 'Test Structure',
+          engineer: 'System Test',
+          dateCreated: new Date(),
+          dateModified: new Date(),
+          version: '1.0',
+          units: {
+            length: 'm',
+            force: 'N',
+            stress: 'Pa',
+            moment: 'N⋅m'
+          }
+        }
       };
 
       // Run analysis
@@ -304,13 +389,13 @@ export class SystemIntegrationTest {
       const details = {
         analysisCompleted: !!analysisResult,
         hasDisplacements: !!analysisResult.displacements && analysisResult.displacements.length > 0,
-        hasForces: !!analysisResult.forces && analysisResult.forces.length > 0,
-        hasStresses: !!analysisResult.stresses && analysisResult.stresses.length > 0,
+        hasForces: !!analysisResult.elementForces && analysisResult.elementForces.length > 0,
+        hasStresses: !!analysisResult.elementStresses && analysisResult.elementStresses.length > 0,
         sniCompliance: !!analysisResult.compliance && !!analysisResult.compliance.sni,
         safetyChecks: !!analysisResult.safetyCheck,
         performanceMetrics: !!analysisResult.performance,
         analysisTime: endTime - startTime,
-        maxDisplacement: analysisResult.maxDisplacement,
+        maxDisplacement: analysisResult.maxDisplacement?.value,
         isStructurallyValid: analysisResult.isValid
       };
 

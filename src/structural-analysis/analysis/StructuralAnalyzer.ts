@@ -36,9 +36,14 @@ const transformStiffnessMatrix = (element: Element, nodes: Node[]): number[][] =
   
   // Material and section properties
   const E = element.material.elasticModulus || 2e11; // Default to steel
-  const A = element.section.area || (element.section.width * element.section.height);
-  const Iy = element.section.momentOfInertiaY || (element.section.width * Math.pow(element.section.height, 3)) / 12;
-  const Iz = element.section.momentOfInertiaZ || (element.section.height * Math.pow(element.section.width, 3)) / 12;
+  
+  // Safely get section dimensions with fallbacks
+  const sectionWidth = element.section.width || 0.3; // Default 300mm
+  const sectionHeight = element.section.height || 0.3; // Default 300mm
+  
+  const A = element.section.area || (sectionWidth * sectionHeight);
+  const Iy = element.section.momentOfInertiaY || (sectionWidth * Math.pow(sectionHeight, 3)) / 12;
+  const Iz = element.section.momentOfInertiaZ || (sectionHeight * Math.pow(sectionWidth, 3)) / 12;
   const G = E / (2 * (1 + (element.material.poissonsRatio || 0.3))); // Shear modulus
   const J = element.section.torsionalConstant || Iy; // Polar moment of inertia (simplified)
   
@@ -227,16 +232,14 @@ const createLoadVector = (structure: Structure3D): number[] => {
           const dofOffset = nodeIndex * dofPerNode;
           
           // Apply load based on direction
-          switch (load.direction) {
-            case 'x':
-              F[dofOffset] += load.magnitude;
-              break;
-            case 'y':
-              F[dofOffset + 1] += load.magnitude;
-              break;
-            case 'z':
-              F[dofOffset + 2] += load.magnitude;
-              break;
+          if (load.direction.x) {
+            F[dofOffset] += load.magnitude * load.direction.x;
+          }
+          if (load.direction.y) {
+            F[dofOffset + 1] += load.magnitude * load.direction.y;
+          }
+          if (load.direction.z) {
+            F[dofOffset + 2] += load.magnitude * load.direction.z;
           }
         }
       }
@@ -416,11 +419,14 @@ export const analyzeStructure = (structure: Structure3D): AnalysisResult => {
   try {
     // Initialize results
     const displacements = [];
-    const forces = [];
-    const stresses = [];
+    const reactions = [];
+    const elementForces = [];
+    const elementStresses = [];
     
     let maxDisplacement = 0;
     let maxStress = 0;
+    let maxDisplacementNode = structure.nodes[0]?.id || 0;
+    let maxStressElement = structure.elements[0]?.id || 0;
     
     // Assemble global stiffness matrix
     let K = assembleGlobalStiffnessMatrix(structure);
@@ -448,6 +454,7 @@ export const analyzeStructure = (structure: Structure3D): AnalysisResult => {
       
       displacements.push({
         nodeId: node.id,
+        loadCombination: 'Default',
         ux,
         uy,
         uz,
@@ -460,40 +467,68 @@ export const analyzeStructure = (structure: Structure3D): AnalysisResult => {
       const totalDisplacement = Math.sqrt(ux*ux + uy*uy + uz*uz);
       if (totalDisplacement > maxDisplacement) {
         maxDisplacement = totalDisplacement;
+        maxDisplacementNode = node.id;
       }
     }
     
     // Process each element for forces and stresses
     for (const element of structure.elements) {
       // Calculate element forces
-      const elementForces = calculateElementForces(element, structure.nodes, U);
+      const elementForceCalcs = calculateElementForces(element, structure.nodes, U);
       
-      forces.push({
+      elementForces.push({
         elementId: element.id,
-        nx: elementForces.nx,
-        vy: elementForces.vy,
-        vz: elementForces.vz,
-        tx: elementForces.tx,
-        my: elementForces.my,
-        mz: elementForces.mz
+        loadCombination: 'Default',
+        position: 0,
+        nx: elementForceCalcs.nx,
+        vy: elementForceCalcs.vy,
+        vz: elementForceCalcs.vz,
+        tx: elementForceCalcs.tx,
+        my: elementForceCalcs.my,
+        mz: elementForceCalcs.mz
       });
       
       // Simplified stress calculation
       const axialStress = 0; // Pa
-      const shearStress = 0; // Pa
-      const bendingStress = 0; // Pa
+      const shearStressY = 0; // Pa
+      const shearStressZ = 0; // Pa
+      const bendingStressY = 0; // Pa
+      const bendingStressZ = 0; // Pa
+      const vonMisesStress = 0; // Pa
       
-      stresses.push({
+      elementStresses.push({
         elementId: element.id,
+        loadCombination: 'Default',
+        position: 0,
         axialStress,
-        shearStress,
-        bendingStress
+        shearStressY,
+        shearStressZ,
+        bendingStressY,
+        bendingStressZ,
+        vonMisesStress
       });
       
       // Track maximum stress
-      const maxElementStress = Math.max(Math.abs(axialStress), Math.abs(shearStress), Math.abs(bendingStress));
+      const maxElementStress = Math.max(Math.abs(axialStress), Math.abs(shearStressY), Math.abs(vonMisesStress));
       if (maxElementStress > maxStress) {
         maxStress = maxElementStress;
+        maxStressElement = element.id;
+      }
+    }
+    
+    // Add reactions (simplified - assumes reactions at supported nodes)
+    for (const node of structure.nodes) {
+      if (node.supports && Object.values(node.supports).some(Boolean)) {
+        reactions.push({
+          nodeId: node.id,
+          loadCombination: 'Default',
+          fx: 0,
+          fy: 0,
+          fz: 0,
+          mx: 0,
+          my: 0,
+          mz: 0
+        });
       }
     }
     
@@ -501,25 +536,48 @@ export const analyzeStructure = (structure: Structure3D): AnalysisResult => {
     const isValid = maxDisplacement < 0.01 && maxStress < 100000000; // 100 MPa limit
     
     return {
+      analysisInfo: {
+        type: 'static',
+        timestamp: new Date(),
+        solutionTime: 0,
+        converged: true,
+        warnings: [],
+        errors: []
+      },
       displacements,
-      forces,
-      stresses,
-      isValid,
-      maxDisplacement,
-      maxStress
+      reactions,
+      elementForces,
+      elementStresses,
+      summary: {
+        maxDisplacement: {
+          value: maxDisplacement,
+          nodeId: maxDisplacementNode,
+          direction: 'ux',
+          loadCombination: 'Default'
+        },
+        maxStress: {
+          value: maxStress,
+          elementId: maxStressElement,
+          type: 'vonMises',
+          loadCombination: 'Default'
+        }
+      },
+      isValid
     };
   } catch (error) {
     console.error("Analysis error:", error);
     
     // Return default results if analysis fails
     const displacements = [];
-    const forces = [];
-    const stresses = [];
+    const reactions = [];
+    const elementForces = [];
+    const elementStresses = [];
     
     // Process each node for displacements
     for (const node of structure.nodes) {
       displacements.push({
         nodeId: node.id,
+        loadCombination: 'Default',
         ux: 0,
         uy: 0,
         uz: 0,
@@ -531,8 +589,10 @@ export const analyzeStructure = (structure: Structure3D): AnalysisResult => {
     
     // Process each element for forces and stresses
     for (const element of structure.elements) {
-      forces.push({
+      elementForces.push({
         elementId: element.id,
+        loadCombination: 'Default',
+        position: 0,
         nx: 0,
         vy: 0,
         vz: 0,
@@ -541,21 +601,63 @@ export const analyzeStructure = (structure: Structure3D): AnalysisResult => {
         mz: 0
       });
       
-      stresses.push({
+      elementStresses.push({
         elementId: element.id,
+        loadCombination: 'Default',
+        position: 0,
         axialStress: 0,
-        shearStress: 0,
-        bendingStress: 0
+        shearStressY: 0,
+        shearStressZ: 0,
+        bendingStressY: 0,
+        bendingStressZ: 0,
+        vonMisesStress: 0
       });
     }
     
+    // Process reactions (simplified)
+    for (const node of structure.nodes) {
+      if (node.supports && Object.values(node.supports).some(Boolean)) {
+        reactions.push({
+          nodeId: node.id,
+          loadCombination: 'Default',
+          fx: 0,
+          fy: 0,
+          fz: 0,
+          mx: 0,
+          my: 0,
+          mz: 0
+        });
+      }
+    }
+    
     return {
+      analysisInfo: {
+        type: 'static',
+        timestamp: new Date(),
+        solutionTime: 0,
+        converged: false,
+        warnings: [],
+        errors: [error instanceof Error ? error.message : 'Analysis failed']
+      },
       displacements,
-      forces,
-      stresses,
-      isValid: false,
-      maxDisplacement: 0,
-      maxStress: 0
+      reactions,
+      elementForces,
+      elementStresses,
+      summary: {
+        maxDisplacement: {
+          value: 0,
+          nodeId: structure.nodes[0]?.id || 0,
+          direction: 'ux',
+          loadCombination: 'Default'
+        },
+        maxStress: {
+          value: 0,
+          elementId: structure.elements[0]?.id || 0,
+          type: 'vonMises',
+          loadCombination: 'Default'
+        }
+      },
+      isValid: false
     };
   }
 };
@@ -590,12 +692,16 @@ export const calculateSectionProperties = (element: Element) => {
   const section = element.section;
   
   if (section.type === 'rectangular') {
-    const area = section.width * section.height;
-    const momentOfInertiaY = (section.width * Math.pow(section.height, 3)) / 12;
-    const momentOfInertiaZ = (section.height * Math.pow(section.width, 3)) / 12;
-    const sectionModulusY = momentOfInertiaY / (section.height / 2);
-    const sectionModulusZ = momentOfInertiaZ / (section.width / 2);
-    const torsionalConstant = (section.width * Math.pow(section.height, 3)) / 3; // Approximation
+    // Safely get section dimensions with fallbacks
+    const width = section.width || 0.3; // Default 300mm
+    const height = section.height || 0.3; // Default 300mm
+    
+    const area = width * height;
+    const momentOfInertiaY = (width * Math.pow(height, 3)) / 12;
+    const momentOfInertiaZ = (height * Math.pow(width, 3)) / 12;
+    const sectionModulusY = momentOfInertiaY / (height / 2);
+    const sectionModulusZ = momentOfInertiaZ / (width / 2);
+    const torsionalConstant = (width * Math.pow(height, 3)) / 3; // Approximation
     
     return {
       area,
@@ -606,7 +712,8 @@ export const calculateSectionProperties = (element: Element) => {
       torsionalConstant
     };
   } else if (section.type === 'circular') {
-    const radius = section.width / 2; // Assuming width = diameter
+    const width = section.width || 0.3; // Default 300mm diameter
+    const radius = width / 2; // Assuming width = diameter
     const area = Math.PI * Math.pow(radius, 2);
     const momentOfInertia = (Math.PI * Math.pow(radius, 4)) / 4;
     const sectionModulus = momentOfInertia / radius;
@@ -622,11 +729,13 @@ export const calculateSectionProperties = (element: Element) => {
     };
   } else if (section.type === 'i-section') {
     // Simplified I-section properties
-    const area = section.area || (section.width * section.height);
-    const momentOfInertiaY = section.momentOfInertiaY || (section.width * Math.pow(section.height, 3)) / 12;
-    const momentOfInertiaZ = section.momentOfInertiaZ || (section.height * Math.pow(section.width, 3)) / 12;
-    const sectionModulusY = momentOfInertiaY / (section.height / 2);
-    const sectionModulusZ = momentOfInertiaZ / (section.width / 2);
+    const width = section.width || 0.3;
+    const height = section.height || 0.3;
+    const area = section.area || (width * height);
+    const momentOfInertiaY = section.momentOfInertiaY || (width * Math.pow(height, 3)) / 12;
+    const momentOfInertiaZ = section.momentOfInertiaZ || (height * Math.pow(width, 3)) / 12;
+    const sectionModulusY = momentOfInertiaY / (height / 2);
+    const sectionModulusZ = momentOfInertiaZ / (width / 2);
     const torsionalConstant = section.torsionalConstant || momentOfInertiaY * 0.1; // Approximation
     
     return {
@@ -638,12 +747,15 @@ export const calculateSectionProperties = (element: Element) => {
       torsionalConstant
     };
   } else {
-    // For other section types, use provided values or defaults
-    const area = section.area || (section.width * section.height);
-    const momentOfInertiaY = section.momentOfInertiaY || (section.width * Math.pow(section.height, 3)) / 12;
-    const momentOfInertiaZ = section.momentOfInertiaZ || (section.height * Math.pow(section.width, 3)) / 12;
-    const sectionModulusY = momentOfInertiaY ? momentOfInertiaY / (section.height / 2) : 0;
-    const sectionModulusZ = momentOfInertiaZ ? momentOfInertiaZ / (section.width / 2) : 0;
+    // For other section types, use provided values or defaults with safe fallbacks
+    const width = section.width || 0.3; // Default 300mm
+    const height = section.height || 0.3; // Default 300mm
+    
+    const area = section.area || (width * height);
+    const momentOfInertiaY = section.momentOfInertiaY || (width * Math.pow(height, 3)) / 12;
+    const momentOfInertiaZ = section.momentOfInertiaZ || (height * Math.pow(width, 3)) / 12;
+    const sectionModulusY = momentOfInertiaY ? momentOfInertiaY / (height / 2) : 0;
+    const sectionModulusZ = momentOfInertiaZ ? momentOfInertiaZ / (width / 2) : 0;
     const torsionalConstant = section.torsionalConstant || 0;
     
     return {
@@ -740,8 +852,8 @@ export const generateAnalysisReport = (analysisResult: AnalysisResult): string =
   report += `========================\n\n`;
   
   report += `STRUCTURE VALIDITY: ${analysisResult.isValid ? 'PASS' : 'FAIL'}\n`;
-  report += `MAX DISPLACEMENT: ${(analysisResult.maxDisplacement * 1000).toFixed(2)} mm\n`;
-  report += `MAX STRESS: ${(analysisResult.maxStress / 1000000).toFixed(2)} MPa\n\n`;
+  report += `MAX DISPLACEMENT: ${(analysisResult.summary.maxDisplacement.value * 1000).toFixed(2)} mm\n`;
+  report += `MAX STRESS: ${(analysisResult.summary.maxStress.value / 1000000).toFixed(2)} MPa\n\n`;
   
   report += `DISPLACEMENTS:\n`;
   for (const disp of analysisResult.displacements) {
@@ -749,13 +861,13 @@ export const generateAnalysisReport = (analysisResult: AnalysisResult): string =
   }
   
   report += `\nINTERNAL FORCES:\n`;
-  for (const force of analysisResult.forces) {
+  for (const force of analysisResult.elementForces) {
     report += `  Element ${force.elementId}: Nx=${force.nx.toFixed(2)}N, Vy=${force.vy.toFixed(2)}N, Vz=${force.vz.toFixed(2)}N\n`;
   }
   
   report += `\nSTRESSES:\n`;
-  for (const stress of analysisResult.stresses) {
-    report += `  Element ${stress.elementId}: σ_axial=${(stress.axialStress / 1000000).toFixed(2)}MPa, σ_shear=${(stress.shearStress / 1000000).toFixed(2)}MPa\n`;
+  for (const stress of analysisResult.elementStresses) {
+    report += `  Element ${stress.elementId}: σ_axial=${(stress.axialStress / 1000000).toFixed(2)}MPa, σ_vonMises=${(stress.vonMisesStress / 1000000).toFixed(2)}MPa\n`;
   }
   
   return report;

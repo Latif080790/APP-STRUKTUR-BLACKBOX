@@ -473,8 +473,8 @@ export class AdvancedExportManager {
         loads: structure.loads?.length || 0
       },
       keyResults: {
-        maxDisplacement: analysisResult.maxDisplacement,
-        maxStress: analysisResult.maxStress,
+        maxDisplacement: analysisResult.summary.maxDisplacement.value,
+        maxStress: analysisResult.summary.maxStress.value,
         isStable: analysisResult.isValid
       }
     };
@@ -492,11 +492,11 @@ export class AdvancedExportManager {
   private generateResultsContent(analysisResult: AnalysisResult): any {
     return {
       displacements: analysisResult.displacements,
-      forces: analysisResult.forces,
-      stresses: analysisResult.stresses,
+      forces: analysisResult.elementForces,
+      stresses: analysisResult.elementStresses,
       summary: {
-        maxDisplacement: analysisResult.maxDisplacement,
-        maxStress: analysisResult.maxStress
+        maxDisplacement: analysisResult.summary.maxDisplacement.value,
+        maxStress: analysisResult.summary.maxStress.value
       }
     };
   }
@@ -515,8 +515,8 @@ export class AdvancedExportManager {
       data: [
         ['Total Nodes', structure.nodes.length, '-'],
         ['Total Elements', structure.elements.length, '-'],
-        ['Max Displacement', analysisResult.maxDisplacement, 'm'],
-        ['Max Stress', analysisResult.maxStress, 'Pa'],
+        ['Max Displacement', analysisResult.summary.maxDisplacement.value, 'm'],
+        ['Max Stress', analysisResult.summary.maxStress.value, 'Pa'],
         ['Analysis Status', analysisResult.isValid ? 'Valid' : 'Invalid', '-']
       ]
     };
@@ -581,7 +581,7 @@ export class AdvancedExportManager {
   private generateCalculationsSheet(analysisResult: AnalysisResult): any {
     return {
       headers: ['Element ID', 'Axial Force', 'Shear Force', 'Moment'],
-      data: analysisResult.forces.map(force => [
+      data: analysisResult.elementForces.map((force: any) => [
         force.elementId,
         force.nx,
         force.vy,
@@ -655,12 +655,12 @@ export class AdvancedExportManager {
     return [
       {
         name: 'Max Displacement',
-        value: analysisResult.maxDisplacement,
+        value: analysisResult.summary.maxDisplacement.value,
         unit: 'm'
       },
       {
         name: 'Max Stress',
-        value: analysisResult.maxStress,
+        value: analysisResult.summary.maxStress.value,
         unit: 'Pa'
       }
     ];
@@ -726,8 +726,8 @@ export class AdvancedExportManager {
     </Elements>
   </Structure>
   <Results>
-    <MaxDisplacement>${analysisResult.maxDisplacement}</MaxDisplacement>
-    <MaxStress>${analysisResult.maxStress}</MaxStress>
+    <MaxDisplacement>${analysisResult.summary.maxDisplacement.value}</MaxDisplacement>
+    <MaxStress>${analysisResult.summary.maxStress.value}</MaxStress>
     <IsValid>${analysisResult.isValid}</IsValid>
   </Results>
 </StructuralAnalysis>`;

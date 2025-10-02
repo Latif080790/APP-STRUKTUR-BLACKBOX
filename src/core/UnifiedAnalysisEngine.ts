@@ -4,7 +4,10 @@
  * dengan akurasi engineering calculations dan multi-standard compliance
  */
 
-import { Structure3D, AnalysisResult, Element, Node } from '@/types/structural';
+import { Structure3D, UnifiedAnalysisResult, Element, Node } from '../types/structural';
+
+// Re-export UnifiedAnalysisResult untuk konsistensi import
+export type { UnifiedAnalysisResult };
 
 // SNI Standards Interface
 export interface SNIStandards {
@@ -53,8 +56,8 @@ export interface AnalysisOptions {
   };
 }
 
-// Enhanced Analysis Results
-export interface UnifiedAnalysisResult extends AnalysisResult {
+// Enhanced Analysis Results interfaces
+export interface EnhancedAnalysisResult extends UnifiedAnalysisResult {
   compliance: {
     sni: {
       sni1726: ComplianceResult;
@@ -513,8 +516,12 @@ class StandardsComplianceChecker {
     }
     
     // Drift limits (inter-story drift ratio)
-    if (analysisResult.maxDisplacement) {
-      const driftRatio = analysisResult.maxDisplacement / buildingHeight;
+    if (analysisResult.displacements && analysisResult.displacements.length > 0) {
+      // Find maximum displacement magnitude from the displacements array
+      const maxDisplacementValue = Math.max(...analysisResult.displacements.map(d => 
+        Math.sqrt(d.ux*d.ux + d.uy*d.uy + d.uz*d.uz)
+      ));
+      const driftRatio = maxDisplacementValue / buildingHeight;
       if (driftRatio > 0.02) { // 2% limit for regular buildings
         violations.push(`Drift ratio ${(driftRatio * 100).toFixed(2)}% melebihi batas 2%`);
       }
@@ -589,8 +596,14 @@ class StandardsComplianceChecker {
     
     // Deflection limits
     const maxAllowableDeflection = this.calculateDeflectionLimits(structure);
-    if (analysisResult.maxDisplacement > maxAllowableDeflection) {
-      violations.push(`Defleksi ${(analysisResult.maxDisplacement * 1000).toFixed(1)}mm > batas ${(maxAllowableDeflection * 1000).toFixed(1)}mm`);
+    if (analysisResult.displacements && analysisResult.displacements.length > 0) {
+      // Find maximum displacement magnitude from the displacements array
+      const maxDisplacementValue = Math.max(...analysisResult.displacements.map(d => 
+        Math.sqrt(d.ux*d.ux + d.uy*d.uy + d.uz*d.uz)
+      ));
+      if (maxDisplacementValue > maxAllowableDeflection) {
+        violations.push(`Defleksi ${(maxDisplacementValue * 1000).toFixed(1)}mm > batas ${(maxAllowableDeflection * 1000).toFixed(1)}mm`);
+      }
     }
     
     // Minimum reinforcement checks
@@ -644,8 +657,14 @@ class StandardsComplianceChecker {
     
     // Deflection limits for steel
     const steelDeflectionLimit = this.calculateSteelDeflectionLimits(structure);
-    if (analysisResult.maxDisplacement > steelDeflectionLimit) {
-      violations.push(`Defleksi baja ${(analysisResult.maxDisplacement * 1000).toFixed(1)}mm > batas ${(steelDeflectionLimit * 1000).toFixed(1)}mm`);
+    if (analysisResult.displacements && analysisResult.displacements.length > 0) {
+      // Find maximum displacement magnitude from the displacements array
+      const maxDisplacementValue = Math.max(...analysisResult.displacements.map(d => 
+        Math.sqrt(d.ux*d.ux + d.uy*d.uy + d.uz*d.uz)
+      ));
+      if (maxDisplacementValue > steelDeflectionLimit) {
+        violations.push(`Defleksi baja ${(maxDisplacementValue * 1000).toFixed(1)}mm > batas ${(steelDeflectionLimit * 1000).toFixed(1)}mm`);
+      }
     }
     
     return {
@@ -818,7 +837,9 @@ class EnhancedSparseMatrixSolver {
   private static sparseMatrixVectorMultiply(A: Map<string, number>, x: number[], n: number): number[] {
     const result = new Array(n).fill(0);
     
-    for (const [key, value] of A.entries()) {
+    // Convert Map entries to array for iteration
+    for (const entry of Array.from(A.entries())) {
+      const [key, value] = entry;
       const [i, j] = key.split(',').map(Number);
       result[i] += value * x[j];
     }
@@ -868,18 +889,16 @@ class SafetyPerformanceAnalyzer {
     
     for (let i = 0; i < structure.elements.length; i++) {
       const element = structure.elements[i];
-      const stress = analysisResult.stresses[i];
       
-      // Calculate combined stress from stress object
+      // Get stress from elementStresses array instead of stresses property
       let combinedStress = 0;
-      if (typeof stress === 'object' && stress !== null) {
+      if (analysisResult.elementStresses && analysisResult.elementStresses[i]) {
+        const stress = analysisResult.elementStresses[i];
         combinedStress = Math.sqrt(
           Math.pow(stress.axialStress || 0, 2) + 
-          Math.pow(stress.shearStress || 0, 2) + 
-          Math.pow(stress.bendingStress || 0, 2)
+          Math.pow(stress.shearStressY || 0, 2) + 
+          Math.pow(stress.bendingStressY || 0, 2)
         );
-      } else {
-        combinedStress = Math.abs(stress as number);
       }
       
       const allowableStress = this.calculateAllowableStress(element, options);
@@ -1058,12 +1077,26 @@ export class UnifiedAnalysisEngine {
       // Step 6: Perform standards compliance checks
       const prelimResult = {
         displacements: this.convertToDisplacementArray(solutionInfo.solution, structure.nodes),
-        forces,
-        stresses,
-        maxDisplacement: Math.max(...solutionInfo.solution.map(Math.abs)),
-        maxStress: Math.max(...stresses.map(s => 
-          Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress))
-        )),
+        elementForces: forces.map(f => ({ ...f, loadCombination: 'combination1', position: 0 })),
+        elementStresses: stresses.map(s => ({ ...s, loadCombination: 'combination1', position: 0, 
+          shearStressY: s.shearStress, shearStressZ: s.shearStress, 
+          bendingStressY: s.bendingStress, bendingStressZ: s.bendingStress,
+          vonMisesStress: Math.sqrt(s.axialStress*s.axialStress + s.shearStress*s.shearStress + s.bendingStress*s.bendingStress)
+        })),
+        maxDisplacement: {
+          value: Math.max(...solutionInfo.solution.map(Math.abs)),
+          nodeId: 'node1',
+          direction: 'uz' as const,
+          loadCombination: 'combination1'
+        },
+        maxStress: {
+          value: Math.max(...stresses.map(s => 
+            Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress))
+          )),
+          elementId: 'element1',
+          type: 'vonMises' as const,
+          loadCombination: 'combination1'
+        },
         isValid: true
       } as unknown as UnifiedAnalysisResult;
       
@@ -1081,44 +1114,70 @@ export class UnifiedAnalysisEngine {
       
       const endTime = performance.now();
       
-      // Compile comprehensive results
+      // Compile comprehensive results with all enhanced properties
       const result: UnifiedAnalysisResult = {
+        id: 'analysis-' + Date.now(),
+        timestamp: new Date(),
+        structureId: 'structure-1',
+        analysisType: this.options.analysisType as any,
+        solutionTime: endTime - startTime,
+        converged: true,
+        warnings: [],
+        errors: [],
         displacements: this.convertToDisplacementArray(solutionInfo.solution, structure.nodes),
-        forces,
-        stresses,
-        maxDisplacement: Math.max(...solutionInfo.solution.map(Math.abs)),
-        maxStress: Math.max(...stresses.map(s => 
-          Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress))
-        )),
-        isValid: this.checkStructuralStability(safetyChecks),
-        
-        compliance,
-        
+        elementForces: forces.map(f => ({ ...f, loadCombination: 'combination1', position: 0 })),
+        elementStresses: stresses.map(s => ({ ...s, loadCombination: 'combination1', position: 0, 
+          shearStressY: s.shearStress, shearStressZ: s.shearStress, 
+          bendingStressY: s.bendingStress, bendingStressZ: s.bendingStress,
+          vonMisesStress: Math.sqrt(s.axialStress*s.axialStress + s.shearStress*s.shearStress + s.bendingStress*s.bendingStress)
+        })),
+        reactions: [],
+        maxDisplacement: {
+          value: Math.max(...solutionInfo.solution.map(Math.abs)),
+          nodeId: structure.nodes[0]?.id || 'node1',
+          direction: 'uz' as const,
+          loadCombination: 'combination1'
+        },
+        maxStress: {
+          value: Math.max(...stresses.map(s => 
+            Math.max(Math.abs(s.axialStress), Math.abs(s.shearStress), Math.abs(s.bendingStress))
+          )),
+          elementId: structure.elements[0]?.id || 'element1',
+          type: 'vonMises' as const,
+          loadCombination: 'combination1'
+        },
+        summary: {
+          totalElements: structure.elements.length,
+          totalNodes: structure.nodes.length,
+          totalLoads: structure.loads?.length || 0,
+          convergenceIterations: solutionInfo.iterations,
+          solutionMethod: this.options.solverType
+        },
+        // Enhanced properties
+        compliance: compliance,
         safetyCheck: {
-          overallSafetyFactor: Math.min(...safetyChecks.map(check => check.safetyFactor)),
+          overallSafetyFactor: Math.min(...safetyChecks.map(s => s.safetyFactor)),
           elementSafetyFactors: safetyChecks,
-          criticalElements: safetyChecks
-            .filter(check => check.safetyFactor < 2.0)
-            .map(check => check.elementId),
+          criticalElements: safetyChecks.filter(s => s.safetyFactor < 1.5).map(s => s.elementId),
           recommendations: this.generateGlobalRecommendations(safetyChecks)
         },
-        
         performance: {
           solutionTime: endTime - startTime,
           memoryUsage: this.estimateMemoryUsage(structure),
-          matrixSize: structure.nodes.length * 6, // 6 DOF per node
+          matrixSize: structure.nodes.length * 6,
           convergenceInfo: {
             iterations: solutionInfo.iterations,
-            residual: solutionInfo.residual
+            residual: solutionInfo.residual,
+            tolerance: this.options.optimization.tolerance
           }
         },
-        
         designOptimization: {
           materialEfficiency: this.calculateMaterialEfficiency(safetyChecks),
           structuralEfficiency: this.calculateStructuralEfficiency(safetyChecks),
           costOptimization: this.estimateCostOptimization(optimizationSuggestions),
           suggestions: optimizationSuggestions
-        }
+        },
+        isValid: this.checkStructuralStability(safetyChecks)
       };
       
       return result;
@@ -1254,16 +1313,25 @@ export class UnifiedAnalysisEngine {
     return { modifiedK, loadVector };
   }
   
-  private getLoadDOFIndex(direction: string): number {
-    switch (direction?.toLowerCase()) {
-      case 'x': return 0;
-      case 'y': return 1;
-      case 'z': return 2;
-      case 'rx': return 3;
-      case 'ry': return 4;
-      case 'rz': return 5;
-      default: return 2; // Default to Z direction
+  private getLoadDOFIndex(direction: any): number {
+    if (typeof direction === 'string') {
+      switch (direction.toLowerCase()) {
+        case 'x': return 0;
+        case 'y': return 1;
+        case 'z': return 2;
+        case 'rx': return 3;
+        case 'ry': return 4;
+        case 'rz': return 5;
+        default: return 2; // Default to Z direction
+      }
+    } else if (typeof direction === 'object' && direction !== null) {
+      // Handle direction object with x, y, z properties
+      if (direction.z !== undefined && direction.z !== 0) return 2;
+      if (direction.y !== undefined && direction.y !== 0) return 1;
+      if (direction.x !== undefined && direction.x !== 0) return 0;
+      return 2; // Default to Z direction
     }
+    return 2; // Default to Z direction
   }
   
   private getSupportConstrainedDOFs(supportType: string): number[] {
@@ -1423,23 +1491,23 @@ export class UnifiedAnalysisEngine {
     return { forces, stresses };
   }
   
-  private performComplianceChecks(structure: Structure3D, prelimResult: Partial<UnifiedAnalysisResult>) {
+  private performComplianceChecks(structure: Structure3D, prelimResult: UnifiedAnalysisResult) {
     const compliance = {
       sni: {
-        sni1726: StandardsComplianceChecker.checkSNI1726(structure, prelimResult as UnifiedAnalysisResult),
-        sni1727: StandardsComplianceChecker.checkSNI1727(structure, prelimResult as UnifiedAnalysisResult),
-        sni2847: StandardsComplianceChecker.checkSNI2847(structure, prelimResult as UnifiedAnalysisResult),
-        sni1729: StandardsComplianceChecker.checkSNI1729(structure, prelimResult as UnifiedAnalysisResult)
+        sni1726: StandardsComplianceChecker.checkSNI1726(structure, prelimResult),
+        sni1727: StandardsComplianceChecker.checkSNI1727(structure, prelimResult),
+        sni2847: StandardsComplianceChecker.checkSNI2847(structure, prelimResult),
+        sni1729: StandardsComplianceChecker.checkSNI1729(structure, prelimResult)
       },
       international: {} as any
     };
     
     // Add international standards if enabled
     if (this.options.standards.international.aci318) {
-      compliance.international.aci318 = StandardsComplianceChecker.checkACI318(structure, prelimResult as UnifiedAnalysisResult);
+      compliance.international.aci318 = StandardsComplianceChecker.checkACI318(structure, prelimResult);
     }
     if (this.options.standards.international.aisc) {
-      compliance.international.aisc = StandardsComplianceChecker.checkAISC(structure, prelimResult as UnifiedAnalysisResult);
+      compliance.international.aisc = StandardsComplianceChecker.checkAISC(structure, prelimResult);
     }
     
     return compliance;
@@ -1498,6 +1566,7 @@ export class UnifiedAnalysisEngine {
    */
   private convertToDisplacementArray(displacements: number[], nodes: Node[]): {
     nodeId: string | number;
+    loadCombination: string;
     ux: number;
     uy: number;
     uz: number;
@@ -1507,6 +1576,7 @@ export class UnifiedAnalysisEngine {
   }[] {
     const result: {
       nodeId: string | number;
+      loadCombination: string;
       ux: number;
       uy: number;
       uz: number;
@@ -1519,6 +1589,7 @@ export class UnifiedAnalysisEngine {
       const nodeIndex = i * 6;
       result.push({
         nodeId: nodes[i].id,
+        loadCombination: 'combination1', // Default load combination
         ux: displacements[nodeIndex] || 0,
         uy: displacements[nodeIndex + 1] || 0,
         uz: displacements[nodeIndex + 2] || 0,
