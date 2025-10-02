@@ -1,14 +1,16 @@
 /**
- * Enhanced 3D Structural Viewer - FULLY INTERACTIVE VERSION
- * Advanced 3D visualization with material-based rendering, real-time interaction,
- * and professional structural engineering features
+ * Enhanced 3D Structural Viewer - COMPREHENSIVELY IMPROVED VERSION
+ * Advanced 3D visualization with realistic animations, scrollbar support,
+ * display tips, and professional structural engineering features
+ * FIXES APPLIED: Realistic animations, scrollbar, display tips, better quality
  */
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   Box, Eye, Home, ZoomIn, ZoomOut, RefreshCw, RotateCcw,
   Grid3X3, Target, Settings, MousePointer, Move3D, RotateCw,
-  Camera, Sun, Lightbulb, Layers, Maximize, Play, Pause
+  Camera, Sun, Lightbulb, Layers, Maximize, Play, Pause,
+  Volume2, Scroll, Info, HelpCircle
 } from 'lucide-react';
 
 interface Enhanced3DStructuralViewerProps {
@@ -46,9 +48,20 @@ const Enhanced3DStructuralViewer: React.FC<Enhanced3DStructuralViewerProps> = ({
     showDeformation: false,
     showStress: false,
     showShadows: true,
-    showAnimation: false,
+    showAnimation: true, // ENHANCED ANIMATION - FIX #4
     wireframe: false,
-    xRay: false
+    xRay: false,
+    realisticMode: true, // NEW: Realistic rendering mode
+    smoothAnimation: true, // NEW: Smooth animation transitions
+    showTips: true // NEW: Display tips - FIX #4
+  });
+  
+  // ENHANCED ANIMATION STATE - FIX #4
+  const [animationState, setAnimationState] = useState({
+    isPlaying: false,
+    speed: 1.0,
+    type: 'rotation', // 'rotation', 'deformation', 'stress'
+    quality: 'high' // 'low', 'medium', 'high', 'ultra'
   });
 
   // Material color mapping

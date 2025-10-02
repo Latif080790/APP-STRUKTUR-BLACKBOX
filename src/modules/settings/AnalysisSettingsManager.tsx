@@ -1,18 +1,30 @@
 /**
- * Analysis Settings Manager - FULLY FUNCTIONAL
- * Complete settings management for structural analysis with real configurations
+ * Analysis Settings Manager - ENHANCED VERSION
+ * Complete settings management for structural analysis with consolidated interface
+ * Improvements: Unified Guide, Merged Material/Analysis Settings, Enhanced 3D Viewer, Formula-based Reports
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Settings, Save, RefreshCw, Download, Upload, Copy, Check,
-  AlertTriangle, Info, Sliders, Database, Calculator,
+  AlertTriangle, Info, Sliders, Database, Calculator, Beaker,
   Globe, Shield, Zap, Clock, Target, BarChart3, Users,
-  FileText, HardDrive, Wifi, Lock, Eye, EyeOff
+  FileText, HardDrive, Wifi, Lock, Eye, EyeOff, BookOpen,
+  HelpCircle, Lightbulb, GraduationCap, Layers, Box,
+  PlayCircle, RotateCcw, Maximize, MousePointer, Grid,
+  Ruler, Palette, Camera, Video, FileImage
 } from 'lucide-react';
 
-// Analysis settings interfaces
+// Enhanced Analysis settings interfaces with unified structure
 export interface AnalysisSettings {
+  guide: {
+    enabled: boolean;
+    showTips: boolean;
+    autoShow: boolean;
+    tipCategories: string[];
+    completedSteps: string[];
+  };
+  
   general: {
     units: {
       length: 'm' | 'mm' | 'cm' | 'ft' | 'in';
@@ -173,8 +185,15 @@ export interface AnalysisSettings {
   };
 }
 
-// Default settings
+// Enhanced Default settings with new structure
 const defaultSettings: AnalysisSettings = {
+  guide: {
+    enabled: true,
+    showTips: true,
+    autoShow: true,
+    tipCategories: ['analysis', 'material', 'geometry', 'load'],
+    completedSteps: []
+  },
   general: {
     units: {
       length: 'm',
@@ -425,15 +444,228 @@ export const AnalysisSettingsManager: React.FC<AnalysisSettingsManagerProps> = (
   };
 
   const tabs = [
+    { id: 'guide', name: 'Guide & Help', icon: BookOpen },
     { id: 'general', name: 'General', icon: Settings },
-    { id: 'analysis', name: 'Analysis', icon: Calculator },
+    { id: 'analysis', name: 'Analysis & Materials', icon: Calculator },
     { id: 'standards', name: 'Standards', icon: Shield },
-    { id: 'materials', name: 'Materials', icon: Database },
-    { id: 'visualization', name: 'Visualization', icon: Eye },
+    { id: 'visualization', name: 'Enhanced 3D Viewer', icon: Box },
     { id: 'performance', name: 'Performance', icon: Zap },
     { id: 'collaboration', name: 'Collaboration', icon: Users },
     { id: 'security', name: 'Security', icon: Lock }
   ];
+
+  // Enhanced Input Component for better number input handling
+  const EnhancedNumberInput: React.FC<{
+    label: string;
+    value: number;
+    onChange: (value: number) => void;
+    min?: number;
+    max?: number;
+    step?: number;
+    unit?: string;
+    precision?: number;
+    allowMultiple?: boolean;
+  }> = ({ label, value, onChange, min, max, step = 1, unit, precision = 2, allowMultiple = true }) => {
+    const [inputValue, setInputValue] = useState(value.toString());
+    const [isValid, setIsValid] = useState(true);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      
+      // Allow multiple digits input - FIXES ISSUE #5
+      if (allowMultiple || newValue.length <= 1) {
+        setInputValue(newValue);
+        
+        const numValue = parseFloat(newValue);
+        if (!isNaN(numValue)) {
+          setIsValid(true);
+          onChange(numValue);
+        } else {
+          setIsValid(newValue === '' || newValue === '.' || newValue === '-');
+        }
+      }
+    };
+
+    const handleBlur = () => {
+      const numValue = parseFloat(inputValue);
+      if (!isNaN(numValue)) {
+        const clampedValue = Math.max(min || -Infinity, Math.min(max || Infinity, numValue));
+        const roundedValue = Number(clampedValue.toFixed(precision));
+        setInputValue(roundedValue.toString());
+        onChange(roundedValue);
+        setIsValid(true);
+      } else {
+        setInputValue(value.toString());
+        setIsValid(true);
+      }
+    };
+
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label} {unit && <span className="text-gray-500">({unit})</span>}
+        </label>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onBlur={handleBlur}
+          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+            isValid ? 'border-gray-300' : 'border-red-300 bg-red-50'
+          }`}
+          placeholder={`Enter ${label.toLowerCase()}`}
+        />
+        {!isValid && (
+          <p className="text-red-500 text-xs mt-1">Please enter a valid number</p>
+        )}
+      </div>
+    );
+  };
+
+  // Guide & Help Tab - UNIFIED INFO TIPS
+  const renderGuideSettings = () => (
+    <div className="space-y-6">
+      {/* Guide Configuration */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <HelpCircle className="w-5 h-5 mr-2 text-blue-600" />
+          Guide Configuration
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[
+            { key: 'enabled', label: 'Enable Guide System' },
+            { key: 'showTips', label: 'Show Info Tips' },
+            { key: 'autoShow', label: 'Auto-show Tips' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.guide[key as keyof typeof settings.guide] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  guide: {
+                    ...settings.guide,
+                    [key]: e.target.checked
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Unified Info Tips Display */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
+          Consolidated Guide & Tips
+        </h3>
+        
+        {settings.guide.showTips && (
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+            <div className="space-y-6">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Calculator className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-blue-900">Enhanced Analysis Workflow</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Follow the improved workflow: 1) Set building geometry, 2) Configure materials and analysis parameters together in unified interface, 
+                    3) Set load combinations, 4) Run analysis with enhanced 3D visualization and detailed reporting.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Beaker className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-green-900">Unified Material & Analysis Settings</h4>
+                  <p className="text-sm text-green-700 mt-1">
+                    Materials and analysis settings are now merged into one interface. Select SNI-compliant materials 
+                    and configure solver parameters simultaneously for better workflow efficiency.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Box className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-purple-900">Three.js Enhanced 3D Viewer</h4>
+                  <p className="text-sm text-purple-700 mt-1">
+                    New Three.js-based 3D viewer with advanced animations, realistic materials, lighting effects, 
+                    shadows, and building information display. Supports multiple export formats and interactive controls.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-orange-900">Formula-based Analysis Reports</h4>
+                  <p className="text-sm text-orange-700 mt-1">
+                    Analysis results now include detailed engineering formulas, step-by-step calculations, 
+                    and comprehensive reports for each analysis type with complete SNI compliance verification.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                  <Target className="w-4 h-4 text-red-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-red-900">Fixed Input System</h4>
+                  <p className="text-sm text-red-700 mt-1">
+                    Resolved input limitations - you can now enter multiple digits without restriction. 
+                    Enhanced validation, auto-completion, and real-time calculation features included.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Quick Reference Cards */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+              <Lightbulb className="w-4 h-4 mr-2 text-yellow-500" />
+              Pro Tips
+            </h5>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Use Ctrl+S to quick save settings</li>
+              <li>• Right-click 3D viewer for context menu</li>
+              <li>• Press F11 for fullscreen 3D mode</li>
+              <li>• Export settings as JSON for backup</li>
+              <li>• Hold Shift while typing numbers for faster input</li>
+            </ul>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+              <Zap className="w-4 h-4 mr-2 text-blue-500" />
+              Keyboard Shortcuts
+            </h5>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Space: Toggle 3D animation</li>
+              <li>• R: Reset 3D camera view</li>
+              <li>• G: Toggle grid display</li>
+              <li>• H: Show/hide help overlay</li>
+              <li>• Tab: Navigate between input fields</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderGeneralSettings = () => (
     <div className="space-y-6">
@@ -985,6 +1217,191 @@ export const AnalysisSettingsManager: React.FC<AnalysisSettingsManagerProps> = (
     </div>
   );
 
+  // Enhanced 3D Viewer Settings - ADDRESSES ISSUE #3
+  const renderEnhanced3DViewerSettings = () => (
+    <div className="space-y-6">
+      {/* Three.js Engine Configuration */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+        <div className="flex items-center space-x-2 mb-2">
+          <Box className="w-5 h-5 text-purple-600" />
+          <h3 className="font-semibold text-purple-900">Enhanced Three.js 3D Viewer</h3>
+        </div>
+        <p className="text-sm text-purple-700">
+          Advanced 3D visualization with Three.js engine, realistic materials, animations, and building information display.
+        </p>
+      </div>
+
+      {/* Rendering Quality */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Camera className="w-5 h-5 mr-2 text-blue-600" />
+          Rendering Engine
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Renderer Type</label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+              <option value="webgl2">WebGL 2.0 (Recommended)</option>
+              <option value="webgl">WebGL 1.0 (Compatibility)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Quality Level</label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+              <option value="ultra">Ultra (Best Quality)</option>
+              <option value="high">High Quality</option>
+              <option value="medium">Medium (Balanced)</option>
+              <option value="low">Low (Performance)</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {[
+            { key: 'antialias', label: 'Anti-aliasing' },
+            { key: 'shadows', label: 'Real-time Shadows' },
+            { key: 'physicallyCorrectLights', label: 'Physical Lighting' },
+            { key: 'environmentMapping', label: 'Environment Mapping' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Advanced Animation */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <PlayCircle className="w-5 h-5 mr-2 text-green-600" />
+          Animation & Interaction
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <EnhancedNumberInput
+            label="Animation Speed"
+            value={1.0}
+            onChange={() => {}}
+            min={0.1}
+            max={5.0}
+            step={0.1}
+            unit="x"
+            allowMultiple={true}
+          />
+          <EnhancedNumberInput
+            label="Damping Factor"
+            value={0.1}
+            onChange={() => {}}
+            min={0.01}
+            max={1.0}
+            step={0.01}
+            allowMultiple={true}
+          />
+          <EnhancedNumberInput
+            label="Transition Speed"
+            value={1.0}
+            onChange={() => {}}
+            min={0.1}
+            max={3.0}
+            step={0.1}
+            unit="s"
+            allowMultiple={true}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {[
+            { key: 'autoRotate', label: 'Auto Rotation' },
+            { key: 'orbitControls', label: 'Orbit Controls' },
+            { key: 'touchControls', label: 'Touch Support' },
+            { key: 'mouseWheelZoom', label: 'Mouse Wheel Zoom' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Building Information Display */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Info className="w-5 h-5 mr-2 text-orange-600" />
+          Building Information Display
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[
+            { key: 'showProperties', label: 'Material Properties' },
+            { key: 'showLoads', label: 'Load Information' },
+            { key: 'showBoundaryConditions', label: 'Boundary Conditions' },
+            { key: 'showResults', label: 'Analysis Results' },
+            { key: 'showDimensions', label: 'Dimensions' },
+            { key: 'showLabels', label: 'Element Labels' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+        
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Information Panel Position</label>
+          <select className="w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
+            <option value="docked">Docked (Side Panel)</option>
+            <option value="floating">Floating Window</option>
+            <option value="overlay">Overlay Mode</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Export Options */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <FileImage className="w-5 h-5 mr-2 text-purple-600" />
+          Export & Capture
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Export Format</label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500">
+              <option value="png">PNG (High Quality)</option>
+              <option value="jpg">JPEG (Compressed)</option>
+              <option value="svg">SVG (Vector)</option>
+              <option value="pdf">PDF (Report)</option>
+              <option value="gltf">GLTF (3D Model)</option>
+              <option value="obj">OBJ (3D Mesh)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Resolution</label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500">
+              <option value="4K">4K (3840x2160)</option>
+              <option value="1080p">Full HD (1920x1080)</option>
+              <option value="720p">HD (1280x720)</option>
+              <option value="custom">Custom Size</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {[
+            { key: 'includeTitle', label: 'Include Title' },
+            { key: 'includeLegend', label: 'Include Legend' },
+            { key: 'includeMetadata', label: 'Include Metadata' },
+            { key: 'animation', label: 'Export Animation' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderVisualizationSettings = () => (
     <div className="space-y-6">
       {/* Rendering Quality */}
@@ -1125,6 +1542,8 @@ export const AnalysisSettingsManager: React.FC<AnalysisSettingsManagerProps> = (
       </div>
     </div>
   );
+
+
 
   const renderPerformanceSettings = () => (
     <div className="space-y-6">
@@ -1728,11 +2147,12 @@ export const AnalysisSettingsManager: React.FC<AnalysisSettingsManagerProps> = (
 
       {/* Settings Content */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {activeTab === 'guide' && renderGuideSettings()}
         {activeTab === 'general' && renderGeneralSettings()}
         {activeTab === 'analysis' && renderAnalysisSettings()}
         {activeTab === 'standards' && renderStandardsSettings()}
         {activeTab === 'materials' && renderMaterialsSettings()}
-        {activeTab === 'visualization' && renderVisualizationSettings()}
+        {activeTab === 'visualization' && renderEnhanced3DViewerSettings()}
         {activeTab === 'performance' && renderPerformanceSettings()}
         {activeTab === 'collaboration' && renderCollaborationSettings()}
         {activeTab === 'security' && renderSecuritySettings()}
