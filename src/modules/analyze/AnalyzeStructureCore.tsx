@@ -2,7 +2,6 @@
  * Analyze Structure Core Module - FULLY FUNCTIONAL
  * Semua jenis analisis struktural dengan SNI compliance dan real calculations
  */
-
 import React, { useState, useEffect } from 'react';
 import {
   Calculator, Activity, Zap, Wind, Target, BarChart3, 
@@ -12,7 +11,7 @@ import {
 } from 'lucide-react';
 import { structuralEngine, AnalysisResults as EngineAnalysisResults, ProjectData } from '../../engines/FunctionalStructuralEngine';
 import MaterialPropertiesManager from '../materials/MaterialPropertiesManager';
-import Enhanced3DStructuralViewer from '../viewer/Enhanced3DStructuralViewer';
+import Enhanced3DStructuralViewerReactThreeFiber from '../viewer/Enhanced3DStructuralViewerReactThreeFiber';
 import AnalysisSettingsManager from '../settings/AnalysisSettingsManager';
 import LoadCombinationsComponent from './LoadCombinationsComponent';
 import AnalysisResultsComponent from './AnalysisResultsComponent';
@@ -258,6 +257,11 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
   const [showInfoTips, setShowInfoTips] = useState(true);
   const [activeInfoTip, setActiveInfoTip] = useState<string | null>(null);
   const [infoTipsEnabled, setInfoTipsEnabled] = useState(true);
+  
+  // COMPREHENSIVE GUIDE SYSTEM STATE
+  const [showGuide, setShowGuide] = useState(false);
+  const [activeGuideCategory, setActiveGuideCategory] = useState<string>('overview');
+  const [completedGuideSteps, setCompletedGuideSteps] = useState<string[]>([]);
   
   // SHARED ANALYSIS STATE FOR ALL ANALYSIS TYPES
   const [analysisResults, setAnalysisResults] = useState<EngineAnalysisResults | null>(null);
@@ -1345,11 +1349,18 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
             </div>
             <div className="flex items-center space-x-2">
               <InfoTipComponent tipId="analysis-workflow">
-                <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <button 
+                  onClick={() => setShowGuide(true)}
+                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                >
                   <Lightbulb className="w-4 h-4" />
                   <span>Guide</span>
                 </button>
               </InfoTipComponent>
+              <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
               <button onClick={() => setShowMaterialManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
@@ -1570,11 +1581,18 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
             </div>
             <div className="flex items-center space-x-2">
               <InfoTipComponent tipId="analysis-workflow">
-                <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <button 
+                  onClick={() => setShowGuide(true)}
+                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                >
                   <Lightbulb className="w-4 h-4" />
                   <span>Guide</span>
                 </button>
               </InfoTipComponent>
+              <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
               <button onClick={() => setShowMaterialManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
@@ -1815,11 +1833,18 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
             </div>
             <div className="flex items-center space-x-2">
               <InfoTipComponent tipId="analysis-workflow">
-                <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <button 
+                  onClick={() => setShowGuide(true)}
+                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                >
                   <Lightbulb className="w-4 h-4" />
                   <span>Guide</span>
                 </button>
               </InfoTipComponent>
+              <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
               <button onClick={() => setShowMaterialManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
@@ -2037,11 +2062,18 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
             </div>
             <div className="flex items-center space-x-2">
               <InfoTipComponent tipId="analysis-workflow">
-                <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <button 
+                  onClick={() => setShowGuide(true)}
+                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                >
                   <Lightbulb className="w-4 h-4" />
                   <span>Guide</span>
                 </button>
               </InfoTipComponent>
+              <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
               <button onClick={() => setShowMaterialManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
@@ -2219,11 +2251,18 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
             </div>
             <div className="flex items-center space-x-2">
               <InfoTipComponent tipId="analysis-workflow">
-                <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <button 
+                  onClick={() => setShowGuide(true)}
+                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                >
                   <Lightbulb className="w-4 h-4" />
                   <span>Guide</span>
                 </button>
               </InfoTipComponent>
+              <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
               <button onClick={() => setShowMaterialManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
@@ -2436,11 +2475,18 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
             </div>
             <div className="flex items-center space-x-2">
               <InfoTipComponent tipId="analysis-workflow">
-                <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <button 
+                  onClick={() => setShowGuide(true)}
+                  className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1"
+                >
                   <Lightbulb className="w-4 h-4" />
                   <span>Guide</span>
                 </button>
               </InfoTipComponent>
+              <button onClick={() => setShowSettingsManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
               <button onClick={() => setShowMaterialManager(true)} className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
@@ -2682,17 +2728,15 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
             </div>
             
             <div className="h-full p-6">
-              <Enhanced3DStructuralViewer
-                buildingGeometry={buildingGeometry}
+              <Enhanced3DStructuralViewerReactThreeFiber
+                geometry={buildingGeometry}
                 selectedMaterials={selectedMaterials}
                 analysisResults={analysisResults ? {
                   maxDisplacement: analysisResults.summary.maxDisplacement,
                   maxStress: analysisResults.summary.maxStress,
                   safetyFactor: analysisResults.summary.safetyFactor
                 } : undefined}
-                onElementSelect={(elementId: string) => console.log('Selected element:', elementId)}
-                onNodeSelect={(nodeId: string) => console.log('Selected node:', nodeId)}
-                className="h-full"
+                onClose={() => setShow3DViewer(false)}
               />
             </div>
           </div>
@@ -3178,6 +3222,550 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Comprehensive Guide Modal - Consolidated Info Tips */}
+      {showGuide && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-5/6 overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Structural Analysis Guide</h2>
+                  <p className="text-blue-100 text-sm">Complete guide to SNI-compliant structural analysis</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGuide(false)}
+                className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex h-full">
+              {/* Guide Navigation Sidebar */}
+              <div className="w-80 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto">
+                <nav className="space-y-2">
+                  {[
+                    { id: 'overview', name: 'Getting Started', icon: Target, description: 'Overview and workflow' },
+                    { id: 'geometry', name: 'Building Geometry', icon: Layers, description: 'Setting up building parameters' },
+                    { id: 'materials', name: 'SNI Materials', icon: Beaker, description: 'Material selection and properties' },
+                    { id: 'loads', name: 'Load Combinations', icon: Calculator, description: 'Load cases and combinations' },
+                    { id: 'analysis', name: 'Analysis Types', icon: BarChart3, description: 'Static, dynamic, seismic analysis' },
+                    { id: 'standards', name: 'SNI Standards', icon: Shield, description: 'Indonesian building codes' },
+                    { id: 'results', name: 'Interpreting Results', icon: TrendingUp, description: 'Analysis results and reports' },
+                    { id: 'troubleshooting', name: 'Troubleshooting', icon: AlertTriangle, description: 'Common issues and solutions' }
+                  ].map(({ id, name, icon: Icon, description }) => (
+                    <button
+                      key={id}
+                      onClick={() => setActiveGuideCategory(id)}
+                      className={`w-full flex items-start space-x-3 px-3 py-3 rounded-lg text-left transition-colors ${
+                        activeGuideCategory === id
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{name}</div>
+                        <div className="text-xs opacity-75 mt-1">{description}</div>
+                      </div>
+                    </button>
+                  ))}
+                </nav>
+                
+                {/* Progress Summary */}
+                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Progress
+                  </h4>
+                  <div className="text-sm text-green-700">
+                    {completedGuideSteps.length} of 8 sections completed
+                  </div>
+                  <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all"
+                      style={{ width: `${(completedGuideSteps.length / 8) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Guide Content */}
+              <div className="flex-1 p-6 overflow-y-auto">
+                {activeGuideCategory === 'overview' && (
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      <h3 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
+                        <Target className="w-8 h-8 mr-3" />
+                        Welcome to Structural Analysis Suite
+                      </h3>
+                      <p className="text-blue-800 mb-4">
+                        This comprehensive tool helps you perform SNI-compliant structural analysis for Indonesian building projects.
+                        Follow the step-by-step workflow below to ensure accurate and compliant results.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-4 flex items-center">
+                          <Layers className="w-5 h-5 mr-2 text-blue-600" />
+                          Analysis Workflow
+                        </h4>
+                        <ol className="space-y-3 text-sm">
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                            <div>
+                              <div className="font-medium">Set Building Geometry</div>
+                              <div className="text-gray-600">Define building type, dimensions, and structural system</div>
+                            </div>
+                          </li>
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                            <div>
+                              <div className="font-medium">Select SNI Materials</div>
+                              <div className="text-gray-600">Choose concrete and steel grades per Indonesian standards</div>
+                            </div>
+                          </li>
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                            <div>
+                              <div className="font-medium">Configure Load Cases</div>
+                              <div className="text-gray-600">Set up load combinations according to SNI 1727</div>
+                            </div>
+                          </li>
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                            <div>
+                              <div className="font-medium">Run Analysis</div>
+                              <div className="text-gray-600">Execute structural analysis and review results</div>
+                            </div>
+                          </li>
+                        </ol>
+                      </div>
+                      
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-4 flex items-center">
+                          <Shield className="w-5 h-5 mr-2 text-green-600" />
+                          SNI Standards Supported
+                        </h4>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 1726:2019</div>
+                              <div className="text-gray-600">Earthquake resistance design</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 1727:2020</div>
+                              <div className="text-gray-600">Minimum design loads</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 2847:2019</div>
+                              <div className="text-gray-600">Concrete structural requirements</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 1729:2020</div>
+                              <div className="text-gray-600">Steel construction specifications</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Quick completion button */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      if (!completedGuideSteps.includes(activeGuideCategory)) {
+                        setCompletedGuideSteps(prev => [...prev, activeGuideCategory]);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      completedGuideSteps.includes(activeGuideCategory)
+                        ? 'bg-green-100 text-green-700 cursor-default'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                    disabled={completedGuideSteps.includes(activeGuideCategory)}
+                  >
+                    {completedGuideSteps.includes(activeGuideCategory) ? (
+                      <>✓ Section Completed</>
+                    ) : (
+                      'Mark as Complete'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Comprehensive Guide Modal - Consolidated Info Tips */}
+      {showGuide && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-5/6 overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Structural Analysis Guide</h2>
+                  <p className="text-blue-100 text-sm">Complete guide to SNI-compliant structural analysis</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGuide(false)}
+                className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex h-full">
+              {/* Guide Navigation Sidebar */}
+              <div className="w-80 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto">
+                <nav className="space-y-2">
+                  {[
+                    { id: 'overview', name: 'Getting Started', icon: Target, description: 'Overview and workflow' },
+                    { id: 'geometry', name: 'Building Geometry', icon: Layers, description: 'Setting up building parameters' },
+                    { id: 'materials', name: 'SNI Materials', icon: Beaker, description: 'Material selection and properties' },
+                    { id: 'loads', name: 'Load Combinations', icon: Calculator, description: 'Load cases and combinations' },
+                    { id: 'analysis', name: 'Analysis Types', icon: BarChart3, description: 'Static, dynamic, seismic analysis' },
+                    { id: 'standards', name: 'SNI Standards', icon: Shield, description: 'Indonesian building codes' },
+                    { id: 'results', name: 'Interpreting Results', icon: TrendingUp, description: 'Analysis results and reports' },
+                    { id: 'troubleshooting', name: 'Troubleshooting', icon: AlertTriangle, description: 'Common issues and solutions' }
+                  ].map(({ id, name, icon: Icon, description }) => (
+                    <button
+                      key={id}
+                      onClick={() => setActiveGuideCategory(id)}
+                      className={`w-full flex items-start space-x-3 px-3 py-3 rounded-lg text-left transition-colors ${
+                        activeGuideCategory === id
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{name}</div>
+                        <div className="text-xs opacity-75 mt-1">{description}</div>
+                      </div>
+                    </button>
+                  ))}
+                </nav>
+                
+                {/* Progress Summary */}
+                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Progress
+                  </h4>
+                  <div className="text-sm text-green-700">
+                    {completedGuideSteps.length} of 8 sections completed
+                  </div>
+                  <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all"
+                      style={{ width: `${(completedGuideSteps.length / 8) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Guide Content */}
+              <div className="flex-1 p-6 overflow-y-auto">
+                {activeGuideCategory === 'overview' && (
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      <h3 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
+                        <Target className="w-8 h-8 mr-3" />
+                        Welcome to Structural Analysis Suite
+                      </h3>
+                      <p className="text-blue-800 mb-4">
+                        This comprehensive tool helps you perform SNI-compliant structural analysis for Indonesian building projects.
+                        Follow the step-by-step workflow below to ensure accurate and compliant results.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-4 flex items-center">
+                          <Layers className="w-5 h-5 mr-2 text-blue-600" />
+                          Analysis Workflow
+                        </h4>
+                        <ol className="space-y-3 text-sm">
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                            <div>
+                              <div className="font-medium">Set Building Geometry</div>
+                              <div className="text-gray-600">Define building type, dimensions, and structural system</div>
+                            </div>
+                          </li>
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                            <div>
+                              <div className="font-medium">Select SNI Materials</div>
+                              <div className="text-gray-600">Choose concrete and steel grades per Indonesian standards</div>
+                            </div>
+                          </li>
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                            <div>
+                              <div className="font-medium">Configure Load Cases</div>
+                              <div className="text-gray-600">Set up load combinations according to SNI 1727</div>
+                            </div>
+                          </li>
+                          <li className="flex items-start space-x-3">
+                            <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                            <div>
+                              <div className="font-medium">Run Analysis</div>
+                              <div className="text-gray-600">Execute structural analysis and review results</div>
+                            </div>
+                          </li>
+                        </ol>
+                      </div>
+                      
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-4 flex items-center">
+                          <Shield className="w-5 h-5 mr-2 text-green-600" />
+                          SNI Standards Supported
+                        </h4>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 1726:2019</div>
+                              <div className="text-gray-600">Earthquake resistance design</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 1727:2020</div>
+                              <div className="text-gray-600">Minimum design loads</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 2847:2019</div>
+                              <div className="text-gray-600">Concrete structural requirements</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-medium">SNI 1729:2020</div>
+                              <div className="text-gray-600">Steel construction specifications</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {activeGuideCategory === 'geometry' && (
+                  <div className="space-y-6">
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                      <h3 className="text-2xl font-bold text-purple-900 mb-4 flex items-center">
+                        <Layers className="w-8 h-8 mr-3" />
+                        Building Geometry Setup
+                      </h3>
+                      <p className="text-purple-800">
+                        Proper building geometry setup is critical for accurate structural analysis. This section guides you through all geometry parameters.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-3">Building Type Selection</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          {[
+                            { type: 'Office', description: 'Commercial office buildings with typical live loads' },
+                            { type: 'Residential', description: 'Residential buildings with domestic use loads' },
+                            { type: 'Industrial', description: 'Industrial facilities with heavy equipment loads' },
+                            { type: 'Educational', description: 'Schools and universities with assembly loads' }
+                          ].map(({ type, description }) => (
+                            <div key={type} className="p-4 border border-gray-200 rounded-lg">
+                              <div className="font-medium text-gray-900">{type}</div>
+                              <div className="text-sm text-gray-600 mt-1">{description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-3">Structural System</h4>
+                        <div className="space-y-3">
+                          {[
+                            { 
+                              system: 'Moment Frame', 
+                              description: 'Provides ductility and flexibility for seismic resistance',
+                              sni: 'SNI 1726 - High ductility system'
+                            },
+                            { 
+                              system: 'Braced Frame', 
+                              description: 'Offers lateral stiffness and strength for wind loads',
+                              sni: 'SNI 1729 - Steel bracing systems'
+                            },
+                            { 
+                              system: 'Shear Wall', 
+                              description: 'Provides excellent lateral resistance for tall buildings',
+                              sni: 'SNI 2847 - Concrete shear wall design'
+                            }
+                          ].map(({ system, description, sni }) => (
+                            <div key={system} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+                              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                              <div>
+                                <div className="font-medium text-gray-900">{system}</div>
+                                <div className="text-sm text-gray-600">{description}</div>
+                                <div className="text-xs text-blue-600 mt-1">{sni}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {activeGuideCategory === 'materials' && (
+                  <div className="space-y-6">
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                      <h3 className="text-2xl font-bold text-orange-900 mb-4 flex items-center">
+                        <Beaker className="w-8 h-8 mr-3" />
+                        SNI Material Standards
+                      </h3>
+                      <p className="text-orange-800">
+                        Indonesian material standards ensure structural safety and consistency. Learn about concrete and steel grades approved for construction.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-4 flex items-center">
+                          <div className="w-6 h-6 bg-gray-100 rounded mr-2"></div>
+                          Concrete Standards (SNI 2847:2019)
+                        </h4>
+                        <div className="space-y-4">
+                          {[
+                            { grade: 'K-25', fc: '25 MPa', use: 'General construction, non-critical elements' },
+                            { grade: 'K-30', fc: '30 MPa', use: 'Structural members, medium-rise buildings' },
+                            { grade: 'K-35', fc: '35 MPa', use: 'High-rise buildings, critical structural elements' }
+                          ].map(({ grade, fc, use }) => (
+                            <div key={grade} className="p-4 border border-gray-200 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-bold text-gray-900">{grade}</span>
+                                <span className="text-sm bg-gray-100 px-2 py-1 rounded">{fc}</span>
+                              </div>
+                              <div className="text-sm text-gray-600">{use}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 className="font-bold text-gray-900 mb-4 flex items-center">
+                          <div className="w-6 h-6 bg-blue-100 rounded mr-2"></div>
+                          Steel Standards (SNI 1729:2020)
+                        </h4>
+                        <div className="space-y-4">
+                          {[
+                            { grade: 'BJ-37', fy: '240 MPa', use: 'Secondary members, light construction' },
+                            { grade: 'BJ-50', fy: '410 MPa', use: 'Primary beams, columns, general construction' },
+                            { grade: 'BJ-55', fy: '550 MPa', use: 'High-rise buildings, heavy-duty applications' }
+                          ].map(({ grade, fy, use }) => (
+                            <div key={grade} className="p-4 border border-gray-200 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-bold text-gray-900">{grade}</span>
+                                <span className="text-sm bg-blue-100 px-2 py-1 rounded">{fy}</span>
+                              </div>
+                              <div className="text-sm text-gray-600">{use}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Add other guide categories with similar comprehensive content */}
+                {activeGuideCategory === 'loads' && (
+                  <div className="space-y-6">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                      <h3 className="text-2xl font-bold text-green-900 mb-4 flex items-center">
+                        <Calculator className="w-8 h-8 mr-3" />
+                        Load Combinations (SNI 1727:2020)
+                      </h3>
+                      <p className="text-green-800">
+                        Load combinations ensure structural safety under various loading conditions. Follow SNI standards for proper load factoring.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h4 className="font-bold text-gray-900 mb-4">Standard Load Combinations</h4>
+                      <div className="space-y-3">
+                        {[
+                          { combo: '1.4D', desc: 'Ultimate limit state - Dead load only', when: 'Minimum loading condition' },
+                          { combo: '1.2D + 1.6L', desc: 'Ultimate limit state - Dead + Live', when: 'Normal service conditions' },
+                          { combo: '1.2D + 1.0L + 1.0E', desc: 'Ultimate limit state - Seismic combination', when: 'Earthquake loading' },
+                          { combo: '0.9D + 1.0E', desc: 'Ultimate limit state - Seismic with minimum dead', when: 'Seismic overturning check' }
+                        ].map(({ combo, desc, when }) => (
+                          <div key={combo} className="p-4 border border-gray-200 rounded-lg">
+                            <div className="font-mono font-bold text-blue-600 mb-1">{combo}</div>
+                            <div className="text-sm text-gray-900 mb-1">{desc}</div>
+                            <div className="text-xs text-gray-600">{when}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Quick completion button */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      if (!completedGuideSteps.includes(activeGuideCategory)) {
+                        setCompletedGuideSteps(prev => [...prev, activeGuideCategory]);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      completedGuideSteps.includes(activeGuideCategory)
+                        ? 'bg-green-100 text-green-700 cursor-default'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                    disabled={completedGuideSteps.includes(activeGuideCategory)}
+                  >
+                    {completedGuideSteps.includes(activeGuideCategory) ? (
+                      <>\u2713 Section Completed</>
+                    ) : (
+                      'Mark as Complete'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

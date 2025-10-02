@@ -894,6 +894,136 @@ export const AnalysisSettingsManager: React.FC<AnalysisSettingsManagerProps> = (
         </div>
       </div>
 
+      {/* Material Properties Integration - MERGED AS REQUESTED */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Beaker className="w-5 h-5 mr-2 text-orange-600" />
+          Material Properties
+        </h3>
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Database className="w-5 h-5 text-orange-600" />
+            <h4 className="font-semibold text-orange-900">SNI Material Database</h4>
+          </div>
+          <p className="text-sm text-orange-700">
+            Select and configure materials according to Indonesian National Standards (SNI).
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Concrete Materials */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+              <div className="w-4 h-4 bg-gray-400 rounded mr-2"></div>
+              Concrete Materials
+            </h4>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                <select
+                  value={settings.materials.concreteGrades[0] || 'K-25'}
+                  onChange={(e) => updateSettings({
+                    ...settings,
+                    materials: {
+                      ...settings.materials,
+                      concreteGrades: [e.target.value, ...settings.materials.concreteGrades.slice(1)]
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="K-17.5">K-17.5 (fc' = 17.5 MPa)</option>
+                  <option value="K-20">K-20 (fc' = 20 MPa)</option>
+                  <option value="K-25">K-25 (fc' = 25 MPa)</option>
+                  <option value="K-30">K-30 (fc' = 30 MPa)</option>
+                  <option value="K-35">K-35 (fc' = 35 MPa)</option>
+                  <option value="K-40">K-40 (fc' = 40 MPa)</option>
+                  <option value="K-45">K-45 (fc' = 45 MPa)</option>
+                  <option value="K-50">K-50 (fc' = 50 MPa)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Density (kg/m³)</label>
+                  <input type="number" value="2400" className="w-full px-2 py-1 border border-gray-300 rounded text-sm" readOnly />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">E (GPa)</label>
+                  <input type="number" value="24.8" className="w-full px-2 py-1 border border-gray-300 rounded text-sm" readOnly />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Steel Materials */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+              <div className="w-4 h-4 bg-gray-600 rounded mr-2"></div>
+              Steel Materials
+            </h4>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                <select
+                  value={settings.materials.steelGrades[0] || 'BJ-37'}
+                  onChange={(e) => updateSettings({
+                    ...settings,
+                    materials: {
+                      ...settings.materials,
+                      steelGrades: [e.target.value, ...settings.materials.steelGrades.slice(1)]
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="BJ-34">BJ-34 (fy = 240 MPa)</option>
+                  <option value="BJ-37">BJ-37 (fy = 240 MPa)</option>
+                  <option value="BJ-41">BJ-41 (fy = 250 MPa)</option>
+                  <option value="BJ-50">BJ-50 (fy = 290 MPa)</option>
+                  <option value="BJ-55">BJ-55 (fy = 410 MPa)</option>
+                  <option value="A36">A36 (fy = 250 MPa)</option>
+                  <option value="A572-50">A572-50 (fy = 345 MPa)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Density (kg/m³)</label>
+                  <input type="number" value="7850" className="w-full px-2 py-1 border border-gray-300 rounded text-sm" readOnly />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">E (GPa)</label>
+                  <input type="number" value="200" className="w-full px-2 py-1 border border-gray-300 rounded text-sm" readOnly />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Material Options */}
+        <div className="mt-4 space-y-3">
+          {[
+            { key: 'allowCustom', label: 'Allow Custom Materials' },
+            { key: 'autoValidate', label: 'Auto-validate SNI Compliance' },
+            { key: 'temperatureEffects', label: 'Include Temperature Effects' },
+            { key: 'creepAndShrinkage', label: 'Include Creep and Shrinkage' }
+          ].map(({ key, label }) => (
+            <label key={key} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.materials[key as keyof typeof settings.materials] as boolean}
+                onChange={(e) => updateSettings({
+                  ...settings,
+                  materials: {
+                    ...settings.materials,
+                    [key]: e.target.checked
+                  }
+                })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-900">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       {/* Nonlinear Analysis */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Nonlinear Analysis</h3>

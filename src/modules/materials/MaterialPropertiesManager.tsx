@@ -46,7 +46,7 @@ export interface MaterialProperties {
   createdDate: Date;
 }
 
-// Standard materials library
+// Standard materials library - EXPANDED TO 6 DEFAULT MATERIALS
 const standardMaterials: MaterialProperties[] = [
   {
     id: 'concrete-k25',
@@ -85,6 +85,27 @@ const standardMaterials: MaterialProperties[] = [
     certificationDate: new Date('2023-01-01'),
     fireResistance: 120,
     exposureClass: 'XC2',
+    durabilityFactor: 1.0,
+    usageCount: 0,
+    lastUsed: new Date(),
+    createdDate: new Date()
+  },
+  {
+    id: 'concrete-k35',
+    name: 'Concrete K-35',
+    type: 'concrete',
+    grade: 'K-35',
+    density: 2400,
+    elasticModulus: 30000,
+    poissonsRatio: 0.2,
+    thermalExpansion: 0.00001,
+    compressiveStrength: 35,
+    tensileStrength: 3.5,
+    sniStandard: 'SNI-2847',
+    certified: true,
+    certificationDate: new Date('2023-01-01'),
+    fireResistance: 180,
+    exposureClass: 'XC3',
     durabilityFactor: 1.0,
     usageCount: 0,
     lastUsed: new Date(),
@@ -131,6 +152,27 @@ const standardMaterials: MaterialProperties[] = [
     usageCount: 0,
     lastUsed: new Date(),
     createdDate: new Date()
+  },
+  {
+    id: 'timber-meranti',
+    name: 'Timber Meranti',
+    type: 'timber',
+    grade: 'E-II',
+    density: 600,
+    elasticModulus: 12000,
+    poissonsRatio: 0.25,
+    thermalExpansion: 0.000005,
+    compressiveStrength: 40,
+    tensileStrength: 60,
+    sniStandard: 'SNI-7973',
+    certified: true,
+    certificationDate: new Date('2023-01-01'),
+    fireResistance: 30,
+    exposureClass: 'Service Class 1',
+    durabilityFactor: 0.8,
+    usageCount: 0,
+    lastUsed: new Date(),
+    createdDate: new Date()
   }
 ];
 
@@ -153,7 +195,7 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSNITooltip, setShowSNITooltip] = useState<string | null>(null);
 
-  // SNI Material Info Tips Database
+  // SNI Material Info Tips Database - EXPANDED TO 6 MATERIALS
   const sniMaterialTips = {
     'concrete-k25': {
       title: 'Concrete K-25 SNI Standards',
@@ -169,6 +211,13 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
       cover: 'Min cover: 25mm (beams), 40mm (columns)',
       notes: 'β1 = 0.85, fr = 0.62√fc = 3.4 MPa'
     },
+    'concrete-k35': {
+      title: 'Concrete K-35 SNI Standards',
+      values: 'fc = 35 MPa, Ec = 30,000 MPa',
+      applications: 'High-rise buildings, heavy structures',
+      cover: 'Min cover: 30mm (beams), 50mm (columns)',
+      notes: 'β1 = 0.82, fr = 0.62√fc = 3.7 MPa'
+    },
     'steel-bj37': {
       title: 'Steel BJ-37 SNI Standards',
       values: 'fy = 240 MPa, fu = 370 MPa',
@@ -178,10 +227,17 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
     },
     'steel-bj50': {
       title: 'Steel BJ-50 SNI Standards',
-      values: 'fy = 410 MPa, fu = 500 MPa',
+      values: 'fy = 290 MPa, fu = 500 MPa',
       applications: 'Primary beams, columns, heavy construction',
       welding: 'Good with preheating, proper electrodes',
       notes: 'Carbon content ≤ 0.30%, high strength'
+    },
+    'timber-meranti': {
+      title: 'Timber Meranti SNI Standards',
+      values: 'fc = 40 MPa, ft = 60 MPa, E = 12,000 MPa',
+      applications: 'Structural beams, posts, traditional construction',
+      treatment: 'Natural durability, chemical treatment available',
+      notes: 'Service Class 1, moisture content ≤ 20%'
     }
   };
 
@@ -483,17 +539,35 @@ export const MaterialPropertiesManager: React.FC<MaterialPropertiesManagerProps>
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {/* Header with enhanced statistics */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Material Properties Manager</h2>
           <p className="text-gray-600 mt-1">SNI-compliant material library and management system</p>
+          <div className="flex items-center space-x-4 mt-2 text-sm">
+            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+              {materials.length} Total Materials
+            </span>
+            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              {materials.filter(m => m.certified).length} SNI Certified
+            </span>
+            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+              {materials.filter(m => standardMaterials.find(s => s.id === m.id)).length} Standard Materials
+            </span>
+            <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+              {materials.filter(m => !standardMaterials.find(s => s.id === m.id)).length} Custom Materials
+            </span>
+          </div>
         </div>
         
         <div className="flex items-center space-x-3">
+          <div className="text-right text-sm text-gray-500">
+            <div>Selected: {selectedMaterials.length}</div>
+            <div>Last Updated: {new Date().toLocaleDateString()}</div>
+          </div>
           <button
             onClick={() => setShowAddForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 font-medium"
           >
             <Plus className="w-4 h-4" />
             <span>Add Material</span>
