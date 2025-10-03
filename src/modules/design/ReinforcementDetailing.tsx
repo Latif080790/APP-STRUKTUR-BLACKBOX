@@ -536,7 +536,7 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
               <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm">
                 <div className="text-gray-800 font-bold mb-2">{detailingResults.elementType}</div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {Object.entries(detailingResults.dimensions).map(([key, value]) => (
+                  {Object.entries(detailingResults.dimensions || {}).map(([key, value]) => (
                     <div key={key} className="flex justify-between border-b border-gray-200 pb-1">
                       <span className="text-gray-700 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
                       <span className="text-blue-700 font-bold font-mono">{String(value)}</span>
@@ -550,10 +550,10 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
                 <div className="space-y-3">
                   <div className="text-gray-800 font-bold text-lg">Flexural Reinforcement</div>
                   
-                  {detailingResults.flexuralReinforcement.bottomBars && (
+                  {detailingResults.flexuralReinforcement?.bottomBars && (
                     <div className="p-3 bg-green-50 border-2 border-green-400 rounded-lg shadow-sm">
                       <div className="text-green-800 font-bold mb-2">Bottom Bars (Positive Moment)</div>
-                      {Object.entries(detailingResults.flexuralReinforcement.bottomBars).map(([key, value]) => (
+                      {Object.entries(detailingResults.flexuralReinforcement.bottomBars || {}).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-sm border-b border-green-200 pb-1">
                           <span className="text-green-700 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
                           <span className="text-green-800 font-bold font-mono">{String(value)}</span>
@@ -562,10 +562,10 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
                     </div>
                   )}
 
-                  {detailingResults.flexuralReinforcement.topBars && (
+                  {detailingResults.flexuralReinforcement?.topBars && (
                     <div className="p-3 bg-blue-50 border-2 border-blue-400 rounded-lg shadow-sm">
                       <div className="text-blue-800 font-bold mb-2">Top Bars (Negative Moment)</div>
-                      {Object.entries(detailingResults.flexuralReinforcement.topBars).map(([key, value]) => (
+                      {Object.entries(detailingResults.flexuralReinforcement.topBars || {}).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-sm border-b border-blue-200 pb-1">
                           <span className="text-blue-700 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
                           <span className="text-blue-800 font-bold font-mono">{String(value)}</span>
@@ -583,7 +583,7 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
                   
                   <div className="p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-sm">
                     <div className="text-yellow-800 font-bold mb-2">Longitudinal Bars</div>
-                    {Object.entries(detailingResults.longitudinalReinforcement).map(([key, value]) => (
+                    {Object.entries(detailingResults.longitudinalReinforcement || {}).map(([key, value]) => (
                       <div key={key} className="flex justify-between text-sm border-b border-yellow-200 pb-1">
                         <span className="text-yellow-700 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
                         <span className="text-yellow-800 font-bold font-mono">{String(value)}</span>
@@ -594,12 +594,12 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
               )}
 
               {/* Shear/Tie Reinforcement with Strong Colors */}
-              {detailingResults.shearReinforcement && (
+              {(detailingResults.shearReinforcement || detailingResults.tieReinforcement) && (
                 <div className="p-3 bg-purple-50 border-2 border-purple-400 rounded-lg shadow-sm">
                   <div className="text-purple-800 font-bold mb-2">
                     {selectedElement === 'beam' ? 'Shear Reinforcement' : 'Tie Reinforcement'}
                   </div>
-                  {Object.entries(detailingResults.shearReinforcement || detailingResults.tieReinforcement).map(([key, value]) => (
+                  {Object.entries((detailingResults.shearReinforcement || detailingResults.tieReinforcement) || {}).map(([key, value]) => (
                     <div key={key} className="flex justify-between text-sm border-b border-purple-200 pb-1">
                       <span className="text-purple-700 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
                       <span className="text-purple-800 font-bold font-mono">{String(value)}</span>
@@ -629,7 +629,7 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
             {/* Detailing Requirements with Strong Borders */}
             <div className="space-y-4">
               <h4 className="text-gray-800 font-bold text-lg">Detailing Requirements</h4>
-              {Object.entries(detailingResults.detailing).map(([key, value]) => (
+              {Object.entries(detailingResults.detailing || {}).map(([key, value]) => (
                 <div key={key} className="flex justify-between items-center p-3 bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm">
                   <span className="text-gray-700 text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                   <span className="text-blue-700 font-bold text-sm font-mono">{String(value)}</span>
@@ -640,7 +640,7 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
             {/* Material Quantities with Professional Styling */}
             <div className="space-y-4">
               <h4 className="text-gray-800 font-bold text-lg">Material Quantities</h4>
-              {Object.entries(detailingResults.materialQuantities).map(([key, value]) => (
+              {Object.entries(detailingResults.materialQuantities || {}).map(([key, value]) => (
                 <div key={key} className="flex justify-between items-center p-3 bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm">
                   <span className="text-gray-700 text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                   <span className="text-green-700 font-bold text-sm font-mono">{String(value)}</span>
@@ -651,7 +651,7 @@ const ReinforcementDetailing: React.FC<ReinforcementDetailingProps> = ({ subModu
             {/* Compliance Checks with Clear Pass/Fail Indicators */}
             <div className="space-y-4">
               <h4 className="text-gray-800 font-bold text-lg">Code Compliance</h4>
-              {Object.entries(detailingResults.compliance).map(([key, value]) => (
+              {Object.entries(detailingResults.compliance || {}).map(([key, value]) => (
                 <div key={key} className={`p-3 rounded-lg border-2 shadow-sm ${
                   value ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'
                 }`}>

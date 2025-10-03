@@ -397,7 +397,7 @@ const CodeChecking: React.FC<CodeCheckingProps> = ({ subModule }) => {
             </h3>
 
             <div className="space-y-4">
-              {Object.entries(designStandards).map(([key, standard]) => (
+              {Object.entries(designStandards || {}).map(([key, standard]) => (
                 <div key={key} className="space-y-2">
                   <div className="flex items-center">
                     <input
@@ -461,7 +461,7 @@ const CodeChecking: React.FC<CodeCheckingProps> = ({ subModule }) => {
 
             {designData ? (
               <div className="space-y-4">
-                {Object.entries(designData).map(([key, data]: [string, any]) => (
+                {Object.entries(designData || {}).map(([key, data]: [string, any]) => (
                   <div key={key} className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm">
                     <div className="font-bold text-gray-800 mb-2 capitalize">
                       {key.replace(/([A-Z])/g, ' $1')}
@@ -504,7 +504,7 @@ const CodeChecking: React.FC<CodeCheckingProps> = ({ subModule }) => {
           <h3 className="text-lg font-bold text-gray-800 mb-6">Available Design Standards</h3>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {Object.entries(designStandards).map(([key, standard]) => (
+            {Object.entries(designStandards || {}).map(([key, standard]) => (
               <div key={key} className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-gray-800 font-bold">{key}</h4>
@@ -579,7 +579,7 @@ const CodeChecking: React.FC<CodeCheckingProps> = ({ subModule }) => {
             <h3 className="text-lg font-bold text-gray-800 mb-4">Detailed Check Results</h3>
             
             <div className="space-y-6">
-              {Object.entries(checkingResults.checkDetails).map(([standard, details]: [string, any]) => (
+              {Object.entries(checkingResults.checkDetails || {}).map(([standard, details]: [string, any]) => (
                 <div key={standard}>
                   <h4 className="text-gray-800 font-bold mb-3">{standard}</h4>
                   <div className="space-y-2">

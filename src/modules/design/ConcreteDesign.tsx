@@ -484,7 +484,7 @@ const ConcreteDesign: React.FC<ConcreteDesignProps> = ({ subModule }) => {
             {/* Geometry & Material */}
             <div className="space-y-4">
               <h4 className="text-white/90 font-medium">Geometry & Materials</h4>
-              {Object.entries(designResults.geometry).map(([key, value]) => (
+              {Object.entries(designResults.geometry || {}).map(([key, value]) => (
                 <div key={key} className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                   <span className="text-white/70 text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                   <span className="text-blue-400 font-mono text-sm">{String(value)}</span>
@@ -495,7 +495,7 @@ const ConcreteDesign: React.FC<ConcreteDesignProps> = ({ subModule }) => {
             {/* Capacities */}
             <div className="space-y-4">
               <h4 className="text-white/90 font-medium">Design Capacities</h4>
-              {Object.entries(designResults.capacities).map(([key, value]) => (
+              {Object.entries(designResults.capacities || {}).map(([key, value]) => (
                 <div key={key} className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                   <span className="text-white/70 text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                   <span className="text-green-400 font-mono text-sm">{String(value)}</span>
@@ -506,7 +506,7 @@ const ConcreteDesign: React.FC<ConcreteDesignProps> = ({ subModule }) => {
             {/* Utilization */}
             <div className="space-y-4">
               <h4 className="text-white/90 font-medium">Utilization Ratios</h4>
-              {Object.entries(designResults.utilization).map(([key, value]) => (
+              {Object.entries(designResults.utilization || {}).map(([key, value]) => (
                 <div key={key} className="p-3 bg-white/5 rounded-lg">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-white/70 text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
@@ -530,7 +530,7 @@ const ConcreteDesign: React.FC<ConcreteDesignProps> = ({ subModule }) => {
           <div className="mt-6">
             <h4 className="text-white/90 font-medium mb-4">Code Compliance Checks</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {Object.entries(designResults.checks).map(([key, value]) => (
+              {Object.entries(designResults.checks || {}).map(([key, value]) => (
                 <div key={key} className={`p-3 rounded-lg border ${
                   value ? 'bg-green-500/10 border-green-400' : 'bg-red-500/10 border-red-400'
                 }`}>

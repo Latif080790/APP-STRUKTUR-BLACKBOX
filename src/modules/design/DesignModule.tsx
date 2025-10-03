@@ -472,13 +472,18 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
       
       switch(componentType) {
         case 'beam':
-          if (!parameters.material || !parameters.section) {
+          // Provide default values if material or section are missing
+          const defaultMaterial = parameters.material || 'K-300'; // Default concrete grade
+          const defaultSection = parameters.section || { width: 300, depth: 500 }; // Default beam section
+          
+          if (!defaultMaterial && !defaultSection) {
             errors.push('Material and section properties required');
             break;
           }
           
-          const beamMaterial = materials.concrete.find(m => m.name === parameters.material) || 
-                              materials.steel.find(m => m.name === parameters.material);
+          const beamMaterial = materials.concrete.find(m => m.name === defaultMaterial) || 
+                              materials.steel.find(m => m.name === defaultMaterial) ||
+                              materials.concrete[2]; // Default to K-300 if not found
           
           if (beamMaterial) {
             const fc = (beamMaterial as any).fc || (beamMaterial as any).fy || 25;
@@ -1028,7 +1033,7 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                 Safety Factors (φ)
               </h4>
               <div className="space-y-2">
-                {Object.entries(designConfig.safetyFactors).map(([material, factor]) => (
+                {Object.entries(designConfig.safetyFactors || {}).map(([material, factor]) => (
                   <div key={material} className="flex justify-between items-center">
                     <span className="text-gray-700 text-sm font-medium capitalize">{material}:</span>
                     <div className="flex items-center space-x-2">
@@ -1054,7 +1059,7 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
               Standards Compliance Status
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.entries(designConfig.codeVersion).map(([code, version]) => (
+              {Object.entries(designConfig.codeVersion || {}).map(([code, version]) => (
                 <div key={code} className="p-3 bg-green-50 border border-green-200 rounded">
                   <div className="flex items-center space-x-2 mb-1">
                     <CheckCircle className="w-4 h-4 text-green-600" />

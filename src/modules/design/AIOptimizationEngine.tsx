@@ -393,7 +393,7 @@ const AIOptimizationEngine: React.FC = () => {
           <div className="mb-6">
             <h4 className="text-slate-800 font-bold mb-3">Objectives</h4>
             <div className="grid grid-cols-2 gap-3">
-              {Object.entries(parameters.objectives).map(([key, value]) => (
+              {Object.entries(parameters.objectives || {}).map(([key, value]) => (
                 <label key={key} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -549,7 +549,7 @@ const AIOptimizationEngine: React.FC = () => {
 
               <h4 className="text-slate-800 font-bold mb-2">Constraint Compliance</h4>
               <div className="space-y-2">
-                {Object.entries(bestSolution.constraints).map(([key, value]) => (
+                {Object.entries(bestSolution.constraints || {}).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
                     <span className="text-slate-700 text-sm font-medium capitalize">
                       {key.replace(/([A-Z])/g, ' $1').replace('OK', '')}
