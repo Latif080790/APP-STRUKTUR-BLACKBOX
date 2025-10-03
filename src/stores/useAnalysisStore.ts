@@ -355,128 +355,63 @@ export const useAnalysisStore = create<AnalysisStore>()(
       setShowGuide: (show) => set({ showGuide: show }),
       setActiveGuideCategory: (category) => set({ activeGuideCategory: category }),
 
-      // Main Analysis Execution - Connected to REAL Engine
+      // Main Analysis Execution - Connected to REAL Engine with CORRECT WORKFLOW
       executeAnalysis: async (analysisType: string) => {
         const state = get();
         set({ 
           isAnalyzing: true, 
-          analysisProgress: 0,
-          analysisResults: null, // Clear previous results before new analysis
+          analysisProgress: 10,
+          analysisResults: null,
           analysisStatus: { ...state.analysisStatus, analysis: 'running' }
         });
 
-        console.log('🚀 Calling the REAL structural engine...');
+        console.log('🚀 Calling the REAL structural engine with the correct workflow...');
 
         try {
-          // Simulate progress steps while preparing data
-          const steps = [
-            { progress: 10, message: 'Preparing project data...' },
-            { progress: 25, message: 'Connecting to analysis engine...' },
-            { progress: 40, message: 'Initializing solver...' },
-            { progress: 60, message: 'Running real calculations...' },
-            { progress: 85, message: 'Processing results...' },
-            { progress: 100, message: 'Analysis completed!' }
-          ];
-
-          for (let i = 0; i < steps.length - 1; i++) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-            set({ analysisProgress: steps[i].progress });
-          }
-
-          // 1. Prepare ProjectData from current store state
-          const currentState = get();
-          const projectData: ProjectData = {
-            id: `live-analysis-${Date.now()}`,
-            name: 'Live Analysis from UI',
-            description: `${analysisType.charAt(0).toUpperCase() + analysisType.slice(1)} analysis`,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            owner: 'Default User',
-            // Convert store data to engine format
-            geometry: {
-              dimensions: currentState.buildingGeometry.dimensions,
-              stories: currentState.buildingGeometry.stories,
-              gridSystem: {
-                xSpacing: currentState.buildingGeometry.grid.xSpacing,
-                ySpacing: currentState.buildingGeometry.grid.ySpacing,
-                xBays: currentState.buildingGeometry.grid.xBays,
-                yBays: currentState.buildingGeometry.grid.yBays
-              }
-            } as any,
-            materials: {
-              concrete: {
-                grade: 'K-30',
-                fc: currentState.analysisConfig.materialProperties?.concrete?.fc || 30,
-                density: currentState.analysisConfig.materialProperties?.concrete?.density || 2400,
-                elasticModulus: currentState.analysisConfig.materialProperties?.concrete?.elasticModulus || 27000
-              },
-              steel: {
-                grade: 'BJ-50',
-                fy: currentState.analysisConfig.materialProperties?.steel?.fy || 410,
-                density: currentState.analysisConfig.materialProperties?.steel?.density || 7850,
-                elasticModulus: currentState.analysisConfig.materialProperties?.steel?.elasticModulus || 200000
-              },
-              reinforcement: {
-                grade: 'BJTS-40',
-                fy: 400,
-                diameter: [10, 12, 16, 19, 22, 25]
-              }
-            } as any,
-            loads: {
-              deadLoad: currentState.buildingGeometry.loads.deadLoad,
-              liveLoad: currentState.buildingGeometry.loads.liveLoad,
-              seismicLoad: 0.2 * currentState.buildingGeometry.loads.deadLoad, // SNI approximation
-              loadCombinations: currentState.analysisConfig.loadCombinations
-            } as any,
+          // 1. Prepare project data from state store
+          // Ensure data types match what the engine expects for ProjectData
+          const projectDataForEngine: Partial<ProjectData> = {
+            name: `Live Analysis - ${new Date().toLocaleTimeString()}`,
+            geometry: get().buildingGeometry as any, 
+            materials: get().analysisConfig.materialProperties as any,
+            loads: get().buildingGeometry.loads as any,
             analysis: {
               type: analysisType as any,
               method: 'LRFD',
-              standards: ['SNI 2847:2019', 'SNI 1726:2019', 'SNI 1727:2020'],
-              convergenceTolerance: currentState.analysisConfig.convergenceTolerance,
-              maxIterations: currentState.analysisConfig.maxIterations,
-              includeP_Delta: currentState.analysisConfig.includeP_Delta,
-              dampingRatio: currentState.analysisConfig.dampingRatio
-            } as any
+              standards: ['SNI 2847:2019', 'SNI 1726:2019'],
+              convergenceTolerance: get().analysisConfig.convergenceTolerance,
+              maxIterations: get().analysisConfig.maxIterations,
+            },
           };
+          
+          // 2. CREATE & REGISTER project in the engine
+          // This is the key step that was missing before.
+          console.log('📝 Creating and registering project in the engine...');
+          const createdProject = structuralEngine.createProject(projectDataForEngine);
+          set({ analysisProgress: 25 });
 
-          // 2. CALL THE REAL STRUCTURAL ENGINE!
-          console.log('📊 Project data prepared:', projectData);
+          // 3. ANALYZE project using the VALID ID from the newly created project
+          console.log(`🧮 Analyzing registered project with ID: ${createdProject.id}`);
+          const realResults = await structuralEngine.analyzeStructure(createdProject.id);
+          set({ analysisProgress: 90 });
           
-          // First, create/update the project in the engine
-          await structuralEngine.updateProject(projectData.id, projectData);
-          
-          // Then run the analysis
-          const realResults = await structuralEngine.analyzeStructure(projectData.id);
-          
-          // Update final progress
-          set({ analysisProgress: 100 });
-
-          // 3. Store REAL RESULTS in state
-          set(state => ({
+          // 4. Store real results in state
+          set((prevState) => ({
             analysisResults: realResults,
-            analysisHistory: [...state.analysisHistory, { 
-              ...realResults, 
-              timestamp: new Date(), 
-              type: analysisType,
-              projectData // Store project data for reference
-            }],
-            analysisStatus: { ...state.analysisStatus, analysis: 'completed' },
+            analysisHistory: [...prevState.analysisHistory, { ...realResults, timestamp: new Date(), type: analysisType }],
+            analysisStatus: { ...prevState.analysisStatus, analysis: 'completed' },
             isAnalyzing: false,
-            analysisProgress: 100
+            analysisProgress: 100,
           }));
           
           console.log('✅ REAL analysis completed successfully!', realResults);
-          console.log('🎯 Real engine calculations confirmed - no more mock data!');
 
         } catch (error) {
           console.error('❌ REAL analysis failed:', error);
-          set(state => ({
-            analysisStatus: { ...state.analysisStatus, analysis: 'error' },
-            isAnalyzing: false
+          set((prevState) => ({
+            analysisStatus: { ...prevState.analysisStatus, analysis: 'error' },
+            isAnalyzing: false,
           }));
-          
-          // Show user-friendly error message
-          alert(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       },
 

@@ -1081,31 +1081,31 @@ export class FunctionalStructuralEngine {
   private generateRealElements(geometry: GeometryData, materials: MaterialData, nodes: StructuralNode[]): StructuralElement[] {
     const elements: StructuralElement[] = [];
     let elementId = 1;
-    
+
     const nodesPerFloor = (geometry.baysX + 1) * (geometry.baysY + 1);
-    
-    // Material properties (convert from input units to SI)
-    const E = materials.concrete.ec * 1e6; // Convert MPa to Pa
-    const G = E / (2 * (1 + materials.concrete.poisson)); // Shear modulus
-    const density = materials.concrete.density; // kg/m³
-    
-    // Generate columns (vertical elements)
+
+    // Material properties (convert to SI units: Pa)
+    const E = materials.concrete.ec * 1e6;
+    const G = E / (2 * (1 + materials.concrete.poisson));
+    const density = materials.concrete.density;
+
+    // ==================== GENERATE COLUMNS ====================
     for (let floor = 0; floor < geometry.floors; floor++) {
       for (let bayY = 0; bayY <= geometry.baysY; bayY++) {
         for (let bayX = 0; bayX <= geometry.baysX; bayX++) {
           const lowerNodeIndex = floor * nodesPerFloor + bayY * (geometry.baysX + 1) + bayX;
           const upperNodeIndex = (floor + 1) * nodesPerFloor + bayY * (geometry.baysX + 1) + bayX;
-          
-          // Column section properties (typical 400x400mm column)
-          const columnWidth = 0.4; // m
-          const columnHeight = 0.4; // m
-          const A = columnWidth * columnHeight;
-          const Iy = (columnWidth * Math.pow(columnHeight, 3)) / 12;
-          const Iz = (columnHeight * Math.pow(columnWidth, 3)) / 12;
-          const J = Iy; // Simplified torsional constant
-          
+
+          // Column section properties (typical 400x400mm)
+          const colWidth = 0.4; // m
+          const colHeight = 0.4; // m
+          const A = colWidth * colHeight;
+          const Iy = (colWidth * Math.pow(colHeight, 3)) / 12;
+          const Iz = (colHeight * Math.pow(colWidth, 3)) / 12;
+          const J = Iy + Iz; // Improved torsional constant approximation
+
           elements.push({
-            id: `C${elementId}`,
+            id: `C${elementId++}`,
             nodeI: nodes[lowerNodeIndex].id,
             nodeJ: nodes[upperNodeIndex].id,
             type: 'column',
@@ -1113,30 +1113,28 @@ export class FunctionalStructuralEngine {
             section: { A, Iy, Iz, J },
             length: geometry.floorHeight
           });
-          
-          elementId++;
         }
       }
     }
-    
-    // Generate beams (horizontal elements)
+
+    // ==================== GENERATE BEAMS ====================
     for (let floor = 1; floor <= geometry.floors; floor++) {
+      // Beam section properties (typical 300x500mm)
+      const beamWidth = 0.3; // m
+      const beamHeight = 0.5; // m
+      const A = beamWidth * beamHeight;
+      const Iy = (beamWidth * Math.pow(beamHeight, 3)) / 12;
+      const Iz = (beamHeight * Math.pow(beamWidth, 3)) / 12;
+      const J = Iy * 0.4; // Improved torsional constant approximation
+
+      // --- BEAMS IN X-DIRECTION ---
       for (let bayY = 0; bayY <= geometry.baysY; bayY++) {
         for (let bayX = 0; bayX < geometry.baysX; bayX++) {
-          // X-direction beams
           const node1Index = floor * nodesPerFloor + bayY * (geometry.baysX + 1) + bayX;
           const node2Index = floor * nodesPerFloor + bayY * (geometry.baysX + 1) + bayX + 1;
           
-          // Beam section properties (typical 300x500mm beam)
-          const beamWidth = 0.3; // m
-          const beamHeight = 0.5; // m
-          const A = beamWidth * beamHeight;
-          const Iy = (beamWidth * Math.pow(beamHeight, 3)) / 12;
-          const Iz = (beamHeight * Math.pow(beamWidth, 3)) / 12;
-          const J = Iy * 0.3; // Simplified torsional constant for rectangular section
-          
           elements.push({
-            id: `B${elementId}`,
+            id: `B${elementId++}`,
             nodeI: nodes[node1Index].id,
             nodeJ: nodes[node2Index].id,
             type: 'beam',
@@ -1144,27 +1142,17 @@ export class FunctionalStructuralEngine {
             section: { A, Iy, Iz, J },
             length: geometry.bayLength
           });
-          
-          elementId++;
         }
       }
-      
-      // Y-direction beams
-      for (let bayY = 0; bayY < geometry.baysY; bayY++) {
-        for (let bayX = 0; bayX <= geometry.baysX; bayX++) {
+
+      // --- BEAMS IN Y-DIRECTION ---
+      for (let bayX = 0; bayX <= geometry.baysX; bayX++) {
+        for (let bayY = 0; bayY < geometry.baysY; bayY++) {
           const node1Index = floor * nodesPerFloor + bayY * (geometry.baysX + 1) + bayX;
           const node2Index = floor * nodesPerFloor + (bayY + 1) * (geometry.baysX + 1) + bayX;
-          
-          // Beam section properties
-          const beamWidth = 0.3; // m
-          const beamHeight = 0.5; // m
-          const A = beamWidth * beamHeight;
-          const Iy = (beamWidth * Math.pow(beamHeight, 3)) / 12;
-          const Iz = (beamHeight * Math.pow(beamWidth, 3)) / 12;
-          const J = Iy * 0.3;
-          
+
           elements.push({
-            id: `B${elementId}`,
+            id: `B${elementId++}`,
             nodeI: nodes[node1Index].id,
             nodeJ: nodes[node2Index].id,
             type: 'beam',
@@ -1172,12 +1160,10 @@ export class FunctionalStructuralEngine {
             section: { A, Iy, Iz, J },
             length: geometry.bayWidth
           });
-          
-          elementId++;
         }
       }
     }
-    
+
     return elements;
   }
 
