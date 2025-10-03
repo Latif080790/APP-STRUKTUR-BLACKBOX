@@ -7,8 +7,12 @@ import {
   Calculator, Activity, Zap, Wind, Target, BarChart3, 
   Settings, Play, Pause, RefreshCw, Download, AlertTriangle,
   CheckCircle, Clock, TrendingUp, Layers, Eye, Save, ExternalLink, X, FileText,
-  Info, HelpCircle, BookOpen, Lightbulb, GraduationCap, Shield, Beaker, Database
+  Info, HelpCircle, BookOpen, Lightbulb, GraduationCap, Shield, Beaker, Database,
+  Gauge, Monitor, Cpu, MemoryStick
 } from 'lucide-react';
+import { OptimizedComponents } from '../../structural-analysis/OptimizedComponents';
+import { withPerformanceMonitoring } from '../../structural-analysis/performance-OptimizedComponents';
+import { PerformanceMonitor } from '../../core/PerformanceMonitor';
 import { structuralEngine, AnalysisResults as EngineAnalysisResults, ProjectData } from '../../engines/FunctionalStructuralEngine';
 import MaterialPropertiesManager from '../materials/MaterialPropertiesManager';
 import EnhancedMaterialPropertiesManager from '../materials/EnhancedMaterialPropertiesManager';
