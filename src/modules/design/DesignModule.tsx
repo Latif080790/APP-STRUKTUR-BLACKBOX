@@ -10,12 +10,16 @@ import {
   CheckCircle, AlertTriangle, Wrench, Box, Target,
   Zap, Shield, TrendingUp, BarChart3, Activity,
   Layers, Compass, RefreshCw, Download, Clipboard,
-  FlaskConical, Award, FileCheck, HelpCircle, Eye
+  FlaskConical, Award, FileCheck, HelpCircle, Eye, Brain
 } from 'lucide-react';
 import { Material, StructuralElement, SNILoadCombinations } from '../../types/structural';
 import AdvancedMaterialTesting from '../../components/AdvancedMaterialTesting';
 import QualityAssuranceProtocols from '../../components/QualityAssuranceProtocols';
 import ProfessionalMaterialCertification from '../../components/ProfessionalMaterialCertification';
+import AIOptimizationEngine from './AIOptimizationEngine';
+import ProfessionalReportGenerator from './ProfessionalReportGenerator';
+import AdvancedConnectionDesign from './AdvancedConnectionDesign';
+import LoadPathAnalysisSystem from './LoadPathAnalysisSystem';
 
 interface DesignModuleProps {
   subModule: string;
@@ -1222,72 +1226,16 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
         return renderSteelDesign();
       case 'concrete-design':
         return renderConcreteDesign();
-      case 'timber-design':
-        return (
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-            <h3 className="text-xl font-bold text-white/90 mb-4 flex items-center">
-              <Wrench className="w-6 h-6 mr-2 text-green-400" />
-              Timber Design - SNI 7973:2019
-            </h3>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wrench className="w-8 h-8 text-green-400" />
-              </div>
-              <p className="text-white/60 mb-4">Advanced timber design module coming in Phase 4</p>
-              <div className="text-green-400 text-sm">Enhanced Connections & Timber Design</div>
-            </div>
-          </div>
-        );
       case 'foundation-design':
         return renderFoundationDesign();
+      case 'ai-optimization':
+        return <AIOptimizationEngine />;
+      case 'report-generator':
+        return <ProfessionalReportGenerator />;
       case 'connection-design':
-        return (
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-            <h3 className="text-xl font-bold text-white/90 mb-4 flex items-center">
-              <Zap className="w-6 h-6 mr-2 text-yellow-400" />
-              Advanced Connection Design
-            </h3>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-yellow-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-yellow-400" />
-              </div>
-              <p className="text-white/60 mb-4">Comprehensive connection design module coming in Phase 4</p>
-              <div className="text-yellow-400 text-sm">Bolt, Weld & Moment Connections with SNI Standards</div>
-            </div>
-          </div>
-        );
-      case 'code-checking':
-        return (
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-            <h3 className="text-xl font-bold text-white/90 mb-4 flex items-center">
-              <FileCheck className="w-6 h-6 mr-2 text-purple-400" />
-              Automated Code Checking
-            </h3>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileCheck className="w-8 h-8 text-purple-400" />
-              </div>
-              <p className="text-white/60 mb-4">AI-powered code checking system coming in Phase 2</p>
-              <div className="text-purple-400 text-sm">Automated Design Optimization & Compliance Verification</div>
-            </div>
-          </div>
-        );
-      case 'reinforcement':
-        return (
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-            <h3 className="text-xl font-bold text-white/90 mb-4 flex items-center">
-              <Layers className="w-6 h-6 mr-2 text-orange-400" />
-              Reinforcement Detailing
-            </h3>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Layers className="w-8 h-8 text-orange-400" />
-              </div>
-              <p className="text-white/60 mb-4">Advanced reinforcement detailing system coming in Phase 3</p>
-              <div className="text-orange-400 text-sm">Professional Drawing Integration & Documentation</div>
-            </div>
-          </div>
-        );
+        return <AdvancedConnectionDesign />;
+      case 'load-path-analysis':
+        return <LoadPathAnalysisSystem />;
       default:
         return renderComponentDesign();
     }
@@ -1323,8 +1271,12 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
               <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
                 <Calculator className="w-4 h-4 mr-1 inline" />Materials
               </button>
-              <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
-                <Eye className="w-4 h-4 mr-1 inline" />3D Model
+              <button 
+                onClick={() => setShow3DViewer(true)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-violet-600 text-white rounded-lg hover:from-purple-600 hover:to-violet-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-purple-400 flex items-center space-x-2"
+              >
+                <Eye className="w-5 h-5" />
+                <span>3D Model</span>
               </button>
             </div>
           </div>
@@ -1350,13 +1302,17 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                   { id: 'quality-assurance', label: 'Quality Assurance' },
                   { id: 'steel-design', label: 'Steel Design' },
                   { id: 'concrete-design', label: 'Concrete Design' },
-                  { id: 'foundation-design', label: 'Foundation Design' }
+                  { id: 'foundation-design', label: 'Foundation Design' },
+                  { id: 'ai-optimization', label: 'AI Optimization' },
+                  { id: 'report-generator', label: 'Report Generator' },
+                  { id: 'connection-design', label: 'Connection Design' },
+                  { id: 'load-path-analysis', label: 'Load Path Analysis' }
                 ].find(item => item.id === (subModule || designAnalysis.activeComponent))?.label || 'Component Design'}
               </span>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-11 gap-3">
             {[
               { id: 'component-design', label: 'Component Design', icon: Building2, color: 'blue' },
               { id: 'material-testing', label: 'Material Testing', icon: FlaskConical, color: 'purple' },
@@ -1364,7 +1320,11 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
               { id: 'quality-assurance', label: 'Quality Assurance', icon: Shield, color: 'green' },
               { id: 'steel-design', label: 'Steel Design', icon: Box, color: 'gray' },
               { id: 'concrete-design', label: 'Concrete Design', icon: Building2, color: 'indigo' },
-              { id: 'foundation-design', label: 'Foundation Design', icon: Settings, color: 'orange' }
+              { id: 'foundation-design', label: 'Foundation Design', icon: Settings, color: 'orange' },
+              { id: 'ai-optimization', label: 'AI Optimization', icon: Brain, color: 'purple' },
+              { id: 'report-generator', label: 'Report Generator', icon: FileText, color: 'emerald' },
+              { id: 'connection-design', label: 'Connection Design', icon: Zap, color: 'red' },
+              { id: 'load-path-analysis', label: 'Load Path Analysis', icon: Activity, color: 'pink' }
             ].map(item => {
               const isActive = subModule === item.id || designAnalysis.activeComponent === item.id;
               return (
@@ -1409,6 +1369,317 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
           {renderSubModule()}
         </div>
       </div>
+      
+      {/* 3D Viewer Modal */}
+      {show3DViewer && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">3D Structural Model Viewer</h2>
+                    <p className="text-purple-100 text-sm">Interactive 3D visualization of structural components</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShow3DViewer(false)}
+                  className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+                >
+                  <span className="text-white text-lg">×</span>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
+                {/* 3D Canvas Area */}
+                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl relative overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Building2 className="w-10 h-10 text-purple-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2">3D Model Viewer</h3>
+                      <p className="text-slate-300 mb-4">Interactive structural component visualization</p>
+                      <div className="text-purple-400 text-sm">Rendering structural model...</div>
+                    </div>
+                  </div>
+                  
+                  {/* View Controls */}
+                  <div className="absolute top-4 right-4 space-y-2">
+                    <button className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
+                      <RefreshCw className="w-5 h-5 text-white" />
+                    </button>
+                    <button className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
+                      <Target className="w-5 h-5 text-white" />
+                    </button>
+                    <button className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
+                      <Download className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Model Properties Panel */}
+                <div className="space-y-4">
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                      <Building2 className="w-4 h-4 mr-2 text-blue-600" />
+                      Model Properties
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Elements:</span>
+                        <span className="text-slate-800 font-medium">156</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Nodes:</span>
+                        <span className="text-slate-800 font-medium">89</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Materials:</span>
+                        <span className="text-slate-800 font-medium">3</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Load Cases:</span>
+                        <span className="text-slate-800 font-medium">5</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                      <Eye className="w-4 h-4 mr-2 text-purple-600" />
+                      Display Options
+                    </h4>
+                    <div className="space-y-3">
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" className="rounded" defaultChecked />
+                        <span className="text-sm text-slate-700">Show Elements</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" className="rounded" defaultChecked />
+                        <span className="text-sm text-slate-700">Show Nodes</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" className="rounded" />
+                        <span className="text-sm text-slate-700">Show Loads</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input type="checkbox" className="rounded" />
+                        <span className="text-sm text-slate-700">Show Deformation</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                      <Settings className="w-4 h-4 mr-2 text-orange-600" />
+                      View Controls
+                    </h4>
+                    <div className="space-y-2">
+                      <button className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+                        Isometric View
+                      </button>
+                      <button className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm">
+                        Front View
+                      </button>
+                      <button className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm">
+                        Top View
+                      </button>
+                      <button className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm">
+                        Side View
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Guide Modal */}
+      {showGuide && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <HelpCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Design Module Guide</h2>
+                    <p className="text-green-100 text-sm">Comprehensive guide for structural design workflow</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowGuide(false)}
+                  className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+                >
+                  <span className="text-white text-lg">×</span>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Quick Start */}
+                <div className="bg-blue-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                    <Target className="w-5 h-5 mr-2" />
+                    Quick Start Guide
+                  </h3>
+                  <div className="space-y-3 text-sm text-blue-700">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-xs font-semibold text-blue-800">1</div>
+                      <div>
+                        <div className="font-medium">Select Design Module</div>
+                        <div className="text-blue-600">Choose from 11 specialized design modules</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-xs font-semibold text-blue-800">2</div>
+                      <div>
+                        <div className="font-medium">Input Parameters</div>
+                        <div className="text-blue-600">Enter design parameters and material properties</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-xs font-semibold text-blue-800">3</div>
+                      <div>
+                        <div className="font-medium">Run Analysis</div>
+                        <div className="text-blue-600">Perform calculations per SNI standards</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-xs font-semibold text-blue-800">4</div>
+                      <div>
+                        <div className="font-medium">Review Results</div>
+                        <div className="text-blue-600">Check compliance and safety factors</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Module Overview */}
+                <div className="bg-purple-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                    <Building2 className="w-5 h-5 mr-2" />
+                    Available Modules
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-purple-700">Component Design - Beams, Columns, Slabs</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-purple-700">Material Testing - Quality Assurance</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      <span className="text-purple-700">Certification - Professional Standards</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-purple-700">Quality Assurance - Testing Protocols</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                      <span className="text-purple-700">Steel Design - SNI 1729:2020</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      <span className="text-purple-700">Concrete Design - SNI 2847:2019</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="text-purple-700">Foundation Design - SNI 8460:2020</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-purple-700">AI Optimization - Genetic Algorithms</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                      <span className="text-purple-700">Report Generator - Professional Documentation</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      <span className="text-purple-700">Connection Design - Bolts, Welds, Moments</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                      <span className="text-purple-700">Load Path Analysis - Progressive Collapse</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* SNI Standards */}
+                <div className="bg-green-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center">
+                    <FileCheck className="w-5 h-5 mr-2" />
+                    SNI Standards Compliance
+                  </h3>
+                  <div className="space-y-3 text-sm text-green-700">
+                    <div>
+                      <div className="font-medium">SNI 2847:2019</div>
+                      <div className="text-green-600">Concrete Structure Requirements</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">SNI 1729:2020</div>
+                      <div className="text-green-600">Steel Structure Specifications</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">SNI 1726:2019</div>
+                      <div className="text-green-600">Earthquake Resistance Planning</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">SNI 1727:2020</div>
+                      <div className="text-green-600">Minimum Design Loads</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">SNI 8460:2020</div>
+                      <div className="text-green-600">Foundation Design Requirements</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Safety Guidelines */}
+                <div className="bg-red-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-red-800 mb-4 flex items-center">
+                    <Shield className="w-5 h-5 mr-2" />
+                    Safety Guidelines
+                  </h3>
+                  <div className="space-y-3 text-sm text-red-700">
+                    <div>
+                      <div className="font-medium">Design Philosophy</div>
+                      <div className="text-red-600">Load and Resistance Factor Design (LRFD)</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Safety Factors</div>
+                      <div className="text-red-600">Minimum SF = 1.5 for all critical components</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Quality Control</div>
+                      <div className="text-red-600">Professional verification required</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Peer Review</div>
+                      <div className="text-red-600">Mandatory for public structures</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
