@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Layers, Plus, Trash2, Copy, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Layers, Plus, Trash2, Copy, CheckCircle, AlertTriangle, RefreshCw, HelpCircle, Info } from 'lucide-react';
 
 interface LoadCombination {
   id: string;
@@ -171,6 +171,24 @@ const LoadCombinationsComponent: React.FC<LoadCombinationsComponentProps> = ({
             <Plus className="w-4 h-4" />
             <span>Add Combination</span>
           </button>
+        </div>
+      </div>
+
+      {/* Help Notice for Consolidated Guide */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-semibold text-blue-900 mb-1">Need Help with Load Combinations?</h4>
+            <p className="text-blue-800 text-sm mb-2">
+              Access comprehensive guidance on SNI load combinations, standards compliance, 
+              and best practices through our consolidated help system.
+            </p>
+            <button className="text-blue-700 hover:text-blue-900 text-sm font-medium flex items-center space-x-1 hover:underline">
+              <HelpCircle className="w-4 h-4" />
+              <span>Open Analysis Guide</span>
+            </button>
+          </div>
         </div>
       </div>
 
