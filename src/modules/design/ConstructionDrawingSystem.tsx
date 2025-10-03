@@ -191,7 +191,7 @@ const ConstructionDrawingSystem: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-indigo-700 to-purple-800 rounded-xl p-6 border-2 border-gray-300 text-white shadow-lg">
         <div className="flex items-center space-x-3 mb-3">
           <PenTool className="w-8 h-8" />
           <div>
@@ -201,20 +201,20 @@ const ConstructionDrawingSystem: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-indigo-100 text-sm">Active Template</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-indigo-100 text-sm font-medium">Active Template</div>
             <div className="text-xl font-bold">{activeTemplate?.name || 'None'}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-indigo-100 text-sm">Current Layer</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-indigo-100 text-sm font-medium">Current Layer</div>
             <div className="text-xl font-bold">{currentLayer}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-indigo-100 text-sm">Zoom Level</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-indigo-100 text-sm font-medium">Zoom Level</div>
             <div className="text-xl font-bold">{zoomLevel}%</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-indigo-100 text-sm">Templates</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-indigo-100 text-sm font-medium">Templates</div>
             <div className="text-xl font-bold">{drawingTemplates.length}</div>
           </div>
         </div>
@@ -222,22 +222,22 @@ const ConstructionDrawingSystem: React.FC = () => {
 
       {/* Drawing Templates */}
       {!activeTemplate && (
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+        <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
             <Layers className="w-5 h-5 mr-2 text-indigo-600" />
             Drawing Templates
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {drawingTemplates.map((template) => (
-              <div key={template.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div key={template.id} className="border-2 border-gray-300 rounded-lg p-4 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      template.type === 'plan' ? 'bg-blue-100' :
-                      template.type === 'elevation' ? 'bg-green-100' :
-                      template.type === 'section' ? 'bg-orange-100' :
-                      'bg-purple-100'
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center border-2 ${
+                      template.type === 'plan' ? 'bg-blue-100 border-blue-300' :
+                      template.type === 'elevation' ? 'bg-green-100 border-green-300' :
+                      template.type === 'section' ? 'bg-orange-100 border-orange-300' :
+                      'bg-purple-100 border-purple-300'
                     }`}>
                       <PenTool className={`w-4 h-4 ${
                         template.type === 'plan' ? 'text-blue-600' :
@@ -247,18 +247,18 @@ const ConstructionDrawingSystem: React.FC = () => {
                       }`} />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-800">{template.name}</h4>
-                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded uppercase">
+                      <h4 className="font-bold text-slate-800">{template.name}</h4>
+                      <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded uppercase font-medium border border-slate-400">
                         {template.type}
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                <p className="text-slate-600 text-sm mb-3">{template.description}</p>
+                <p className="text-slate-700 text-sm mb-3 font-medium">{template.description}</p>
                 
                 <div className="mb-4">
-                  <h5 className="text-sm font-medium text-slate-700 mb-2">Layers ({template.layers.length})</h5>
+                  <h5 className="text-sm font-bold text-slate-800 mb-2">Layers ({template.layers.length})</h5>
                   <div className="space-y-1">
                     {template.layers.map((layer) => (
                       <div key={layer.id} className="flex items-center space-x-2 text-xs">
@@ -266,7 +266,7 @@ const ConstructionDrawingSystem: React.FC = () => {
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: layer.color }}
                         ></div>
-                        <span className="text-slate-600">{layer.name}</span>
+                        <span className="text-slate-700 font-medium">{layer.name}</span>
                       </div>
                     ))}
                   </div>
@@ -274,7 +274,7 @@ const ConstructionDrawingSystem: React.FC = () => {
                 
                 <button
                   onClick={() => createNewDrawing(template)}
-                  className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm"
+                  className="w-full px-4 py-2 bg-indigo-700 text-white rounded-md hover:bg-indigo-800 transition-colors text-sm font-bold border border-indigo-600"
                 >
                   Open Template
                 </button>
@@ -288,8 +288,8 @@ const ConstructionDrawingSystem: React.FC = () => {
       {activeTemplate && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Tools Panel */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Tools</h3>
+          <div className="bg-white rounded-xl p-4 border-2 border-gray-300 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">Tools</h3>
             
             <div className="space-y-2 mb-6">
               {drawingTools.map((tool) => (
@@ -298,8 +298,8 @@ const ConstructionDrawingSystem: React.FC = () => {
                   onClick={() => setSelectedTool(tool.id)}
                   className={`w-full flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
                     selectedTool === tool.id
-                      ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                      : 'text-slate-600 hover:bg-slate-50'
+                      ? 'bg-indigo-100 text-indigo-800 border-2 border-indigo-300 font-bold'
+                      : 'text-slate-600 hover:bg-slate-50 border-2 border-transparent font-medium'
                   }`}
                 >
                   <tool.icon className="w-4 h-4" />
@@ -310,11 +310,11 @@ const ConstructionDrawingSystem: React.FC = () => {
             
             {/* View Controls */}
             <div className="border-t pt-4">
-              <h4 className="text-sm font-semibold text-slate-700 mb-3">View</h4>
+              <h4 className="text-sm font-bold text-slate-800 mb-3">View</h4>
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Zoom</span>
+                  <span className="text-sm text-slate-700 font-medium">Zoom</span>
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={() => setZoomLevel(prev => Math.max(25, prev - 25))}
@@ -322,7 +322,7 @@ const ConstructionDrawingSystem: React.FC = () => {
                     >
                       <ZoomOut className="w-4 h-4" />
                     </button>
-                    <span className="text-xs text-slate-500 w-12 text-center">{zoomLevel}%</span>
+                    <span className="text-xs text-slate-600 w-12 text-center font-bold">{zoomLevel}%</span>
                     <button
                       onClick={() => setZoomLevel(prev => Math.min(400, prev + 25))}
                       className="p-1 text-slate-600 hover:text-slate-800"
@@ -337,9 +337,9 @@ const ConstructionDrawingSystem: React.FC = () => {
                     type="checkbox"
                     checked={gridVisible}
                     onChange={(e) => setGridVisible(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded"
+                    className="w-4 h-4 text-indigo-600 border-2 border-gray-300 rounded"
                   />
-                  <span className="text-sm text-slate-600">Show Grid</span>
+                  <span className="text-sm text-slate-700 font-medium">Show Grid</span>
                 </label>
                 
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -347,30 +347,30 @@ const ConstructionDrawingSystem: React.FC = () => {
                     type="checkbox"
                     checked={snapToGrid}
                     onChange={(e) => setSnapToGrid(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded"
+                    className="w-4 h-4 text-indigo-600 border-2 border-gray-300 rounded"
                   />
-                  <span className="text-sm text-slate-600">Snap to Grid</span>
+                  <span className="text-sm text-slate-700 font-medium">Snap to Grid</span>
                 </label>
               </div>
             </div>
           </div>
 
           {/* Drawing Canvas */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800">{activeTemplate.name}</h3>
+          <div className="lg:col-span-2 bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
+            <div className="bg-slate-100 px-4 py-2 border-b-2 border-gray-300 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800">{activeTemplate.name}</h3>
               
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setActiveTemplate(null)}
-                  className="px-3 py-1 text-slate-600 hover:text-slate-800 text-sm"
+                  className="px-3 py-1 text-slate-700 hover:text-slate-900 text-sm font-medium"
                 >
                   Close
                 </button>
                 
                 <button
                   onClick={() => exportDrawing('dwg')}
-                  className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
+                  className="px-3 py-1 bg-indigo-700 text-white rounded-md hover:bg-indigo-800 text-sm font-bold border border-indigo-600"
                 >
                   Export DWG
                 </button>
@@ -403,17 +403,17 @@ const ConstructionDrawingSystem: React.FC = () => {
           </div>
 
           {/* Layers Panel */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Layers</h3>
+          <div className="bg-white rounded-xl p-4 border-2 border-gray-300 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">Layers</h3>
             
             <div className="space-y-2">
               {activeTemplate.layers.map((layer) => (
                 <div
                   key={layer.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                  className={`p-3 rounded-lg border-2 cursor-pointer transition-colors ${
                     currentLayer === layer.id
-                      ? 'bg-indigo-50 border-indigo-200'
-                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-indigo-50 border-indigo-500'
+                      : 'bg-slate-50 border-gray-300 hover:bg-slate-100 hover:border-indigo-300'
                   }`}
                   onClick={() => setCurrentLayer(layer.id)}
                 >
@@ -423,7 +423,7 @@ const ConstructionDrawingSystem: React.FC = () => {
                         className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
                         style={{ backgroundColor: layer.color }}
                       ></div>
-                      <span className="text-sm font-medium text-slate-800">{layer.name}</span>
+                      <span className="text-sm font-bold text-slate-800">{layer.name}</span>
                     </div>
                     
                     <div className="flex items-center space-x-1">
@@ -449,7 +449,7 @@ const ConstructionDrawingSystem: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-600 font-medium">
                     {layer.elements.length} elements
                   </div>
                 </div>

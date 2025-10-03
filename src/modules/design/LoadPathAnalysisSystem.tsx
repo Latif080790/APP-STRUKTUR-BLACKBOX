@@ -256,7 +256,7 @@ const LoadPathAnalysisSystem: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-pink-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-red-700 to-pink-800 rounded-xl p-6 border-2 border-gray-300 text-white shadow-lg">
         <div className="flex items-center space-x-3 mb-3">
           <Activity className="w-8 h-8" />
           <div>
@@ -266,28 +266,28 @@ const LoadPathAnalysisSystem: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-red-100 text-sm">Analysis Scenarios</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-red-100 text-sm font-medium">Analysis Scenarios</div>
             <div className="text-xl font-bold">{analysisScenarios.length}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-red-100 text-sm">Load Paths</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-red-100 text-sm font-medium">Load Paths</div>
             <div className="text-xl font-bold">{loadPaths.length}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-red-100 text-sm">Critical Elements</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-red-100 text-sm font-medium">Critical Elements</div>
             <div className="text-xl font-bold">{structuralElements.filter(e => e.status === 'critical').length}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-red-100 text-sm">Progress</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-red-100 text-sm font-medium">Progress</div>
             <div className="text-xl font-bold">{analysisProgress.toFixed(0)}%</div>
           </div>
         </div>
       </div>
 
       {/* Analysis Scenarios */}
-      <div className="bg-white rounded-xl p-6 border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+      <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
           <Target className="w-5 h-5 mr-2 text-red-600" />
           Analysis Scenarios
         </h3>
@@ -297,10 +297,10 @@ const LoadPathAnalysisSystem: React.FC = () => {
             <button
               key={scenario.id}
               onClick={() => setSelectedScenario(scenario)}
-              className={`text-left p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
+              className={`text-left p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${
                 selectedScenario?.id === scenario.id
-                  ? 'bg-red-50 border-red-200 shadow-lg'
-                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-red-50 border-red-500 shadow-lg'
+                  : 'bg-slate-50 border-gray-300 hover:bg-slate-100 hover:border-red-300'
               }`}
             >
               <div className="flex items-center space-x-2 mb-2">
@@ -308,9 +308,13 @@ const LoadPathAnalysisSystem: React.FC = () => {
                 {scenario.type === 'progressive' && <TrendingDown className="w-5 h-5 text-red-600" />}
                 {scenario.type === 'seismic' && <Zap className="w-5 h-5 text-orange-600" />}
                 {scenario.type === 'extreme' && <AlertTriangle className="w-5 h-5 text-purple-600" />}
-                <span className="font-medium text-slate-800">{scenario.name}</span>
+                <span className={`font-bold ${
+                  selectedScenario?.id === scenario.id ? 'text-red-800' : 'text-slate-800'
+                }`}>{scenario.name}</span>
               </div>
-              <p className="text-slate-600 text-sm">{scenario.description}</p>
+              <p className={`text-sm ${
+                selectedScenario?.id === scenario.id ? 'text-red-700' : 'text-slate-600'
+              }`}>{scenario.description}</p>
             </button>
           ))}
         </div>
@@ -319,9 +323,9 @@ const LoadPathAnalysisSystem: React.FC = () => {
       {/* Analysis Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Visualization */}
-        <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-slate-200">
+        <div className="lg:col-span-2 bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-800 flex items-center">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center">
               <Eye className="w-5 h-5 mr-2 text-red-600" />
               Structural Visualization
             </h3>
@@ -329,7 +333,7 @@ const LoadPathAnalysisSystem: React.FC = () => {
             <select
               value={visualizationMode}
               onChange={(e) => setVisualizationMode(e.target.value as any)}
-              className="px-3 py-1 border border-slate-300 rounded-md text-sm"
+              className="px-3 py-1 border-2 border-gray-300 rounded-md text-sm font-medium"
             >
               <option value="load-path">Load Paths</option>
               <option value="stress">Stress Distribution</option>
@@ -340,13 +344,13 @@ const LoadPathAnalysisSystem: React.FC = () => {
             ref={canvasRef}
             width={500}
             height={300}
-            className="border border-slate-200 rounded-lg w-full"
+            className="border-2 border-gray-300 rounded-lg w-full"
           />
           
           <div className="mt-4 flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 bg-green-500 rounded"></div>
-              <span className="text-sm text-slate-600">Safe</span>
+              <span className="text-sm text-slate-700 font-medium">Safe</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 bg-yellow-500 rounded"></div>
@@ -360,23 +364,23 @@ const LoadPathAnalysisSystem: React.FC = () => {
         </div>
 
         {/* Analysis Control */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+        <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
             <Settings className="w-5 h-5 mr-2 text-red-600" />
             Analysis Control
           </h3>
 
           {selectedScenario && (
             <div className="space-y-4">
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <h4 className="font-medium text-slate-800">{selectedScenario.name}</h4>
-                <p className="text-slate-600 text-sm">{selectedScenario.description}</p>
+              <div className="p-3 bg-slate-50 rounded-lg border-2 border-gray-200">
+                <h4 className="font-bold text-slate-800">{selectedScenario.name}</h4>
+                <p className="text-slate-700 text-sm font-medium">{selectedScenario.description}</p>
               </div>
 
               <button
                 onClick={() => performProgressiveCollapseAnalysis(selectedScenario)}
                 disabled={isAnalyzing}
-                className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all flex items-center justify-center space-x-2"
+                className="w-full px-4 py-3 bg-red-700 text-white rounded-lg hover:bg-red-800 disabled:opacity-50 transition-all flex items-center justify-center space-x-2 border-2 border-red-600 font-bold shadow-lg"
               >
                 {isAnalyzing ? <Clock className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
                 <span>{isAnalyzing ? 'Analyzing...' : 'Run Analysis'}</span>
@@ -403,47 +407,47 @@ const LoadPathAnalysisSystem: React.FC = () => {
 
       {/* Results */}
       {collapseResults && (
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+        <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
             <BarChart3 className="w-5 h-5 mr-2 text-red-600" />
             Progressive Collapse Analysis Results
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-4">
-              <h4 className="font-medium text-slate-700">Collapse Summary</h4>
+              <h4 className="font-bold text-slate-800">Collapse Summary</h4>
               
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-red-50 rounded-lg">
-                  <div className="text-red-700 text-sm font-medium">Collapse Ratio</div>
+                <div className="p-3 bg-red-50 rounded-lg border-2 border-red-200">
+                  <div className="text-red-800 text-sm font-bold">Collapse Ratio</div>
                   <div className="text-red-900 font-bold text-lg">{(collapseResults.collapseRatio * 100).toFixed(1)}%</div>
                 </div>
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <div className="text-orange-700 text-sm font-medium">Time to Collapse</div>
+                <div className="p-3 bg-orange-50 rounded-lg border-2 border-orange-200">
+                  <div className="text-orange-800 text-sm font-bold">Time to Collapse</div>
                   <div className="text-orange-900 font-bold text-lg">{collapseResults.timeToCollapse.toFixed(1)}s</div>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h4 className="font-medium text-slate-700">Failure Sequence</h4>
+              <h4 className="font-bold text-slate-800">Failure Sequence</h4>
               <div className="space-y-2">
-                <div className="p-2 bg-red-100 rounded text-sm">
-                  <span className="font-medium text-red-800">Initial:</span> {collapseResults.initialFailure}
+                <div className="p-2 bg-red-100 rounded text-sm border border-red-300">
+                  <span className="font-bold text-red-800">Initial:</span> {collapseResults.initialFailure}
                 </div>
                 {collapseResults.cascadeSequence.map((element, index) => (
-                  <div key={index} className="p-2 bg-orange-100 rounded text-sm">
-                    <span className="font-medium text-orange-800">Step {index + 1}:</span> {element}
+                  <div key={index} className="p-2 bg-orange-100 rounded text-sm border border-orange-300">
+                    <span className="font-bold text-orange-800">Step {index + 1}:</span> {element}
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="space-y-4">
-              <h4 className="font-medium text-slate-700">Recommendations</h4>
+              <h4 className="font-bold text-slate-800">Recommendations</h4>
               <div className="space-y-2">
                 {collapseResults.recommendations.map((rec, index) => (
-                  <div key={index} className="p-2 bg-blue-50 rounded text-sm text-blue-800">
+                  <div key={index} className="p-2 bg-blue-50 rounded text-sm text-blue-800 border border-blue-300 font-medium">
                     • {rec}
                   </div>
                 ))}

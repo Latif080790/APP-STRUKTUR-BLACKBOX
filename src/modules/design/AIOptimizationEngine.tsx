@@ -352,7 +352,7 @@ const AIOptimizationEngine: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-purple-700 to-indigo-800 rounded-xl p-6 border-2 border-gray-300 text-white shadow-lg">
         <div className="flex items-center space-x-3 mb-3">
           <Brain className="w-8 h-8" />
           <div>
@@ -362,20 +362,20 @@ const AIOptimizationEngine: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-purple-100 text-sm">Current Generation</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-purple-100 text-sm font-medium">Current Generation</div>
             <div className="text-xl font-bold">{currentGeneration}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-purple-100 text-sm">Progress</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-purple-100 text-sm font-medium">Progress</div>
             <div className="text-xl font-bold">{optimizationProgress.toFixed(1)}%</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-purple-100 text-sm">Best Fitness</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-purple-100 text-sm font-medium">Best Fitness</div>
             <div className="text-xl font-bold">{bestSolution?.bestFitness.toFixed(3) || '0.000'}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-purple-100 text-sm">Database Size</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-purple-100 text-sm font-medium">Database Size</div>
             <div className="text-xl font-bold">{sectionDatabase.length} sections</div>
           </div>
         </div>
@@ -384,14 +384,14 @@ const AIOptimizationEngine: React.FC = () => {
       {/* Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Optimization Parameters */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+        <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
             <Settings className="w-5 h-5 mr-2 text-indigo-600" />
             Optimization Parameters
           </h3>
 
           <div className="mb-6">
-            <h4 className="text-slate-700 font-medium mb-3">Objectives</h4>
+            <h4 className="text-slate-800 font-bold mb-3">Objectives</h4>
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(parameters.objectives).map(([key, value]) => (
                 <label key={key} className="flex items-center space-x-2 cursor-pointer">
@@ -413,7 +413,7 @@ const AIOptimizationEngine: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="text-slate-700 font-medium mb-3">Algorithm Settings</h4>
+            <h4 className="text-slate-800 font-bold mb-3">Algorithm Settings</h4>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-600 text-sm mb-1">Population Size</label>
@@ -427,7 +427,7 @@ const AIOptimizationEngine: React.FC = () => {
                       populationSize: parseInt(e.target.value)
                     }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-indigo-500 font-medium"
                 />
               </div>
               <div>
@@ -442,7 +442,7 @@ const AIOptimizationEngine: React.FC = () => {
                       generations: parseInt(e.target.value)
                     }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-indigo-500 font-medium"
                 />
               </div>
             </div>
@@ -450,8 +450,8 @@ const AIOptimizationEngine: React.FC = () => {
         </div>
 
         {/* Control Panel */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+        <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
             <Cpu className="w-5 h-5 mr-2 text-indigo-600" />
             Control Panel
           </h3>
@@ -460,7 +460,7 @@ const AIOptimizationEngine: React.FC = () => {
             <button
               onClick={startOptimization}
               disabled={isOptimizing}
-              className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2 font-medium"
+              className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-lg hover:from-green-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2 font-bold border-2 border-green-500 shadow-lg"
             >
               <Play className="w-5 h-5" />
               <span>{isOptimizing ? 'Optimizing...' : 'Start Optimization'}</span>
@@ -470,7 +470,7 @@ const AIOptimizationEngine: React.FC = () => {
               <button
                 onClick={stopOptimization}
                 disabled={!isOptimizing}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2 border-2 border-red-500 font-bold"
               >
                 <Pause className="w-4 h-4" />
                 <span>Stop</span>
@@ -479,7 +479,7 @@ const AIOptimizationEngine: React.FC = () => {
               <button
                 onClick={resetOptimization}
                 disabled={isOptimizing}
-                className="px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
+                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2 border-2 border-slate-500 font-bold"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Reset</span>
@@ -506,64 +506,64 @@ const AIOptimizationEngine: React.FC = () => {
 
       {/* Results */}
       {bestSolution && (
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+        <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
             <Target className="w-5 h-5 mr-2 text-green-600" />
             Optimization Results (Generation {bestSolution.generation})
           </h3>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-slate-700 font-medium mb-3">Optimized Sections</h4>
+              <h4 className="text-slate-800 font-bold mb-3">Optimized Sections</h4>
               <div className="space-y-2">
                 {bestSolution.selectedSections.map((section, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                    <span className="text-slate-700 font-medium">{section.name}</span>
-                    <span className="text-slate-600 text-sm">{section.type}</span>
+                  <div key={index} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border-2 border-gray-200">
+                    <span className="text-slate-800 font-bold">{section.name}</span>
+                    <span className="text-slate-600 text-sm font-medium px-2 py-1 bg-blue-100 rounded">{section.type}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div>
-              <h4 className="text-slate-700 font-medium mb-3">Performance Metrics</h4>
+              <h4 className="text-slate-800 font-bold mb-3">Performance Metrics</h4>
               
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="text-blue-700 text-sm font-medium">Total Cost</div>
-                  <div className="text-blue-900 font-bold">Rp {bestSolution.objectives.cost.toLocaleString()}</div>
+                <div className="p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+                  <div className="text-blue-800 text-sm font-bold">Total Cost</div>
+                  <div className="text-blue-900 font-bold text-lg">Rp {bestSolution.objectives.cost.toLocaleString()}</div>
                 </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <div className="text-green-700 text-sm font-medium">Total Weight</div>
-                  <div className="text-green-900 font-bold">{bestSolution.objectives.weight.toFixed(1)} kg</div>
+                <div className="p-3 bg-green-50 rounded-lg border-2 border-green-200">
+                  <div className="text-green-800 text-sm font-bold">Total Weight</div>
+                  <div className="text-green-900 font-bold text-lg">{bestSolution.objectives.weight.toFixed(1)} kg</div>
                 </div>
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <div className="text-purple-700 text-sm font-medium">Avg Strength</div>
-                  <div className="text-purple-900 font-bold">{bestSolution.objectives.strength.toFixed(0)} MPa</div>
+                <div className="p-3 bg-purple-50 rounded-lg border-2 border-purple-200">
+                  <div className="text-purple-800 text-sm font-bold">Avg Strength</div>
+                  <div className="text-purple-900 font-bold text-lg">{bestSolution.objectives.strength.toFixed(0)} MPa</div>
                 </div>
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <div className="text-orange-700 text-sm font-medium">Max Deflection</div>
-                  <div className="text-orange-900 font-bold">{bestSolution.objectives.deflection.toFixed(1)} mm</div>
+                <div className="p-3 bg-orange-50 rounded-lg border-2 border-orange-200">
+                  <div className="text-orange-800 text-sm font-bold">Max Deflection</div>
+                  <div className="text-orange-900 font-bold text-lg">{bestSolution.objectives.deflection.toFixed(1)} mm</div>
                 </div>
               </div>
 
-              <h4 className="text-slate-700 font-medium mb-2">Constraint Compliance</h4>
+              <h4 className="text-slate-800 font-bold mb-2">Constraint Compliance</h4>
               <div className="space-y-2">
                 {Object.entries(bestSolution.constraints).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <span className="text-slate-600 text-sm capitalize">
+                  <div key={key} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                    <span className="text-slate-700 text-sm font-medium capitalize">
                       {key.replace(/([A-Z])/g, ' $1').replace('OK', '')}
                     </span>
                     <div className="flex items-center space-x-1">
                       {value ? (
                         <>
                           <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span className="text-green-600 text-sm font-medium">Pass</span>
+                          <span className="text-green-700 text-sm font-bold">Pass</span>
                         </>
                       ) : (
                         <>
                           <AlertTriangle className="w-4 h-4 text-red-600" />
-                          <span className="text-red-600 text-sm font-medium">Fail</span>
+                          <span className="text-red-700 text-sm font-bold">Fail</span>
                         </>
                       )}
                     </div>

@@ -3,7 +3,7 @@
  * Main template that integrates all modules with complete navigation hierarchy
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from './components/layout/MainLayout';
 import DashboardOverview from './modules/dashboard/DashboardOverview';
 import ProjectManagement from './modules/projects/ProjectManagement';
@@ -21,6 +21,107 @@ import ProfessionalStructuralDashboard from './components/ProfessionalStructural
 
 const StructureApp: React.FC = () => {
   const [currentModule, setCurrentModule] = useState('overview');
+
+  // Read URL parameters to determine current module
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const moduleParam = urlParams.get('module');
+    const subParam = urlParams.get('sub');
+    
+    console.log('URL Parameters:', { module: moduleParam, sub: subParam });
+    
+    if (subParam) {
+      // If we have a sub parameter, use it as the current module
+      setCurrentModule(subParam);
+    } else if (moduleParam) {
+      // If we only have module, use the default sub-module for that module
+      switch(moduleParam) {
+        case 'design':
+          setCurrentModule('component-design');
+          break;
+        case 'analyze':
+          setCurrentModule('static-analysis');
+          break;
+        case 'education':
+          setCurrentModule('tutorials');
+          break;
+        case 'marketplace':
+          setCurrentModule('bim-plugins');
+          break;
+        case 'reports':
+          setCurrentModule('analysis-reports');
+          break;
+        case 'validation':
+          setCurrentModule('sni-standards');
+          break;
+        default:
+          setCurrentModule(moduleParam);
+      }
+    }
+  }, []);
+
+  // Listen for URL changes (for back/forward navigation)
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const moduleParam = urlParams.get('module');
+      const subParam = urlParams.get('sub');
+      
+      if (subParam) {
+        setCurrentModule(subParam);
+      } else if (moduleParam) {
+        setCurrentModule(moduleParam);
+      } else {
+        setCurrentModule('overview');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Handle module changes and update URL
+  const handleModuleChange = (module: string) => {
+    console.log('Module change requested:', module);
+    setCurrentModule(module);
+    
+    // Update URL based on module
+    const urlParams = new URLSearchParams();
+    
+    // Determine parent module for sub-modules
+    const designModules = ['component-design', 'steel-design', 'concrete-design', 'timber-design', 'foundation-design', 'connection-design', 'code-checking', 'reinforcement'];
+    const analyzeModules = ['static-analysis', 'dynamic-analysis', 'linear-analysis', 'nonlinear-analysis', 'seismic-analysis', 'wind-load', 'load-combinations', 'analysis-results'];
+    const educationModules = ['tutorials', 'courses', 'case-studies', 'documentation', 'best-practices', 'certification', 'community', 'knowledge-base'];
+    const marketplaceModules = ['bim-plugins', 'analysis-tools', 'design-templates', 'material-libraries', 'my-purchases', 'plugin-management', 'developer-resources'];
+    const reportsModules = ['analysis-reports', 'design-reports', 'materia0l-schedules', 'cost-estimation', 'technical-docs', 'export-options', 'report-templates', 'automated-reports'];
+    const validationModules = ['sni-standards', 'asce-standards', 'eurocode', 'aci-standards', 'aisc-standards', 'custom-standards', 'compliance-checker', 'standard-updates'];
+    
+    if (designModules.includes(module)) {
+      urlParams.set('module', 'design');
+      urlParams.set('sub', module);
+    } else if (analyzeModules.includes(module)) {
+      urlParams.set('module', 'analyze');
+      urlParams.set('sub', module);
+    } else if (educationModules.includes(module)) {
+      urlParams.set('module', 'education');
+      urlParams.set('sub', module);
+    } else if (marketplaceModules.includes(module)) {
+      urlParams.set('module', 'marketplace');
+      urlParams.set('sub', module);
+    } else if (reportsModules.includes(module)) {
+      urlParams.set('module', 'reports');
+      urlParams.set('sub', module);
+    } else if (validationModules.includes(module)) {
+      urlParams.set('module', 'validation');
+      urlParams.set('sub', module);
+    } else {
+      // Top-level modules
+      urlParams.set('module', module);
+    }
+    
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.pushState({}, '', newUrl);
+  };
 
   const renderModuleContent = () => {
     switch (currentModule) {
@@ -260,7 +361,7 @@ const StructureApp: React.FC = () => {
       <NotificationProvider>
         <MainLayout 
           currentModule={currentModule} 
-          onModuleChange={setCurrentModule}
+          onModuleChange={handleModuleChange}
         >
           {renderModuleContent()}
         </MainLayout>

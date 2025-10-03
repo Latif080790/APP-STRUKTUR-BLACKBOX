@@ -177,7 +177,7 @@ const AdvancedConnectionDesign: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-orange-700 to-red-800 rounded-xl p-6 border-2 border-gray-300 text-white shadow-lg">
         <div className="flex items-center space-x-3 mb-3">
           <Zap className="w-8 h-8" />
           <div>
@@ -187,28 +187,28 @@ const AdvancedConnectionDesign: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-orange-100 text-sm">Connection Types</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-orange-100 text-sm font-medium">Connection Types</div>
             <div className="text-xl font-bold">{connectionTypes.length}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-orange-100 text-sm">Selected</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-orange-100 text-sm font-medium">Selected</div>
             <div className="text-xl font-bold">{selectedConnection?.name.split(' ')[0] || 'None'}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-orange-100 text-sm">Analysis Status</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-orange-100 text-sm font-medium">Analysis Status</div>
             <div className="text-xl font-bold">{isAnalyzing ? 'Running' : 'Ready'}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-orange-100 text-sm">Progress</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-orange-100 text-sm font-medium">Progress</div>
             <div className="text-xl font-bold">{analysisProgress.toFixed(0)}%</div>
           </div>
         </div>
       </div>
 
       {/* Connection Selection */}
-      <div className="bg-white rounded-xl p-6 border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+      <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
           <Settings className="w-5 h-5 mr-2 text-orange-600" />
           Connection Types
         </h3>
@@ -218,10 +218,10 @@ const AdvancedConnectionDesign: React.FC = () => {
             <button
               key={connection.id}
               onClick={() => setSelectedConnection(connection)}
-              className={`text-left p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
+              className={`text-left p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${
                 selectedConnection?.id === connection.id
-                  ? 'bg-orange-50 border-orange-200 shadow-lg'
-                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-orange-50 border-orange-500 shadow-lg'
+                  : 'bg-slate-50 border-gray-300 hover:bg-slate-100 hover:border-orange-300'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -230,7 +230,9 @@ const AdvancedConnectionDesign: React.FC = () => {
                   {connection.category === 'weld' && <Zap className="w-5 h-5 text-orange-600" />}
                   {connection.category === 'moment' && <Activity className="w-5 h-5 text-purple-600" />}
                   {connection.category === 'seismic' && <Shield className="w-5 h-5 text-red-600" />}
-                  <span className="font-medium text-slate-800">{connection.name}</span>
+                  <span className={`font-bold ${
+                  selectedConnection?.id === connection.id ? 'text-orange-800' : 'text-slate-800'
+                }`}>{connection.name}</span>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded uppercase ${
                   connection.complexity === 'basic' ? 'bg-green-100 text-green-700' :
@@ -241,7 +243,9 @@ const AdvancedConnectionDesign: React.FC = () => {
                 </span>
               </div>
               
-              <p className="text-slate-600 text-sm mb-2">{connection.description}</p>
+              <p className={`text-sm mb-2 ${
+                selectedConnection?.id === connection.id ? 'text-orange-700' : 'text-slate-600'
+              }`}>{connection.description}</p>
               
               <div className="flex items-center justify-between">
                 <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
@@ -265,8 +269,8 @@ const AdvancedConnectionDesign: React.FC = () => {
       {selectedConnection && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Connection Parameters */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+          <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
               <Calculator className="w-5 h-5 mr-2 text-orange-600" />
               Design Parameters
             </h3>
@@ -274,10 +278,10 @@ const AdvancedConnectionDesign: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <h4 className="text-slate-700 font-medium mb-2">Selected Connection</h4>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <div className="font-medium text-slate-800">{selectedConnection.name}</div>
-                  <div className="text-slate-600 text-sm">{selectedConnection.description}</div>
-                  <div className="text-slate-500 text-xs mt-1">{selectedConnection.sniStandard}</div>
+                <div className="p-3 bg-slate-50 rounded-lg border-2 border-gray-200">
+                  <div className="font-bold text-slate-800">{selectedConnection.name}</div>
+                  <div className="text-slate-700 text-sm font-medium">{selectedConnection.description}</div>
+                  <div className="text-slate-600 text-xs mt-1 font-medium">{selectedConnection.sniStandard}</div>
                 </div>
               </div>
 
@@ -287,7 +291,7 @@ const AdvancedConnectionDesign: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-slate-600 text-sm mb-1">Diameter (mm)</label>
-                      <select className="w-full px-3 py-2 border border-slate-300 rounded-md">
+                      <select className="w-full px-3 py-2 border-2 border-gray-300 rounded-md font-medium">
                         <option>M16</option>
                         <option>M20</option>
                         <option>M24</option>
@@ -296,7 +300,7 @@ const AdvancedConnectionDesign: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-slate-600 text-sm mb-1">Grade</label>
-                      <select className="w-full px-3 py-2 border border-slate-300 rounded-md">
+                      <select className="w-full px-3 py-2 border-2 border-gray-300 rounded-md font-medium">
                         <option>A325</option>
                         <option>A490</option>
                         <option>8.8</option>
@@ -313,11 +317,11 @@ const AdvancedConnectionDesign: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-slate-600 text-sm mb-1">Size (mm)</label>
-                      <input type="number" className="w-full px-3 py-2 border border-slate-300 rounded-md" defaultValue="6" />
+                      <input type="number" className="w-full px-3 py-2 border-2 border-gray-300 rounded-md font-medium" defaultValue="6" />
                     </div>
                     <div>
                       <label className="block text-slate-600 text-sm mb-1">Length (mm)</label>
-                      <input type="number" className="w-full px-3 py-2 border border-slate-300 rounded-md" defaultValue="150" />
+                      <input type="number" className="w-full px-3 py-2 border-2 border-gray-300 rounded-md font-medium" defaultValue="150" />
                     </div>
                   </div>
                 </div>
@@ -328,11 +332,11 @@ const AdvancedConnectionDesign: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-600 text-sm mb-1">Shear Force (kN)</label>
-                    <input type="number" className="w-full px-3 py-2 border border-slate-300 rounded-md" defaultValue="150" />
+                    <input type="number" className="w-full px-3 py-2 border-2 border-gray-300 rounded-md font-medium" defaultValue="150" />
                   </div>
                   <div>
                     <label className="block text-slate-600 text-sm mb-1">Axial Force (kN)</label>
-                    <input type="number" className="w-full px-3 py-2 border border-slate-300 rounded-md" defaultValue="100" />
+                    <input type="number" className="w-full px-3 py-2 border-2 border-gray-300 rounded-md font-medium" defaultValue="100" />
                   </div>
                 </div>
               </div>
@@ -340,7 +344,7 @@ const AdvancedConnectionDesign: React.FC = () => {
               <button
                 onClick={() => performConnectionAnalysis(selectedConnection)}
                 disabled={isAnalyzing}
-                className="w-full px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
+                className="w-full px-4 py-3 bg-orange-700 text-white rounded-lg hover:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2 border-2 border-orange-600 font-bold shadow-lg"
               >
                 {isAnalyzing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                 <span>{isAnalyzing ? 'Analyzing...' : 'Analyze Connection'}</span>
@@ -349,8 +353,8 @@ const AdvancedConnectionDesign: React.FC = () => {
           </div>
 
           {/* Analysis Results */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+          <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
               <Target className="w-5 h-5 mr-2 text-orange-600" />
               Analysis Results
             </h3>
@@ -377,31 +381,31 @@ const AdvancedConnectionDesign: React.FC = () => {
             {analysisResults && !isAnalyzing && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <div className="text-blue-700 text-sm font-medium">Capacity</div>
+                  <div className="p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+                    <div className="text-blue-800 text-sm font-bold">Capacity</div>
                     <div className="text-blue-900 font-bold text-lg">{analysisResults.capacity.toFixed(1)} kN</div>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <div className="text-green-700 text-sm font-medium">Demand</div>
+                  <div className="p-3 bg-green-50 rounded-lg border-2 border-green-200">
+                    <div className="text-green-800 text-sm font-bold">Demand</div>
                     <div className="text-green-900 font-bold text-lg">{analysisResults.demand.toFixed(1)} kN</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <div className="text-purple-700 text-sm font-medium">Utilization Ratio</div>
+                  <div className="p-3 bg-purple-50 rounded-lg border-2 border-purple-200">
+                    <div className="text-purple-800 text-sm font-bold">Utilization Ratio</div>
                     <div className="text-purple-900 font-bold text-lg">{(analysisResults.utilizationRatio * 100).toFixed(1)}%</div>
                   </div>
-                  <div className="p-3 bg-orange-50 rounded-lg">
-                    <div className="text-orange-700 text-sm font-medium">Safety Factor</div>
+                  <div className="p-3 bg-orange-50 rounded-lg border-2 border-orange-200">
+                    <div className="text-orange-800 text-sm font-bold">Safety Factor</div>
                     <div className="text-orange-900 font-bold text-lg">{analysisResults.safetyFactor.toFixed(2)}</div>
                   </div>
                 </div>
 
-                <div className={`p-4 rounded-lg border ${
+                <div className={`p-4 rounded-lg border-2 ${
                   analysisResults.compliant 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-red-50 border-red-200'
+                    ? 'bg-green-50 border-green-500' 
+                    : 'bg-red-50 border-red-500'
                 }`}>
                   <div className="flex items-center space-x-2 mb-2">
                     {analysisResults.compliant ? (
@@ -409,7 +413,7 @@ const AdvancedConnectionDesign: React.FC = () => {
                     ) : (
                       <AlertTriangle className="w-5 h-5 text-red-600" />
                     )}
-                    <span className={`font-medium ${
+                    <span className={`font-bold ${
                       analysisResults.compliant ? 'text-green-800' : 'text-red-800'
                     }`}>
                       {analysisResults.compliant ? 'SNI Compliant' : 'Requires Review'}
@@ -418,10 +422,10 @@ const AdvancedConnectionDesign: React.FC = () => {
                   
                   {analysisResults.recommendations.length > 0 && (
                     <div>
-                      <h5 className="text-sm font-medium text-slate-700 mb-2">Recommendations:</h5>
+                      <h5 className="text-sm font-bold text-slate-700 mb-2">Recommendations:</h5>
                       <ul className="space-y-1">
                         {analysisResults.recommendations.map((rec, index) => (
-                          <li key={index} className="text-sm text-slate-600">• {rec}</li>
+                          <li key={index} className="text-sm text-slate-700 font-medium">• {rec}</li>
                         ))}
                       </ul>
                     </div>
@@ -429,11 +433,11 @@ const AdvancedConnectionDesign: React.FC = () => {
                 </div>
 
                 <div className="flex space-x-2">
-                  <button className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors text-sm flex items-center justify-center space-x-1">
+                  <button className="flex-1 px-3 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors text-sm flex items-center justify-center space-x-1 border border-slate-400 font-medium">
                     <Eye className="w-4 h-4" />
                     <span>View Details</span>
                   </button>
-                  <button className="flex-1 px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors text-sm flex items-center justify-center space-x-1">
+                  <button className="flex-1 px-3 py-2 bg-orange-700 text-white rounded-md hover:bg-orange-800 transition-colors text-sm flex items-center justify-center space-x-1 border border-orange-600 font-bold">
                     <Download className="w-4 h-4" />
                     <span>Export</span>
                   </button>

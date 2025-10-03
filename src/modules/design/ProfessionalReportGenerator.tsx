@@ -244,7 +244,7 @@ const ProfessionalReportGenerator: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-emerald-700 to-teal-800 rounded-xl p-6 border-2 border-gray-300 text-white shadow-lg">
         <div className="flex items-center space-x-3 mb-3">
           <FileText className="w-8 h-8" />
           <div>
@@ -254,39 +254,39 @@ const ProfessionalReportGenerator: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-emerald-100 text-sm">Available Templates</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-emerald-100 text-sm font-medium">Available Templates</div>
             <div className="text-xl font-bold">{reportTemplates.length}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-emerald-100 text-sm">Generated Reports</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-emerald-100 text-sm font-medium">Generated Reports</div>
             <div className="text-xl font-bold">{generatedReports.length}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-emerald-100 text-sm">Active Module</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-emerald-100 text-sm font-medium">Active Module</div>
             <div className="text-xl font-bold">{activeTab === 'reports' ? 'Reports' : 'Drawings'}</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-emerald-100 text-sm">Progress</div>
+          <div className="bg-white/15 rounded-lg p-3 border border-white/20">
+            <div className="text-emerald-100 text-sm font-medium">Progress</div>
             <div className="text-xl font-bold">{generationProgress.progress.toFixed(0)}%</div>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="flex border-b border-slate-200">
+      <div className="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
+        <div className="flex border-b-2 border-gray-300">
           <button
             onClick={() => setActiveTab('reports')}
             className={`flex-1 px-6 py-4 text-center transition-colors ${
               activeTab === 'reports'
-                ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-600'
-                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                ? 'bg-emerald-50 text-emerald-800 border-b-2 border-emerald-700 font-bold'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50 font-medium'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
               <FileText className="w-5 h-5" />
-              <span className="font-medium">Report Generator</span>
+              <span className="font-bold">Report Generator</span>
             </div>
           </button>
           
@@ -294,13 +294,13 @@ const ProfessionalReportGenerator: React.FC = () => {
             onClick={() => setActiveTab('drawings')}
             className={`flex-1 px-6 py-4 text-center transition-colors ${
               activeTab === 'drawings'
-                ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-600'
-                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                ? 'bg-emerald-50 text-emerald-800 border-b-2 border-emerald-700 font-bold'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50 font-medium'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
               <PenTool className="w-5 h-5" />
-              <span className="font-medium">Construction Drawings</span>
+              <span className="font-bold">Construction Drawings</span>
             </div>
           </button>
         </div>
@@ -310,8 +310,8 @@ const ProfessionalReportGenerator: React.FC = () => {
       {activeTab === 'reports' && (
         <div className="space-y-6">
           {/* Project Information */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+          <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
               <Building className="w-5 h-5 mr-2 text-emerald-600" />
               Project Information
             </h3>
@@ -326,7 +326,7 @@ const ProfessionalReportGenerator: React.FC = () => {
                     ...prev,
                     projectInfo: { ...prev.projectInfo, name: e.target.value }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
               
@@ -339,7 +339,7 @@ const ProfessionalReportGenerator: React.FC = () => {
                     ...prev,
                     projectInfo: { ...prev.projectInfo, location: e.target.value }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
               
@@ -352,7 +352,7 @@ const ProfessionalReportGenerator: React.FC = () => {
                     ...prev,
                     projectInfo: { ...prev.projectInfo, client: e.target.value }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
               
@@ -365,7 +365,7 @@ const ProfessionalReportGenerator: React.FC = () => {
                     ...prev,
                     projectInfo: { ...prev.projectInfo, engineer: e.target.value }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
               
@@ -378,7 +378,7 @@ const ProfessionalReportGenerator: React.FC = () => {
                     ...prev,
                     projectInfo: { ...prev.projectInfo, projectNumber: e.target.value }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
               
@@ -391,47 +391,47 @@ const ProfessionalReportGenerator: React.FC = () => {
                     ...prev,
                     projectInfo: { ...prev.projectInfo, date: e.target.value }
                   }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-slate-800 focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
             </div>
           </div>
 
           {/* Report Templates */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+          <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
               <Layout className="w-5 h-5 mr-2 text-emerald-600" />
               Report Templates
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {reportTemplates.map((template) => (
-                <div key={template.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div key={template.id} className="border-2 border-gray-300 rounded-lg p-4 hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       {template.type === 'calculation' && <BarChart3 className="w-5 h-5 text-blue-600" />}
                       {template.type === 'compliance' && <Award className="w-5 h-5 text-green-600" />}
                       {template.type === 'drawing' && <PenTool className="w-5 h-5 text-purple-600" />}
                       {template.type === 'summary' && <FileCheck className="w-5 h-5 text-orange-600" />}
-                      <h4 className="font-semibold text-slate-800">{template.name}</h4>
+                      <h4 className="font-bold text-slate-800">{template.name}</h4>
                     </div>
-                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded uppercase">
+                    <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded uppercase font-medium border border-slate-400">
                       {template.format}
                     </span>
                   </div>
                   
-                  <p className="text-slate-600 text-sm mb-3">{template.description}</p>
+                  <p className="text-slate-700 text-sm mb-3 font-medium">{template.description}</p>
                   
                   <div className="mb-4">
-                    <h5 className="text-sm font-medium text-slate-700 mb-2">Sections ({template.sections.length})</h5>
+                    <h5 className="text-sm font-bold text-slate-800 mb-2">Sections ({template.sections.length})</h5>
                     <div className="flex flex-wrap gap-1">
                       {template.sections.slice(0, 3).map((section, index) => (
-                        <span key={index} className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded">
+                        <span key={index} className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded border border-emerald-300 font-medium">
                           {section}
                         </span>
                       ))}
                       {template.sections.length > 3 && (
-                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                        <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded border border-slate-400 font-medium">
                           +{template.sections.length - 3} more
                         </span>
                       )}
@@ -441,7 +441,7 @@ const ProfessionalReportGenerator: React.FC = () => {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => previewReport(template)}
-                      className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors text-sm flex items-center justify-center space-x-1"
+                      className="flex-1 px-3 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors text-sm flex items-center justify-center space-x-1 border border-slate-400 font-medium"
                     >
                       <Eye className="w-4 h-4" />
                       <span>Preview</span>
@@ -450,7 +450,7 @@ const ProfessionalReportGenerator: React.FC = () => {
                     <button
                       onClick={() => generateReport(template)}
                       disabled={isGenerating}
-                      className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center space-x-1"
+                      className="flex-1 px-3 py-2 bg-emerald-700 text-white rounded-md hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center space-x-1 border border-emerald-600 font-bold"
                     >
                       <FileText className="w-4 h-4" />
                       <span>Generate</span>
@@ -463,8 +463,8 @@ const ProfessionalReportGenerator: React.FC = () => {
 
           {/* Generation Progress */}
           {isGenerating && (
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+            <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
                 <Settings className="w-5 h-5 mr-2 text-emerald-600 animate-spin" />
                 Generating Report
               </h3>
@@ -482,11 +482,11 @@ const ProfessionalReportGenerator: React.FC = () => {
                   ></div>
                 </div>
                 
-                <div className="text-sm text-slate-600">
+                <div className="text-sm text-slate-700 font-medium">
                   Current: {generationProgress.currentSection}
                 </div>
                 
-                <div className="text-sm text-slate-500">
+                <div className="text-sm text-slate-600 font-medium">
                   Section {Math.ceil((generationProgress.progress / 100) * generationProgress.totalSections)} of {generationProgress.totalSections}
                 </div>
               </div>
@@ -495,36 +495,36 @@ const ProfessionalReportGenerator: React.FC = () => {
 
           {/* Generated Reports */}
           {generatedReports.length > 0 && (
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+            <div className="bg-white rounded-xl p-6 border-2 border-gray-300 shadow-lg">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
                 <Download className="w-5 h-5 mr-2 text-emerald-600" />
                 Generated Reports
               </h3>
               
               <div className="space-y-3">
                 {generatedReports.map((report) => (
-                  <div key={report.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div key={report.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border-2 border-gray-200">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center border-2 border-emerald-300">
                         <FileText className="w-5 h-5 text-emerald-600" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-slate-800">{report.template.name}</h4>
-                        <div className="text-sm text-slate-600">
+                        <h4 className="font-bold text-slate-800">{report.template.name}</h4>
+                        <div className="text-sm text-slate-700 font-medium">
                           Generated: {report.generatedAt.toLocaleString()} • {report.size} • {report.pages} pages
                         </div>
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      <span className="flex items-center space-x-1 text-green-600 text-sm">
+                      <span className="flex items-center space-x-1 text-green-700 text-sm font-bold">
                         <CheckCircle className="w-4 h-4" />
                         <span>Ready</span>
                       </span>
                       
                       <button
                         onClick={() => downloadReport(report)}
-                        className="px-3 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm flex items-center space-x-1"
+                        className="px-3 py-1 bg-emerald-700 text-white rounded-md hover:bg-emerald-800 transition-colors text-sm flex items-center space-x-1 border border-emerald-600 font-bold"
                       >
                         <Download className="w-4 h-4" />
                         <span>Download</span>

@@ -20,6 +20,11 @@ import AIOptimizationEngine from './AIOptimizationEngine';
 import ProfessionalReportGenerator from './ProfessionalReportGenerator';
 import AdvancedConnectionDesign from './AdvancedConnectionDesign';
 import LoadPathAnalysisSystem from './LoadPathAnalysisSystem';
+import ConcreteDesign from './ConcreteDesign';
+import TimberDesign from './TimberDesign';
+import FoundationDesign from './FoundationDesign';
+import CodeChecking from './CodeChecking';
+import ReinforcementDetailing from './ReinforcementDetailing';
 
 interface DesignModuleProps {
   subModule: string;
@@ -31,6 +36,20 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [show3DViewer, setShow3DViewer] = useState(false);
+  
+  // Steel design specific state
+  const [selectedSteelSection, setSelectedSteelSection] = useState<any>(null);
+  const [selectedSteelGrade, setSelectedSteelGrade] = useState<any>(null);
+  const [steelDesignInputs, setSteelDesignInputs] = useState({
+    length: 6000, // mm
+    momentX: 150, // kNm  
+    momentY: 50,  // kNm
+    axialForce: 200, // kN
+    shearForce: 80, // kN
+    lateralSupport: true,
+    loadType: 'combined' // 'flexure', 'axial', 'combined'
+  });
+  const [steelDesignResults, setSteelDesignResults] = useState<any>(null);
 
 // Advanced design configuration with precision engineering parameters
   const [designConfig, setDesignConfig] = useState({
@@ -432,6 +451,13 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
     optimizationSuggestions: [] as string[]
   });
 
+  // Initialize default module if none selected
+  useEffect(() => {
+    if (!subModule && !designAnalysis.activeComponent) {
+      setDesignAnalysis(prev => ({ ...prev, activeComponent: 'component-design' }));
+    }
+  }, [subModule, designAnalysis.activeComponent]);
+
   // Live calculation engine
   const performDesignCalculation = useCallback(async (componentType: string, parameters: any) => {
     setDesignAnalysis(prev => ({ ...prev, isCalculating: true, validationErrors: [], optimizationSuggestions: [] }));
@@ -622,33 +648,135 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
     }
   }, [engineeringCalculations, materials, steelSections]);
 
+  // Steel design calculation function
+  const performSteelDesignCalculation = useCallback((section: any, grade: any, inputs: any) => {
+    if (!section || !grade) return;
+
+    try {
+      // Calculate design parameters
+      const fy = grade.fy;
+      const fu = grade.fu;
+      const E = grade.elasticModulus || 200000; // MPa
+      
+      // Section properties
+      const A = section.A; // cm²
+      const Zx = section.Zx; // cm³
+      const Zy = section.Zy || section.Zx * 0.3; // cm³ (approximate if not provided)
+      const rx = section.rx; // cm
+      const ry = section.ry; // cm
+      
+      // Calculate slenderness ratios
+      const Lx = inputs.length / 10; // convert mm to cm
+      const Ly = inputs.length / 10;
+      const slendernessX = Lx / rx;
+      const slendernessY = Ly / ry;
+      const maxSlenderness = Math.max(slendernessX, slendernessY);
+      
+      // Flexural capacity
+      const MnX = engineeringCalculations.steel.calculateMn(Zx, fy, inputs.lateralSupport);
+      const MnY = engineeringCalculations.steel.calculateMn(Zy, fy, inputs.lateralSupport);
+      
+      // Compressive capacity  
+      const Pn = engineeringCalculations.steel.calculatePn(A, fy, maxSlenderness);
+      
+      // Shear capacity
+      const webArea = section.webThickness ? section.depth * section.webThickness / 100 : A * 0.4; // cm²
+      const Vn = engineeringCalculations.steel.calculateVn(webArea, fy);
+      
+      // Check interaction equations for combined loading
+      const MuxOverMnx = inputs.momentX / MnX;
+      const MuyOverMny = inputs.momentY / MnY;
+      const PuOverPn = Math.abs(inputs.axialForce) / Pn;
+      const VuOverVn = inputs.shearForce / Vn;
+      
+      // Interaction check (simplified)
+      let interactionRatio = 0;
+      if (PuOverPn >= 0.2) {
+        // Compression controls
+        interactionRatio = PuOverPn + (8/9) * (MuxOverMnx + MuyOverMny);
+      } else {
+        // Tension/small compression
+        interactionRatio = PuOverPn/2 + MuxOverMnx + MuyOverMny;
+      }
+      
+      // Overall safety check
+      const isPassingFlexure = MuxOverMnx <= 1.0 && MuyOverMny <= 1.0;
+      const isPassingAxial = PuOverPn <= 1.0;
+      const isPassingShear = VuOverVn <= 1.0;
+      const isPassingSlenderness = maxSlenderness <= 200;
+      const isPassingInteraction = interactionRatio <= 1.0;
+      
+      const overallSafety = isPassingFlexure && isPassingAxial && isPassingShear && 
+                           isPassingSlenderness && isPassingInteraction;
+      
+      const results = {
+        section: section,
+        grade: grade,
+        capacities: {
+          MnX: MnX.toFixed(1),
+          MnY: MnY.toFixed(1),
+          Pn: Pn.toFixed(0),
+          Vn: Vn.toFixed(0)
+        },
+        utilization: {
+          flexureX: (MuxOverMnx * 100).toFixed(1),
+          flexureY: (MuyOverMny * 100).toFixed(1),
+          axial: (PuOverPn * 100).toFixed(1),
+          shear: (VuOverVn * 100).toFixed(1),
+          interaction: (interactionRatio * 100).toFixed(1)
+        },
+        checks: {
+          flexure: isPassingFlexure,
+          axial: isPassingAxial,
+          shear: isPassingShear,
+          slenderness: isPassingSlenderness,
+          interaction: isPassingInteraction,
+          overall: overallSafety
+        },
+        slenderness: {
+          ratioX: slendernessX.toFixed(1),
+          ratioY: slendernessY.toFixed(1),
+          max: maxSlenderness.toFixed(1),
+          limit: '200'
+        }
+      };
+      
+      setSteelDesignResults(results);
+    } catch (error) {
+      console.error('Steel design calculation error:', error);
+      setSteelDesignResults(null);
+    }
+  }, [engineeringCalculations]);
+
   const renderComponentDesign = () => {
     return (
       <div className="space-y-6">
-        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-          <h3 className="text-xl font-bold text-white/90 mb-4 flex items-center">
-            <Building2 className="w-6 h-6 mr-2 text-blue-400" />
+        <div className="bg-white border-2 border-gray-300 rounded-lg p-6 shadow-lg">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center border-b-2 border-gray-200 pb-3">
+            <Building2 className="w-6 h-6 mr-3 text-blue-600" />
             Comprehensive Structural Component Design
           </h3>
           
-          {/* Enhanced Component Selection with Real-time Preview */}
+          {/* Enhanced Component Selection with High Contrast */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {[
               { 
                 id: 'beam', 
                 name: 'Beam Design', 
-                icon: '—', 
+                icon: '━', 
                 desc: 'Flexure, shear & deflection',
                 standards: ['SNI 2847:2019', 'SNI 1729:2020'],
-                complexity: 'intermediate'
+                complexity: 'intermediate',
+                color: 'blue'
               },
               { 
                 id: 'column', 
                 name: 'Column Design', 
-                icon: '|', 
+                icon: '┃', 
                 desc: 'Axial, combined & buckling',
                 standards: ['SNI 2847:2019', 'SNI 1729:2020'],
-                complexity: 'advanced'
+                complexity: 'advanced',
+                color: 'green'
               },
               { 
                 id: 'connection', 
@@ -656,7 +784,8 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                 icon: '⚡', 
                 desc: 'Bolted, welded & moment',
                 standards: ['SNI 1729:2020', 'AISC 360'],
-                complexity: 'advanced'
+                complexity: 'advanced',
+                color: 'purple'
               },
               { 
                 id: 'foundation', 
@@ -664,16 +793,23 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                 icon: '⬜', 
                 desc: 'Bearing, settlement & stability',
                 standards: ['SNI 8460:2020', 'SNI 1726:2019'],
-                complexity: 'expert'
+                complexity: 'expert',
+                color: 'orange'
               }
             ].map(component => {
               const isActive = designAnalysis.activeComponent === component.id;
+              const colorClass = {
+                blue: isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-25',
+                green: isActive ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-white hover:border-green-400 hover:bg-green-25',
+                purple: isActive ? 'border-purple-500 bg-purple-50' : 'border-gray-300 bg-white hover:border-purple-400 hover:bg-purple-25',
+                orange: isActive ? 'border-orange-500 bg-orange-50' : 'border-gray-300 bg-white hover:border-orange-400 hover:bg-orange-25'
+              }[component.color];
+              
               return (
                 <button
                   key={component.id}
                   onClick={() => {
                     setDesignAnalysis(prev => ({ ...prev, activeComponent: component.id }));
-                    // Trigger sample calculation for demonstration
                     performDesignCalculation(component.id, {
                       material: component.id === 'foundation' ? null : 'K-300',
                       width: 300,
@@ -683,63 +819,64 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                       rebarGrade: 400
                     });
                   }}
-                className={`p-4 bg-white border rounded-lg transition-all duration-200 hover:shadow-md text-left relative overflow-hidden ${
-                  isActive 
-                    ? 'border-blue-200 bg-blue-50 shadow-lg' 
-                    : 'border-gray-200 hover:border-gray-300'
-                } rounded-lg`}
-              >
-                {/* Complexity indicator */}
-                <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-                  component.complexity === 'intermediate' ? 'bg-yellow-400' :
-                  component.complexity === 'advanced' ? 'bg-orange-400' :
-                  'bg-red-400'
-                }`}></div>
-                
-                <div className="text-2xl mb-3 text-center">{component.icon}</div>
-                <div className="text-gray-900 font-medium mb-2 text-center">{component.name}</div>
-                <div className="text-gray-600 text-xs mb-3 text-center">{component.desc}</div>
-                
-                {/* Standards badges */}
-                <div className="flex flex-wrap gap-1">
-                  {component.standards.map(standard => (
-                    <span key={standard} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                      {standard.split(':')[0]}
-                    </span>
-                  ))}
-                </div>
-                
-                {isActive && (
-                  <div className="absolute inset-0 bg-blue-100/50 border-2 border-blue-300 rounded-lg pointer-events-none" />
-                )}
-              </button>
+                  className={`p-4 border-2 rounded-lg transition-all duration-200 shadow-md text-left relative overflow-hidden ${colorClass}`}
+                >
+                  {/* Complexity indicator with strong colors */}
+                  <div className={`absolute top-2 right-2 w-3 h-3 rounded-full ${
+                    component.complexity === 'intermediate' ? 'bg-yellow-500' :
+                    component.complexity === 'advanced' ? 'bg-orange-500' :
+                    'bg-red-500'
+                  } shadow-sm`}></div>
+                  
+                  <div className="text-3xl mb-3 text-center font-bold text-gray-700">{component.icon}</div>
+                  <div className="text-gray-900 font-bold mb-2 text-center text-sm">{component.name}</div>
+                  <div className="text-gray-600 text-xs mb-3 text-center">{component.desc}</div>
+                  
+                  {/* Standards badges with strong contrast */}
+                  <div className="flex flex-wrap gap-1">
+                    {component.standards.map(standard => (
+                      <span key={standard} className="text-xs bg-green-600 text-white px-2 py-1 rounded font-medium shadow-sm">
+                        {standard.split(':')[0]}
+                      </span>
+                    ))}
+                  </div>
+                  
+                  {isActive && (
+                    <div className={`absolute inset-0 border-4 ${
+                      component.color === 'blue' ? 'border-blue-400' :
+                      component.color === 'green' ? 'border-green-400' :
+                      component.color === 'purple' ? 'border-purple-400' :
+                      'border-orange-400'
+                    } rounded-lg pointer-events-none bg-opacity-20`} />
+                  )}
+                </button>
               );
             })}
           </div>
 
-          {/* Real-time Calculation Status */}
+          {/* Real-time Calculation Status with High Contrast */}
           {designAnalysis.isCalculating && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-4 mb-6 shadow-md">
               <div className="flex items-center space-x-3">
-                <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                <span className="text-blue-700 font-medium">Performing precision engineering calculations...</span>
+                <div className="animate-spin w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full"></div>
+                <span className="text-blue-800 font-bold">Performing precision engineering calculations...</span>
               </div>
-              <div className="w-full bg-blue-200 rounded-full h-2 mt-3">
-                <div className="bg-blue-500 h-2 rounded-full transition-all duration-300" style={{ width: '65%' }}></div>
+              <div className="w-full bg-blue-200 rounded-full h-3 mt-3 shadow-inner">
+                <div className="bg-blue-600 h-3 rounded-full transition-all duration-300 shadow-sm" style={{ width: '65%' }}></div>
               </div>
             </div>
           )}
 
-          {/* Validation Errors */}
+          {/* Validation Errors with Strong Red Styling */}
           {designAnalysis.validationErrors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-red-50 border-2 border-red-400 rounded-lg p-4 mb-6 shadow-md">
               <div className="flex items-start space-x-3">
-                <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+                <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-red-800 font-medium mb-2">Design Validation Errors</h4>
+                  <h4 className="text-red-800 font-bold mb-2">Design Validation Errors</h4>
                   <ul className="space-y-1">
                     {designAnalysis.validationErrors.map((error, index) => (
-                      <li key={index} className="text-red-700 text-sm">• {error}</li>
+                      <li key={index} className="text-red-700 text-sm font-medium">• {error}</li>
                     ))}
                   </ul>
                 </div>
@@ -747,16 +884,16 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
             </div>
           )}
 
-          {/* Optimization Suggestions */}
+          {/* Optimization Suggestions with Strong Green Styling */}
           {designAnalysis.optimizationSuggestions.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="bg-green-50 border-2 border-green-400 rounded-lg p-4 mb-6 shadow-md">
               <div className="flex items-start space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                <CheckCircle className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-green-800 font-medium mb-2">Optimization Suggestions</h4>
+                  <h4 className="text-green-800 font-bold mb-2">Optimization Suggestions</h4>
                   <ul className="space-y-1">
                     {designAnalysis.optimizationSuggestions.map((suggestion, index) => (
-                      <li key={index} className="text-green-700 text-sm">• {suggestion}</li>
+                      <li key={index} className="text-green-700 text-sm font-medium">• {suggestion}</li>
                     ))}
                   </ul>
                 </div>
@@ -764,36 +901,36 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
             </div>
           )}
 
-          {/* Design Results Display */}
+          {/* Design Results Display with Professional Styling */}
           {designAnalysis.analysisResults && (
-            <div className="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
-              <h4 className="text-gray-900 font-medium mb-4 flex items-center">
-                <Target className="w-5 h-5 mr-2 text-green-500" />
+            <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 mb-6 shadow-md">
+              <h4 className="text-gray-900 font-bold mb-4 flex items-center border-b-2 border-gray-300 pb-2">
+                <Target className="w-5 h-5 mr-2 text-green-600" />
                 Design Analysis Results - {designAnalysis.analysisResults.componentType.toUpperCase()}
               </h4>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Design Parameters */}
+                {/* Design Parameters with Strong Contrast */}
                 <div className="space-y-3">
-                  <h5 className="text-gray-800 font-medium">Design Parameters</h5>
+                  <h5 className="text-gray-800 font-bold text-lg">Design Parameters</h5>
                   {Object.entries(designAnalysis.analysisResults.designParameters || {}).map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-center p-3 bg-white rounded border border-gray-200">
-                      <span className="text-gray-700 text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                      <span className="text-blue-600 text-sm font-mono">{String(value)}</span>
+                    <div key={key} className="flex justify-between items-center p-3 bg-white border-2 border-gray-200 rounded shadow-sm">
+                      <span className="text-gray-700 text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                      <span className="text-blue-700 text-sm font-bold font-mono">{String(value)}</span>
                     </div>
                   ))}
                 </div>
                 
-                {/* Compliance Status */}
+                {/* Compliance Status with Strong Indicators */}
                 <div className="space-y-3">
-                  <h5 className="text-gray-800 font-medium">Code Compliance</h5>
+                  <h5 className="text-gray-800 font-bold text-lg">Code Compliance</h5>
                   {Object.entries(designAnalysis.analysisResults.compliance || {}).map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-center p-3 bg-white rounded border border-gray-200">
-                      <span className="text-gray-700 text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                      <span className={`text-sm font-medium ${
+                    <div key={key} className="flex justify-between items-center p-3 bg-white border-2 border-gray-200 rounded shadow-sm">
+                      <span className="text-gray-700 text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                      <span className={`text-sm font-bold ${
                         typeof value === 'boolean' 
-                          ? (value ? 'text-green-600' : 'text-red-600')
-                          : 'text-blue-600'
+                          ? (value ? 'text-green-700' : 'text-red-700')
+                          : 'text-blue-700'
                       }`}>
                         {typeof value === 'boolean' ? (value ? '✓ PASS' : '✗ FAIL') : String(value)}
                       </span>
@@ -802,31 +939,31 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                 </div>
               </div>
               
-              {/* Summary Metrics */}
+              {/* Summary Metrics with Strong Visual Indicators */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                <div className="p-4 bg-white border border-green-200 rounded-lg">
+                <div className="p-4 bg-white border-2 border-green-300 rounded-lg shadow-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-green-700 text-sm font-medium">Utilization Ratio</span>
-                    <span className="text-green-600 font-bold">
+                    <span className="text-green-800 text-sm font-bold">Utilization Ratio</span>
+                    <span className="text-green-700 font-bold text-lg">
                       {(designAnalysis.analysisResults.utilizationRatio * 100).toFixed(1)}%
                     </span>
                   </div>
-                  <div className="w-full bg-green-100 rounded-full h-2 mt-2">
+                  <div className="w-full bg-green-200 rounded-full h-3 mt-2 shadow-inner">
                     <div 
-                      className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                      className="bg-green-600 h-3 rounded-full transition-all duration-500 shadow-sm"
                       style={{ width: `${Math.min(designAnalysis.analysisResults.utilizationRatio * 100, 100)}%` }}
                     ></div>
                   </div>
                 </div>
                 
-                <div className="p-4 bg-white border border-blue-200 rounded-lg">
+                <div className="p-4 bg-white border-2 border-blue-300 rounded-lg shadow-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-blue-700 text-sm font-medium">Safety Factor</span>
-                    <span className="text-blue-600 font-bold">
+                    <span className="text-blue-800 text-sm font-bold">Safety Factor</span>
+                    <span className="text-blue-700 font-bold text-lg">
                       {designAnalysis.analysisResults.safetyFactor.toFixed(2)}
                     </span>
                   </div>
-                  <div className="text-blue-600 text-xs mt-1">
+                  <div className="text-blue-700 text-xs mt-1 font-medium">
                     {designAnalysis.analysisResults.safetyFactor >= 2.0 ? 'Adequate' : 
                      designAnalysis.analysisResults.safetyFactor >= 1.5 ? 'Marginal' : 'Inadequate'}
                   </div>
@@ -835,20 +972,20 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
             </div>
           )}
 
-          {/* Advanced Design Configuration */}
+          {/* Advanced Design Configuration with Professional Styling */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <h4 className="text-gray-900 font-medium mb-3 flex items-center">
-                <Settings className="w-5 h-5 mr-2 text-purple-500" />
+            <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-md">
+              <h4 className="text-gray-900 font-bold mb-3 flex items-center border-b-2 border-gray-200 pb-2">
+                <Settings className="w-5 h-5 mr-2 text-purple-600" />
                 Design Configuration
               </h4>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700 text-sm">Design Method:</span>
+                  <span className="text-gray-700 text-sm font-medium">Design Method:</span>
                   <select 
                     value={designConfig.designMethod}
                     onChange={(e) => setDesignConfig(prev => ({...prev, designMethod: e.target.value}))}
-                    className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="bg-white border-2 border-gray-300 rounded px-3 py-1 text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium shadow-sm"
                   >
                     <option value="LRFD">LRFD (Recommended)</option>
                     <option value="ASD">ASD (Allowable Stress)</option>
@@ -856,11 +993,11 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                   </select>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700 text-sm">Analysis Type:</span>
+                  <span className="text-gray-700 text-sm font-medium">Analysis Type:</span>
                   <select 
                     value={designConfig.analysisType}
                     onChange={(e) => setDesignConfig(prev => ({...prev, analysisType: e.target.value}))}
-                    className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="bg-white border-2 border-gray-300 rounded px-3 py-1 text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium shadow-sm"
                   >
                     <option value="linear">Linear</option>
                     <option value="nonlinear">Non-linear</option>
@@ -868,14 +1005,14 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                   </select>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700 text-sm">Quality Control:</span>
+                  <span className="text-gray-700 text-sm font-medium">Quality Control:</span>
                   <select 
                     value={designConfig.qualityControl.verificationLevel}
                     onChange={(e) => setDesignConfig(prev => ({
                       ...prev, 
                       qualityControl: {...prev.qualityControl, verificationLevel: e.target.value}
                     }))}
-                    className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="bg-white border-2 border-gray-300 rounded px-3 py-1 text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium shadow-sm"
                   >
                     <option value="basic">Basic</option>
                     <option value="advanced">Advanced</option>
@@ -885,15 +1022,15 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <h4 className="text-gray-900 font-medium mb-3 flex items-center">
-                <Shield className="w-5 h-5 mr-2 text-orange-500" />
+            <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-md">
+              <h4 className="text-gray-900 font-bold mb-3 flex items-center border-b-2 border-gray-200 pb-2">
+                <Shield className="w-5 h-5 mr-2 text-orange-600" />
                 Safety Factors (φ)
               </h4>
               <div className="space-y-2">
                 {Object.entries(designConfig.safetyFactors).map(([material, factor]) => (
                   <div key={material} className="flex justify-between items-center">
-                    <span className="text-gray-700 text-sm capitalize">{material}:</span>
+                    <span className="text-gray-700 text-sm font-medium capitalize">{material}:</span>
                     <div className="flex items-center space-x-2">
                       <span className="text-orange-600 text-sm font-mono">φ = {factor}</span>
                       <span className={`text-xs px-2 py-1 rounded ${
@@ -937,7 +1074,7 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
   const renderSteelDesign = () => {
     return (
       <div className="space-y-6">
-        {/* Enhanced Steel Design Panel with Eye-Friendly Colors */}
+        {/* Header with Professional Styling */}
         <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
           <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
             <Box className="w-6 h-6 mr-2 text-slate-600" />
@@ -947,36 +1084,294 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
           {/* Steel Section Selection */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-lg p-4 border border-slate-200">
-              <h4 className="text-slate-700 font-medium mb-3">Wide Flange Sections</h4>
+              <h4 className="text-slate-700 font-medium mb-3 flex items-center justify-between">
+                <span>Wide Flange Sections</span>
+                {selectedSteelSection && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                    Selected: {selectedSteelSection.name}
+                  </span>
+                )}
+              </h4>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {steelSections.wideFlange.map((section, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-slate-50 rounded hover:bg-slate-100 transition-colors border border-slate-200">
-                    <span className="text-slate-700 text-sm font-mono">{section.name}</span>
-                    <div className="text-slate-600 text-xs">
-                      A = {section.A} cm² | Zx = {section.Zx} cm³
-                    </div>
-                  </div>
-                ))}
+                {steelSections.wideFlange.map((section, index) => {
+                  const isSelected = selectedSteelSection?.name === section.name;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedSteelSection(section);
+                        console.log('Selected steel section:', section);
+                        // Trigger calculation if both section and grade are selected
+                        if (selectedSteelGrade) {
+                          performSteelDesignCalculation(section, selectedSteelGrade, steelDesignInputs);
+                        }
+                      }}
+                      className={`w-full flex justify-between items-center p-3 rounded transition-all duration-200 border-2 ${
+                        isSelected
+                          ? 'bg-blue-100 border-blue-300 shadow-md'
+                          : 'bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className={`text-sm font-mono ${
+                        isSelected ? 'text-blue-800 font-semibold' : 'text-slate-700'
+                      }`}>
+                        {section.name}
+                      </span>
+                      <div className={`text-xs ${
+                        isSelected ? 'text-blue-600' : 'text-slate-600'
+                      }`}>
+                        A = {section.A} cm² | Zx = {section.Zx} cm³
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-slate-200">
-              <h4 className="text-slate-700 font-medium mb-3">Steel Properties</h4>
+              <h4 className="text-slate-700 font-medium mb-3 flex items-center justify-between">
+                <span>Steel Properties</span>
+                {selectedSteelGrade && (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                    Selected: {selectedSteelGrade.name}
+                  </span>
+                )}
+              </h4>
               <div className="space-y-2">
-                {materials.steel.map((steel, index) => (
-                  <div key={index} className="p-3 bg-amber-50 border border-amber-200 rounded">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-slate-800 font-medium">{steel.name}</span>
-                      <span className="text-amber-700 text-xs">{steel.code}</span>
-                    </div>
-                    <div className="text-slate-600 text-sm">
-                      fy = {steel.fy} MPa | fu = {steel.fu} MPa
-                    </div>
-                  </div>
-                ))}
+                {materials.steel.map((steel, index) => {
+                  const isSelected = selectedSteelGrade?.name === steel.name;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedSteelGrade(steel);
+                        console.log('Selected steel grade:', steel);
+                        // Trigger calculation if both section and grade are selected
+                        if (selectedSteelSection) {
+                          performSteelDesignCalculation(selectedSteelSection, steel, steelDesignInputs);
+                        }
+                      }}
+                      className={`w-full p-3 rounded border-2 transition-all duration-200 ${
+                        isSelected
+                          ? 'bg-green-100 border-green-300 shadow-md'
+                          : 'bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className={`font-medium ${
+                          isSelected ? 'text-green-800' : 'text-slate-800'
+                        }`}>
+                          {steel.name}
+                        </span>
+                        <span className={`text-xs ${
+                          isSelected ? 'text-green-700' : 'text-amber-700'
+                        }`}>
+                          {steel.code}
+                        </span>
+                      </div>
+                      <div className={`text-sm ${
+                        isSelected ? 'text-green-700' : 'text-slate-600'
+                      }`}>
+                        fy = {steel.fy} MPa | fu = {steel.fu} MPa
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
+
+          {/* Design Input Parameters */}
+          {(selectedSteelSection || selectedSteelGrade) && (
+            <div className="bg-white rounded-lg p-4 border border-slate-200 mb-6">
+              <h4 className="text-slate-700 font-medium mb-3">Design Parameters</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Length (mm)</label>
+                  <input
+                    type="number"
+                    value={steelDesignInputs.length}
+                    onChange={(e) => {
+                      const newInputs = { ...steelDesignInputs, length: Number(e.target.value) };
+                      setSteelDesignInputs(newInputs);
+                      if (selectedSteelSection && selectedSteelGrade) {
+                        performSteelDesignCalculation(selectedSteelSection, selectedSteelGrade, newInputs);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Moment X (kNm)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={steelDesignInputs.momentX}
+                    onChange={(e) => {
+                      const newInputs = { ...steelDesignInputs, momentX: Number(e.target.value) };
+                      setSteelDesignInputs(newInputs);
+                      if (selectedSteelSection && selectedSteelGrade) {
+                        performSteelDesignCalculation(selectedSteelSection, selectedSteelGrade, newInputs);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Axial Force (kN)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={steelDesignInputs.axialForce}
+                    onChange={(e) => {
+                      const newInputs = { ...steelDesignInputs, axialForce: Number(e.target.value) };
+                      setSteelDesignInputs(newInputs);
+                      if (selectedSteelSection && selectedSteelGrade) {
+                        performSteelDesignCalculation(selectedSteelSection, selectedSteelGrade, newInputs);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Shear Force (kN)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={steelDesignInputs.shearForce}
+                    onChange={(e) => {
+                      const newInputs = { ...steelDesignInputs, shearForce: Number(e.target.value) };
+                      setSteelDesignInputs(newInputs);
+                      if (selectedSteelSection && selectedSteelGrade) {
+                        performSteelDesignCalculation(selectedSteelSection, selectedSteelGrade, newInputs);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Load Type</label>
+                  <select
+                    value={steelDesignInputs.loadType}
+                    onChange={(e) => {
+                      const newInputs = { ...steelDesignInputs, loadType: e.target.value };
+                      setSteelDesignInputs(newInputs);
+                      if (selectedSteelSection && selectedSteelGrade) {
+                        performSteelDesignCalculation(selectedSteelSection, selectedSteelGrade, newInputs);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="flexure">Flexure Only</option>
+                    <option value="axial">Axial Only</option>
+                    <option value="combined">Combined Loading</option>
+                  </select>
+                </div>
+                <div className="flex items-center">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={steelDesignInputs.lateralSupport}
+                      onChange={(e) => {
+                        const newInputs = { ...steelDesignInputs, lateralSupport: e.target.checked };
+                        setSteelDesignInputs(newInputs);
+                        if (selectedSteelSection && selectedSteelGrade) {
+                          performSteelDesignCalculation(selectedSteelSection, selectedSteelGrade, newInputs);
+                        }
+                      }}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">Lateral Support</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Design Results */}
+          {steelDesignResults && (
+            <div className="bg-white rounded-lg p-4 border border-slate-200 mb-6">
+              <h4 className="text-slate-700 font-medium mb-3 flex items-center">
+                <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
+                Steel Design Results
+              </h4>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Capacities */}
+                <div className="space-y-3">
+                  <h5 className="font-medium text-gray-800">Design Capacities</h5>
+                  <div className="space-y-2">
+                    <div className="flex justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">Moment Capacity (Mn-X):</span>
+                      <span className="text-sm font-medium text-blue-600">{steelDesignResults.capacities.MnX} kNm</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">Axial Capacity (Pn):</span>
+                      <span className="text-sm font-medium text-blue-600">{steelDesignResults.capacities.Pn} kN</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">Shear Capacity (Vn):</span>
+                      <span className="text-sm font-medium text-blue-600">{steelDesignResults.capacities.Vn} kN</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Utilization Ratios */}
+                <div className="space-y-3">
+                  <h5 className="font-medium text-gray-800">Utilization Ratios</h5>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">Flexure:</span>
+                      <span className={`text-sm font-medium ${
+                        parseFloat(steelDesignResults.utilization.flexureX) > 100 ? 'text-red-600' : 
+                        parseFloat(steelDesignResults.utilization.flexureX) > 80 ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {steelDesignResults.utilization.flexureX}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">Axial:</span>
+                      <span className={`text-sm font-medium ${
+                        parseFloat(steelDesignResults.utilization.axial) > 100 ? 'text-red-600' : 
+                        parseFloat(steelDesignResults.utilization.axial) > 80 ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {steelDesignResults.utilization.axial}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">Interaction:</span>
+                      <span className={`text-sm font-medium ${
+                        parseFloat(steelDesignResults.utilization.interaction) > 100 ? 'text-red-600' : 
+                        parseFloat(steelDesignResults.utilization.interaction) > 80 ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {steelDesignResults.utilization.interaction}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Overall Status */}
+              <div className="mt-4 p-3 rounded-lg ${
+                steelDesignResults.checks.overall 
+                  ? 'bg-green-100 border border-green-300' 
+                  : 'bg-red-100 border border-red-300'
+              }">
+                <div className="flex items-center space-x-2">
+                  {steelDesignResults.checks.overall ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  )}
+                  <span className={`font-medium ${
+                    steelDesignResults.checks.overall ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {steelDesignResults.checks.overall ? 'DESIGN PASSES - Section is adequate' : 'DESIGN FAILS - Section needs revision'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Design Checks */}
           <div className="bg-white rounded-lg p-4 border border-slate-200">
@@ -988,7 +1383,12 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                   <span className="text-emerald-700 text-sm font-medium">Flexural Strength</span>
                 </div>
                 <div className="text-slate-700 text-sm">φMn ≥ Mu</div>
-                <div className="text-emerald-600 text-xs mt-1">Ratio: 0.73 ✓</div>
+                <div className="text-emerald-600 text-xs mt-1">
+                  {steelDesignResults ? 
+                    `Ratio: ${steelDesignResults.utilization.flexureX}% ${parseFloat(steelDesignResults.utilization.flexureX) <= 100 ? '✓' : '✗'}` : 
+                    'Ratio: 0.73 ✓'
+                  }
+                </div>
               </div>
               
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
@@ -997,16 +1397,26 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                   <span className="text-emerald-700 text-sm font-medium">Shear Strength</span>
                 </div>
                 <div className="text-slate-700 text-sm">φVn ≥ Vu</div>
-                <div className="text-emerald-600 text-xs mt-1">Ratio: 0.45 ✓</div>
+                <div className="text-emerald-600 text-xs mt-1">
+                  {steelDesignResults ? 
+                    `Ratio: ${steelDesignResults.utilization.shear}% ${parseFloat(steelDesignResults.utilization.shear) <= 100 ? '✓' : '✗'}` : 
+                    'Ratio: 0.45 ✓'
+                  }
+                </div>
               </div>
               
               <div className="p-3 bg-amber-50 border border-amber-200 rounded">
                 <div className="flex items-center space-x-2 mb-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span className="text-amber-700 text-sm font-medium">Deflection</span>
+                  <span className="text-amber-700 text-sm font-medium">Slenderness</span>
                 </div>
-                <div className="text-slate-700 text-sm">δ ≤ L/240</div>
-                <div className="text-amber-600 text-xs mt-1">Ratio: 0.89 ⚠</div>
+                <div className="text-slate-700 text-sm">L/r ≤ 200</div>
+                <div className="text-amber-600 text-xs mt-1">
+                  {steelDesignResults ? 
+                    `Ratio: ${steelDesignResults.slenderness.max} ${parseFloat(steelDesignResults.slenderness.max) <= 200 ? '✓' : '⚠'}` : 
+                    'Ratio: 0.89 ⚠'
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -1114,168 +1524,65 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
     );
   };
 
-  const renderFoundationDesign = () => {
-    return (
-      <div className="space-y-6">
-        {/* Enhanced Foundation Design Panel with Eye-Friendly Colors */}
-        <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-          <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
-            <Settings className="w-6 h-6 mr-2 text-slate-600" />
-            Foundation Design - SNI 8460:2020
-          </h3>
-
-          {/* Soil Parameters */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-lg p-4 border border-slate-200">
-              <h4 className="text-slate-700 font-medium mb-3">Soil Investigation</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600 text-sm">Soil Type:</span>
-                  <span className="text-purple-700 text-sm font-medium">Clay (CH)</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600 text-sm">SPT N-Value:</span>
-                  <span className="text-purple-700 text-sm font-medium">15 (Medium Dense)</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600 text-sm">Bearing Capacity:</span>
-                  <span className="text-purple-700 text-sm font-medium">200 kN/m²</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600 text-sm">Settlement:</span>
-                  <span className="text-purple-700 text-sm font-medium">18 mm (OK)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-slate-200">
-              <h4 className="text-slate-700 font-medium mb-3">Foundation Types</h4>
-              <div className="space-y-2">
-                {[
-                  { type: 'Isolated Footing', size: '2.0 x 2.0 m', load: '850 kN' },
-                  { type: 'Combined Footing', size: '3.0 x 4.0 m', load: '1200 kN' },
-                  { type: 'Raft Foundation', size: '12 x 8 m', load: '8500 kN' },
-                  { type: 'Pile Foundation', size: 'φ40 cm - 12m', load: '1500 kN' }
-                ].map((foundation, index) => (
-                  <div key={index} className="p-3 bg-violet-50 rounded border border-violet-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-700 text-sm font-medium">{foundation.type}</span>
-                      <span className="text-violet-700 text-xs">{foundation.size}</span>
-                    </div>
-                    <div className="text-slate-600 text-xs mt-1">Load: {foundation.load}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Design Results */}
-          <div className="bg-white rounded-lg p-4 border border-slate-200">
-            <h4 className="text-slate-700 font-medium mb-3">Foundation Design Results</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  <span className="text-emerald-700 text-sm font-medium">Bearing Capacity</span>
-                </div>
-                <div className="text-slate-700 text-sm">qult = 450 kN/m²</div>
-                <div className="text-slate-700 text-sm">qallow = 150 kN/m²</div>
-                <div className="text-emerald-600 text-xs mt-1">SF = 3.0 ✓</div>
-              </div>
-              
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  <span className="text-emerald-700 text-sm font-medium">Settlement</span>
-                </div>
-                <div className="text-slate-700 text-sm">δ = 18 mm</div>
-                <div className="text-slate-700 text-sm">δallow = 25 mm</div>
-                <div className="text-emerald-600 text-xs mt-1">OK ✓</div>
-              </div>
-              
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600" />
-                  <span className="text-blue-700 text-sm font-medium">Reinforcement</span>
-                </div>
-                <div className="text-slate-700 text-sm">Bottom: D16-200</div>
-                <div className="text-slate-700 text-sm">Top: D13-250</div>
-                <div className="text-blue-600 text-xs mt-1">ρ = 0.8% ✓</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Main render function
+  // Render appropriate submodule based on selection
   const renderSubModule = () => {
-    const activeModule = subModule || designAnalysis.activeComponent;
-    
-    switch(activeModule) {
-      case 'component-design':
-        return renderComponentDesign();
-      case 'material-testing':
-        return <AdvancedMaterialTesting />;
-      case 'certification':
-        return <ProfessionalMaterialCertification />;
-      case 'quality-assurance':
-        return <QualityAssuranceProtocols />;
+    switch (subModule) {
       case 'steel-design':
         return renderSteelDesign();
       case 'concrete-design':
-        return renderConcreteDesign();
+        return <ConcreteDesign />;
+      case 'timber-design':
+        return <TimberDesign />;
       case 'foundation-design':
-        return renderFoundationDesign();
-      case 'ai-optimization':
-        return <AIOptimizationEngine />;
-      case 'report-generator':
-        return <ProfessionalReportGenerator />;
+        return <FoundationDesign />;
       case 'connection-design':
         return <AdvancedConnectionDesign />;
-      case 'load-path-analysis':
-        return <LoadPathAnalysisSystem />;
+      case 'code-checking':
+        return <CodeChecking />;
+      case 'reinforcement':
+        return <ReinforcementDetailing />;
+      case 'component-design':
       default:
         return renderComponentDesign();
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Enhanced Header with Info Tips - Matching AnalyzeStructureCore Pattern */}
-      <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+    <div className="min-h-screen bg-gray-100">
+      {/* Professional Header with Strong Contrast */}
+      <div className="bg-white border-b-2 border-gray-200 shadow-sm mb-6">
+        <div className="bg-gradient-to-r from-blue-700 to-blue-800 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
+                <Building2 className="w-5 h-5 text-blue-700" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-white">Structural Design Suite</h1>
-                <p className="text-blue-100 text-sm">Comprehensive structural component design following SNI standards</p>
+                <p className="text-blue-100 text-sm">Professional structural component design following SNI standards</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <button 
                 onClick={() => setShowGuide(true)}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-green-400 flex items-center space-x-2"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-md border border-green-500 flex items-center space-x-2"
               >
-                <HelpCircle className="w-5 h-5" />
+                <HelpCircle className="w-4 h-4" />
                 <span>Help & Guide</span>
               </button>
-              <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm flex items-center space-x-1">
+              <button className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-md border border-blue-500 flex items-center space-x-1">
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
               </button>
-              <button className="px-3 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all text-sm">
-                <Calculator className="w-4 h-4 mr-1 inline" />Materials
+              <button className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-md border border-blue-500 flex items-center space-x-1">
+                <Calculator className="w-4 h-4" />
+                <span>Materials</span>
               </button>
               <button 
                 onClick={() => setShow3DViewer(true)}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-violet-600 text-white rounded-lg hover:from-purple-600 hover:to-violet-700 transition-all text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-purple-400 flex items-center space-x-2"
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-md border border-purple-500 flex items-center space-x-2"
               >
-                <Eye className="w-5 h-5" />
+                <Eye className="w-4 h-4" />
                 <span>3D Model</span>
               </button>
             </div>
@@ -1283,102 +1590,22 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
         </div>
       </div>
 
-      {/* Main Content Container */}
+      {/* Main Content Container with High Contrast */}
       <div className="max-w-7xl mx-auto px-6">
-        {/* Enhanced Navigation Tabs - Matching AnalyzeStructureCore Style */}
-        <div className="bg-white rounded-xl shadow-lg mb-6 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Design Modules</h3>
-              <p className="text-gray-600 text-sm">Select a design module to begin structural analysis and design</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Active:</span>
-              <span className="text-sm font-medium text-blue-600">
-                {[
-                  { id: 'component-design', label: 'Component Design' },
-                  { id: 'material-testing', label: 'Material Testing' },
-                  { id: 'certification', label: 'Certification' },
-                  { id: 'quality-assurance', label: 'Quality Assurance' },
-                  { id: 'steel-design', label: 'Steel Design' },
-                  { id: 'concrete-design', label: 'Concrete Design' },
-                  { id: 'foundation-design', label: 'Foundation Design' },
-                  { id: 'ai-optimization', label: 'AI Optimization' },
-                  { id: 'report-generator', label: 'Report Generator' },
-                  { id: 'connection-design', label: 'Connection Design' },
-                  { id: 'load-path-analysis', label: 'Load Path Analysis' }
-                ].find(item => item.id === (subModule || designAnalysis.activeComponent))?.label || 'Component Design'}
-              </span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-11 gap-3">
-            {[
-              { id: 'component-design', label: 'Component Design', icon: Building2, color: 'blue' },
-              { id: 'material-testing', label: 'Material Testing', icon: FlaskConical, color: 'purple' },
-              { id: 'certification', label: 'Certification', icon: Award, color: 'yellow' },
-              { id: 'quality-assurance', label: 'Quality Assurance', icon: Shield, color: 'green' },
-              { id: 'steel-design', label: 'Steel Design', icon: Box, color: 'gray' },
-              { id: 'concrete-design', label: 'Concrete Design', icon: Building2, color: 'indigo' },
-              { id: 'foundation-design', label: 'Foundation Design', icon: Settings, color: 'orange' },
-              { id: 'ai-optimization', label: 'AI Optimization', icon: Brain, color: 'purple' },
-              { id: 'report-generator', label: 'Report Generator', icon: FileText, color: 'emerald' },
-              { id: 'connection-design', label: 'Connection Design', icon: Zap, color: 'red' },
-              { id: 'load-path-analysis', label: 'Load Path Analysis', icon: Activity, color: 'pink' }
-            ].map(item => {
-              const isActive = subModule === item.id || designAnalysis.activeComponent === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    window.history.pushState({}, '', `?module=design&sub=${item.id}`);
-                    setDesignAnalysis(prev => ({ ...prev, activeComponent: item.id }));
-                  }}
-                  className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
-                    isActive
-                      ? `bg-${item.color}-50 border-${item.color}-200 shadow-lg`
-                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className={`w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center ${
-                    isActive
-                      ? `bg-${item.color}-100`
-                      : 'bg-gray-100'
-                  }`}>
-                    <item.icon className={`w-4 h-4 ${
-                      isActive
-                        ? `text-${item.color}-600`
-                        : 'text-gray-600'
-                    }`} />
-                  </div>
-                  <div className={`text-xs font-medium text-center ${
-                    isActive
-                      ? `text-${item.color}-900`
-                      : 'text-gray-700'
-                  }`}>
-                    {item.label}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-lg shadow-lg border border-gray-300 p-6">
           {renderSubModule()}
         </div>
       </div>
       
-      {/* 3D Viewer Modal */}
+      {/* 3D Viewer Modal with Professional Styling */}
       {show3DViewer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4">
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl border-2 border-gray-300 max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-700 to-purple-800 px-6 py-4 border-b border-purple-600">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Eye className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
+                    <Eye className="w-5 h-5 text-purple-700" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">3D Structural Model Viewer</h2>
@@ -1387,110 +1614,110 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                 </div>
                 <button 
                   onClick={() => setShow3DViewer(false)}
-                  className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+                  className="w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-md"
                 >
-                  <span className="text-white text-lg">×</span>
+                  <span className="text-xl font-bold">×</span>
                 </button>
               </div>
             </div>
             
-            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+            <div className="p-6 bg-gray-50">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
-                {/* 3D Canvas Area */}
-                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl relative overflow-hidden">
+                {/* 3D Canvas Area with Professional Dark Theme */}
+                <div className="lg:col-span-2 bg-gray-900 rounded-lg border-2 border-gray-700 shadow-inner relative overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-white">
-                      <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Building2 className="w-10 h-10 text-purple-400" />
+                      <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <Building2 className="w-10 h-10 text-white" />
                       </div>
                       <h3 className="text-xl font-semibold mb-2">3D Model Viewer</h3>
-                      <p className="text-slate-300 mb-4">Interactive structural component visualization</p>
-                      <div className="text-purple-400 text-sm">Rendering structural model...</div>
+                      <p className="text-gray-300 mb-4">Interactive structural component visualization</p>
+                      <div className="text-purple-400 text-sm font-medium">Rendering structural model...</div>
                     </div>
                   </div>
                   
-                  {/* View Controls */}
+                  {/* View Controls with High Contrast */}
                   <div className="absolute top-4 right-4 space-y-2">
-                    <button className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
-                      <RefreshCw className="w-5 h-5 text-white" />
+                    <button className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-md border border-blue-500">
+                      <RefreshCw className="w-5 h-5" />
                     </button>
-                    <button className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
-                      <Target className="w-5 h-5 text-white" />
+                    <button className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-md border border-green-500">
+                      <Target className="w-5 h-5" />
                     </button>
-                    <button className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
-                      <Download className="w-5 h-5 text-white" />
+                    <button className="w-10 h-10 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-md border border-orange-500">
+                      <Download className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
                 
-                {/* Model Properties Panel */}
+                {/* Model Properties Panel with Strong Borders */}
                 <div className="space-y-4">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
-                      <Building2 className="w-4 h-4 mr-2 text-blue-600" />
+                  <div className="bg-white rounded-lg border-2 border-gray-300 shadow-md p-4">
+                    <h4 className="font-bold text-gray-800 mb-3 flex items-center border-b border-gray-200 pb-2">
+                      <Building2 className="w-5 h-5 mr-2 text-blue-600" />
                       Model Properties
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Elements:</span>
-                        <span className="text-slate-800 font-medium">156</span>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between border-b border-gray-100 pb-1">
+                        <span className="text-gray-700 font-medium">Elements:</span>
+                        <span className="text-gray-900 font-bold">156</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-1">
+                        <span className="text-gray-700 font-medium">Nodes:</span>
+                        <span className="text-gray-900 font-bold">89</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-1">
+                        <span className="text-gray-700 font-medium">Materials:</span>
+                        <span className="text-gray-900 font-bold">3</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-600">Nodes:</span>
-                        <span className="text-slate-800 font-medium">89</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Materials:</span>
-                        <span className="text-slate-800 font-medium">3</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Load Cases:</span>
-                        <span className="text-slate-800 font-medium">5</span>
+                        <span className="text-gray-700 font-medium">Load Cases:</span>
+                        <span className="text-gray-900 font-bold">5</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
-                      <Eye className="w-4 h-4 mr-2 text-purple-600" />
+                  <div className="bg-white rounded-lg border-2 border-gray-300 shadow-md p-4">
+                    <h4 className="font-bold text-gray-800 mb-3 flex items-center border-b border-gray-200 pb-2">
+                      <Eye className="w-5 h-5 mr-2 text-purple-600" />
                       Display Options
                     </h4>
                     <div className="space-y-3">
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" defaultChecked />
-                        <span className="text-sm text-slate-700">Show Elements</span>
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" defaultChecked />
+                        <span className="text-gray-700 font-medium">Show Elements</span>
                       </label>
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" defaultChecked />
-                        <span className="text-sm text-slate-700">Show Nodes</span>
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" defaultChecked />
+                        <span className="text-gray-700 font-medium">Show Nodes</span>
                       </label>
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" />
-                        <span className="text-sm text-slate-700">Show Loads</span>
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" />
+                        <span className="text-gray-700 font-medium">Show Loads</span>
                       </label>
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" />
-                        <span className="text-sm text-slate-700">Show Deformation</span>
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" />
+                        <span className="text-gray-700 font-medium">Show Deformation</span>
                       </label>
                     </div>
                   </div>
                   
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
-                      <Settings className="w-4 h-4 mr-2 text-orange-600" />
+                  <div className="bg-white rounded-lg border-2 border-gray-300 shadow-md p-4">
+                    <h4 className="font-bold text-gray-800 mb-3 flex items-center border-b border-gray-200 pb-2">
+                      <Settings className="w-5 h-5 mr-2 text-orange-600" />
                       View Controls
                     </h4>
                     <div className="space-y-2">
-                      <button className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+                      <button className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-md border border-blue-500">
                         Isometric View
                       </button>
-                      <button className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm">
+                      <button className="w-full px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium shadow-md border border-gray-500">
                         Front View
                       </button>
-                      <button className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm">
+                      <button className="w-full px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium shadow-md border border-gray-500">
                         Top View
                       </button>
-                      <button className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm">
+                      <button className="w-full px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium shadow-md border border-gray-500">
                         Side View
                       </button>
                     </div>
@@ -1502,15 +1729,15 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
         </div>
       )}
       
-      {/* Guide Modal */}
+      {/* Guide Modal with Professional Design */}
       {showGuide && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl border-2 border-gray-300 max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-green-700 to-green-800 px-6 py-4 border-b border-green-600">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <HelpCircle className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
+                    <HelpCircle className="w-5 h-5 text-green-700" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">Design Module Guide</h2>
@@ -1519,9 +1746,9 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                 </div>
                 <button 
                   onClick={() => setShowGuide(false)}
-                  className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+                  className="w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-md"
                 >
-                  <span className="text-white text-lg">×</span>
+                  <span className="text-xl font-bold">×</span>
                 </button>
               </div>
             </div>
@@ -1626,6 +1853,7 @@ const DesignModule: React.FC<DesignModuleProps> = ({ subModule }) => {
                     <FileCheck className="w-5 h-5 mr-2" />
                     SNI Standards Compliance
                   </h3>
+
                   <div className="space-y-3 text-sm text-green-700">
                     <div>
                       <div className="font-medium">SNI 2847:2019</div>
