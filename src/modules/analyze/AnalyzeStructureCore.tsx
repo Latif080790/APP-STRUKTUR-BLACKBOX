@@ -700,6 +700,13 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
   const [activeGuideCategory, setActiveGuideCategory] = useState<string>('overview');
   const [completedGuideSteps, setCompletedGuideSteps] = useState<string[]>([]);
   
+  // PERFORMANCE MONITORING STATE
+  const [performanceMonitor] = useState(() => new PerformanceMonitor());
+  const [performanceMetrics, setPerformanceMetrics] = useState<any>(null);
+  const [showPerformancePanel, setShowPerformancePanel] = useState(false);
+  const [performanceAlerts, setPerformanceAlerts] = useState<any[]>([]);
+  const [isPerformanceOptimized, setIsPerformanceOptimized] = useState(false);
+  
   // SHARED ANALYSIS STATE FOR ALL ANALYSIS TYPES
   const [analysisResults, setAnalysisResults] = useState<EngineAnalysisResults | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<any[]>([]);
@@ -1254,6 +1261,65 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
       setAnalysisStatus(prev => ({ ...prev, analysis: 'not-run' }));
       console.log('AnalyzeStructureCore - Analysis history cleared');
     }
+  };
+
+  // PERFORMANCE MONITORING FUNCTIONS
+  useEffect(() => {
+    // Initialize performance monitoring
+    performanceMonitor.startMonitoring();
+    
+    // Listen for performance metrics updates
+    const handleMetricsUpdate = (metrics: any) => {
+      setPerformanceMetrics(metrics);
+      
+      // Check for performance alerts
+      const alerts = [];
+      if (metrics.memoryUsage.percentage > 80) {
+        alerts.push({
+          id: `memory_${Date.now()}`,
+          type: 'warning',
+          title: 'High Memory Usage',
+          message: `Memory usage is at ${metrics.memoryUsage.percentage.toFixed(1)}%`,
+          timestamp: new Date()
+        });
+      }
+      
+      if (metrics.analysisTime.latest > 5000) {
+        alerts.push({
+          id: `analysis_${Date.now()}`,
+          type: 'warning', 
+          title: 'Slow Analysis Performance',
+          message: `Last analysis took ${(metrics.analysisTime.latest / 1000).toFixed(1)}s`,
+          timestamp: new Date()
+        });
+      }
+      
+      setPerformanceAlerts(alerts);
+    };
+    
+    // Setup performance monitoring listener with subscribe method
+    const unsubscribe = performanceMonitor.subscribe(handleMetricsUpdate);
+    
+    return () => {
+      performanceMonitor.stopMonitoring();
+      unsubscribe();
+    };
+  }, [performanceMonitor]);
+  
+  const togglePerformanceOptimization = () => {
+    setIsPerformanceOptimized(!isPerformanceOptimized);
+    
+    if (!isPerformanceOptimized) {
+      // Enable performance optimizations
+      console.log('Enabling performance optimizations...');
+      // Here we would switch to using OptimizedComponents
+    } else {
+      console.log('Disabling performance optimizations...');
+    }
+  };
+  
+  const clearPerformanceAlerts = () => {
+    setPerformanceAlerts([]);
   };
 
   // LOAD COMBINATIONS INTEGRATION
@@ -3317,6 +3383,111 @@ const AnalyzeStructureCore: React.FC<AnalyzeStructureCoreProps> = ({ initialAnal
     <>
       {/* ONLY Main Content - NO DUPLICATE SIDEBAR */}
       <div className="w-full bg-gray-50">
+        {/* Performance Monitoring Panel */}
+        {showPerformancePanel && (
+          <div className="fixed top-4 right-4 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900 flex items-center">
+                <Monitor className="w-4 h-4 mr-2 text-blue-600" />
+                Performance Monitor
+              </h3>
+              <button
+                onClick={() => setShowPerformancePanel(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {performanceMetrics && (
+              <div className="space-y-3">
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-700">Memory Usage</span>
+                    <span className="text-sm font-semibold text-blue-900">
+                      {performanceMetrics.memoryUsage.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2 mt-1">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${performanceMetrics.memoryUsage.percentage}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="bg-green-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-green-700">Analysis Time</span>
+                    <span className="text-sm font-semibold text-green-900">
+                      {(performanceMetrics.analysisTime.latest / 1000).toFixed(1)}s
+                    </span>
+                  </div>
+                  <div className="text-xs text-green-600 mt-1">
+                    Trend: {performanceMetrics.analysisTime.trend}
+                  </div>
+                </div>
+                
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-purple-700">Optimization</span>
+                    <button
+                      onClick={togglePerformanceOptimization}
+                      className={`text-xs px-2 py-1 rounded ${
+                        isPerformanceOptimized
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}
+                    >
+                      {isPerformanceOptimized ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {performanceAlerts.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="text-xs font-medium text-gray-700 mb-2">Alerts ({performanceAlerts.length})</div>
+                <div className="space-y-2">
+                  {performanceAlerts.slice(0, 2).map((alert) => (
+                    <div key={alert.id} className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                      <div className="text-xs font-medium text-yellow-800">{alert.title}</div>
+                      <div className="text-xs text-yellow-700">{alert.message}</div>
+                    </div>
+                  ))}
+                  {performanceAlerts.length > 2 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      +{performanceAlerts.length - 2} more alerts
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={clearPerformanceAlerts}
+                  className="text-xs text-blue-600 hover:text-blue-700 mt-2"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Performance Toggle Button */}
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            onClick={() => setShowPerformancePanel(!showPerformancePanel)}
+            className={`p-3 rounded-full shadow-lg transition-all ${
+              showPerformancePanel
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-blue-600 hover:bg-blue-50'
+            }`}
+            title="Performance Monitor"
+          >
+            <Gauge className="w-5 h-5" />
+          </button>
+        </div>
+        
         <div className="p-6">
           {renderAnalysisContent()}
         </div>
